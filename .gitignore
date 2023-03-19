@@ -1,3 +1,4 @@
 a.out
 pasm
 test.asm
+*.o

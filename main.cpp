@@ -10,12 +10,20 @@ std::ofstream output;
 std::vector<std::string> lines;
 // labels in data section (name, offset)
 std::unordered_map<std::string, uint64_t> data_labels;
-// labels in code section (idx, name)
 std::vector<std::string> text_labels;
+std::unordered_map<std::string, int> text_labels_map;
 // symbols (positions)
 std::vector<uint64_t> relocations;
-// symbol table (idx, offset)
-std::vector<uint64_t> reloc_table;
+// symbol table (name, offset)
+std::unordered_map<std::string, uint64_t> reloc_table;
+// output buffer
+std::vector<uint8_t> output_buffer;
+uint64_t data_offset = 0;
+uint64_t bss_offset = 0;
+uint64_t text_offset = 0;
+uint64_t data_size = 0;
+
+std::string &filename(void) { return input_name; }
 
 void print_help(const char *name) {
 	std::cout << "Usage: " << name << " [options] input\n";
@@ -23,39 +31,6 @@ void print_help(const char *name) {
 	std::cout << "-h, --help\t\tPrint this help message\n";
 	std::cout << "-v, --version\t\tPrint version information\n";
 	std::cout << "-o, --output\t\tSpecify output file" << std::endl;
-}
-
-int reg_size(std::string s) {
-	// nx, nl, nh, rn, di, si
-	if (s.size() == 2) {
-		if (s[0] == 'r')
-			return 64;
-		if (s[1] == 'x' || s[1] == 'i')
-			return 16;
-		return 8;
-	}
-	// rnx
-	if (s[0] == 'r' && s[2] == 'x')
-		return 64;
-	if (s[0] == 'e')
-		return 32;
-	if (s[2] == 'l' || s[2] == 'h')
-		return 8;
-	if (s[2] == 'w')
-		return 16;
-	if (s[2] == 'd')
-		return 32;
-	return -1;
-}
-
-int op_type(std::string s) {
-	if (reg_size(s) != -1)
-		return REG;
-	if (s.find(' ') != std::string::npos || s[0] == '[')
-		return MEM;
-	// if in symbol table return IMM
-	return IMM;
-	return -1;
 }
 
 int main(int argc, char *argv[]) {
@@ -113,8 +88,9 @@ int main(int argc, char *argv[]) {
 	while (std::getline(input, line)) {
 		lines.push_back(line);
 	}
+
 	// perform preprocessing
-	for (int i = 0; i < lines.size(); i++) {
+	for (size_t i = 0; i < lines.size(); i++) {
 		std::string &line = lines[i];
 		// remove comments
 		line = line.substr(0, line.find(';'));
@@ -130,20 +106,39 @@ int main(int argc, char *argv[]) {
 			line = "";
 		else
 			line = line.substr(0, last + 1);
+		// remove whitespace before and after commas
+		// check if we are in a string
+		bool in_string = false;
+		for (size_t j = 0; j < line.size(); j++) {
+			if (line[j] == '"' && (j == 0 || line[j - 1] != '\\'))
+				in_string = !in_string;
+			if (line[j] == ',' && !in_string) {
+				size_t k = line.find_first_not_of(" \t", j + 1);
+				if (k != std::string::npos) {
+					k--;
+					while (k != j)
+						line.erase(k--, 1);
+				}
+				k = line.find_last_not_of(" \t", j - 1);
+				if (k != std::string::npos) {
+					k++;
+					while (k != j)
+						line.erase(k++, 1);
+				}
+			}
+		}
 	}
+
 	// go line by line and parse labels
 	sect curr_sect = UNDEF;
-	uint64_t data_size = 0;
 	// last label that was not a dot
-	std::string last_tl = "";
-	for (int i = 0; i < lines.size(); i++) {
+	std::string prev_label;
+	for (size_t i = 0; i < lines.size(); i++) {
 		std::string &line = lines[i];
-		while (line.size() == 0 && i + 1 < lines.size()) {
-			i++;
-			if (i >= lines.size())
-				break;
+		while (line.size() == 0 && ++i < lines.size())
 			line = lines[i];
-		}
+		if (i == lines.size())
+			break;
 		if (line.starts_with("section ")) {
 			if (line == "section .text") {
 				curr_sect = TEXT;
@@ -156,7 +151,7 @@ int main(int argc, char *argv[]) {
 				return 1;
 			}
 			data_size = 0;
-			last_tl = "";
+			prev_label = "";
 		} else if (line.find(':') != std::string::npos && line.find_first_of(" \t\"'") > line.find(':')) {
 			if (line.size() == 1) {
 				std::cerr << input_name << ':' << i + 1 << ": error: empty label" << std::endl;
@@ -167,8 +162,12 @@ int main(int argc, char *argv[]) {
 				uint64_t len = std::count(line.begin(), line.end(), ',') + 1;
 				char c = line[line.find('d', line.find(':')) + 1];
 				if (c == 'b') {
-					int l = line.find('\"', line.find(':'));
-					int r = line.find('\"', l + 1);
+					size_t l = line.find('\"', line.find(':'));
+					while (l != 0 && l != std::string::npos && line[l - 1] == '\\')
+						l = line.find('\"', l + 1);
+					size_t r = line.find('\"', l + 1);
+					while (r != 0 && r != std::string::npos && line[r - 1] == '\\')
+						r = line.find('\"', r + 1);
 					while (l != std::string::npos && r != std::string::npos) {
 						len += r - l - 3;
 						l = line.find('\"', r + 1);
@@ -189,18 +188,62 @@ int main(int argc, char *argv[]) {
 			} else if (curr_sect == TEXT) {
 				std::string label = line.substr(0, line.size() - 1);
 				if (line[0] == '.') {
-					if (last_tl == "") {
-						std::cerr << input_name << ':' << i + 1 << ": error: dot label without text label" << std::endl;
+					if (prev_label == "") {
+						std::cerr << input_name << ':' << i + 1 << ": error: dot label without parent label" << std::endl;
 						return 1;
 					}
-					label = last_tl + label;
+					label = prev_label + label;
 				} else {
-					last_tl = label;
+					prev_label = label;
 				}
+				line = label + ":";
+				text_labels_map[label] = text_labels.size();
 				text_labels.push_back(label);
+			} else if (curr_sect == BSS) {
+				std::string label = line.substr(0, line.find(':'));
 			} else if (curr_sect == UNDEF) {
 				std::cerr << input_name << ':' << i + 1 << ": error: label outside of section" << std::endl;
 				return 1;
+			}
+		}
+	}
+
+	curr_sect = UNDEF;
+	// go line by line and parse instructions
+	for (size_t i = 0; i < lines.size(); i++) {
+		std::string &line = lines[i];
+		while (line.size() == 0 && ++i < lines.size())
+			line = lines[i];
+		if (i == lines.size())
+			break;
+		if (line.starts_with("section ")) {
+			if (line == "section .text") {
+				curr_sect = TEXT;
+			} else if (line == "section .rodata") {
+				curr_sect = RODATA;
+			} else if (line == "section .bss") {
+				curr_sect = BSS;
+			}
+		} else {
+			if (curr_sect == TEXT) {
+				// parse instruction
+				std::string instr = line.substr(0, line.find(' '));
+				if (instr.ends_with(':'))
+					continue;
+				std::vector<std::string> args;
+				size_t pos = line.find(' ');
+				while (pos != std::string::npos) {
+					size_t next = line.find(',', pos + 1);
+					if (next == std::string::npos) {
+						next = line.size();
+						args.push_back(line.substr(pos + 1, next - pos - 1));
+						break;
+					}
+					args.push_back(line.substr(pos + 1, next - pos - 1));
+					pos = next;
+				}
+				if (!handle(instr, args, i + 1))
+					return 1;
 			}
 		}
 	}

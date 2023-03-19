@@ -2,14 +2,13 @@
 #ifndef MAIN_HPP
 #define MAIN_HPP
 
+#include "translate.hpp"
 #include <cstring>
 #include <fstream>
 #include <iostream>
-#include <set>
+#include <regex>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
-
-enum op_type { REG, MEM, IMM };
-enum sect { UNDEF, TEXT, RODATA, BSS };
 
 #endif
