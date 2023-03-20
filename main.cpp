@@ -21,6 +21,7 @@ std::vector<uint8_t> output_buffer;
 uint64_t data_offset = 0;
 uint64_t bss_offset = 0;
 uint64_t text_offset = 0;
+uint64_t bss_size = 0;
 uint64_t data_size = 0;
 
 std::string &filename(void) { return input_name; }
@@ -93,39 +94,52 @@ int main(int argc, char *argv[]) {
 	for (size_t i = 0; i < lines.size(); i++) {
 		std::string &line = lines[i];
 		// remove comments
-		line = line.substr(0, line.find(';'));
-		// remove leading whitespace
-		size_t first = line.find_first_not_of(" \t");
-		if (first == std::string::npos)
-			line = "";
-		else
-			line = line.substr(first);
-		// remove trailing whitespace
-		size_t last = line.find_last_not_of(" \t");
-		if (last == std::string::npos)
-			line = "";
-		else
-			line = line.substr(0, last + 1);
-		// remove whitespace before and after commas
-		// check if we are in a string
 		bool in_string = false;
-		for (size_t j = 0; j < line.size(); j++) {
-			if (line[j] == '"' && (j == 0 || line[j - 1] != '\\'))
+		for (size_t i = 0; i < line.size(); i++) {
+			if (line[i] == '"' && (i == 0 || line[i - 1] != '\\'))
 				in_string = !in_string;
-			if (line[j] == ',' && !in_string) {
-				size_t k = line.find_first_not_of(" \t", j + 1);
-				if (k != std::string::npos) {
-					k--;
-					while (k != j)
-						line.erase(k--, 1);
+			if (line[i] == ';' && !in_string) {
+				line = line.substr(0, i);
+				break;
+			}
+		}
+		if (in_string)
+			std::cerr << input_name << ":" << i + 1 << ": error: unterminated string constant" << std::endl;
+		// remove leading and trailing whitespace
+		line = std::regex_replace(line, std::regex("^\\s*(.*?)\\s*$"), "$1");
+		// remove whitespace between tokens
+		size_t l = 0;
+		size_t r = line.find('"', l);
+		while (r != 0 && r != std::string::npos) {
+			if (line[r - 1] != '\\')
+				break;
+			r = line.find('"', r + 1);
+		}
+		std::regex p("\\s*([,+\\-*\\/:\\\"])\\s*");
+		if (r == std::string::npos)
+			line = std::regex_replace(line, p, "$1");
+		else {
+			while (r != std::string::npos) {
+				if (l == 0)
+					line = std::regex_replace(line.substr(l, r - l), p, "$1") + line.substr(r);
+				else
+					line = line.substr(0, l) + std::regex_replace(line.substr(l, r - l - 1), p, "$1") + line.substr(r);
+				l = r + 1;
+				r = line.find('"', l);
+				while (r != 0 && r != std::string::npos) {
+					if (line[r - 1] != '\\')
+						break;
+					r = line.find('"', r + 1);
 				}
-				k = line.find_last_not_of(" \t", j - 1);
-				if (k != std::string::npos) {
-					k++;
-					while (k != j)
-						line.erase(k++, 1);
+				l = r + 1;
+				r = line.find('"', l);
+				while (r != 0 && r != std::string::npos) {
+					if (line[r - 1] != '\\')
+						break;
+					r = line.find('"', r + 1);
 				}
 			}
+			line = line.substr(0, l) + std::regex_replace(line.substr(l, line.size() - l), p, "$1");
 		}
 	}
 
@@ -201,6 +215,16 @@ int main(int argc, char *argv[]) {
 				text_labels.push_back(label);
 			} else if (curr_sect == BSS) {
 				std::string label = line.substr(0, line.find(':'));
+				data_labels[label] = bss_size;
+				char c = line[line.find("res") + 3];
+				int len = std::stoi(line.substr(line.find("res") + 5));
+				if (c == 'w')
+					len *= 2;
+				else if (c == 'd')
+					len *= 4;
+				else if (c == 'q')
+					len *= 8;
+				bss_size += len;
 			} else if (curr_sect == UNDEF) {
 				std::cerr << input_name << ':' << i + 1 << ": error: label outside of section" << std::endl;
 				return 1;
@@ -219,10 +243,13 @@ int main(int argc, char *argv[]) {
 		if (line.starts_with("section ")) {
 			if (line == "section .text") {
 				curr_sect = TEXT;
+				text_offset = output_buffer.size() + bss_size;
 			} else if (line == "section .rodata") {
 				curr_sect = RODATA;
+				data_offset = output_buffer.size() + bss_size;
 			} else if (line == "section .bss") {
 				curr_sect = BSS;
+				bss_offset = output_buffer.size();
 			}
 		} else {
 			if (curr_sect == TEXT) {
@@ -244,6 +271,106 @@ int main(int argc, char *argv[]) {
 				}
 				if (!handle(instr, args, i + 1))
 					return 1;
+			} else if (curr_sect == RODATA) {
+				std::string label = line.substr(0, line.find(':'));
+				std::string instr = line.substr(line.find(':') + 1, line.find(' ') - line.find(':') - 1);
+				std::vector<std::string> args;
+				size_t pos = line.find(' ');
+				while (pos != std::string::npos) {
+					size_t next = line.find(',', pos + 1);
+					while (next != std::string::npos) {
+						std::string tmp = line.substr(0, next);
+						if (std::count(tmp.begin(), tmp.end(), '\"') % 2 == 0)
+							break;
+						next = line.find(',', next + 1);
+					}
+					if (next == std::string::npos) {
+						next = line.size();
+						args.push_back(line.substr(pos + 1, next - pos - 1));
+						break;
+					}
+					args.push_back(line.substr(pos + 1, next - pos - 1));
+					pos = next;
+				}
+				reloc_table[label] = output_buffer.size() + bss_size;
+				for (size_t i = 0; i < args.size(); i++) {
+					if (args[i][0] == '"') {
+						for (size_t j = 1; j < args[i].size() - 1; j++) {
+							if (args[i][j] == '\\') {
+								switch (args[i][j + 1]) {
+								case '0':
+									output_buffer.push_back('\0');
+									break;
+								case 'n':
+									output_buffer.push_back('\n');
+									break;
+								case 'r':
+									output_buffer.push_back('\r');
+									break;
+								case 't':
+									output_buffer.push_back('\t');
+									break;
+								case '\\':
+									output_buffer.push_back('\\');
+									break;
+								case '"':
+									output_buffer.push_back('"');
+									break;
+								case 'x':
+									output_buffer.push_back(std::stoul(args[i].substr(j + 2, 2), nullptr, 16));
+									j += 2;
+									break;
+								}
+								j++;
+							} else
+								output_buffer.push_back(args[i][j]);
+						}
+						continue;
+					}
+					if (instr == "db") {
+						output_buffer.push_back(std::stoul(args[i], nullptr, 0));
+					} else if (instr == "dw") {
+						uint16_t val = std::stoul(args[i], nullptr, 0);
+						output_buffer.push_back(val & 0xff);
+						output_buffer.push_back((val >> 8) & 0xff);
+					} else if (instr == "dd") {
+						uint32_t val = std::stoul(args[i], nullptr, 0);
+						output_buffer.push_back(val & 0xff);
+						output_buffer.push_back((val >> 8) & 0xff);
+						output_buffer.push_back((val >> 16) & 0xff);
+						output_buffer.push_back((val >> 24) & 0xff);
+					} else if (instr == "dq") {
+						uint64_t val = std::stoull(args[i], nullptr, 0);
+						output_buffer.push_back(val & 0xff);
+						output_buffer.push_back((val >> 8) & 0xff);
+						output_buffer.push_back((val >> 16) & 0xff);
+						output_buffer.push_back((val >> 24) & 0xff);
+						output_buffer.push_back((val >> 32) & 0xff);
+						output_buffer.push_back((val >> 40) & 0xff);
+						output_buffer.push_back((val >> 48) & 0xff);
+						output_buffer.push_back((val >> 56) & 0xff);
+					} else {
+						std::cerr << input_name << ':' << i + 1 << ": error: unknown directive " << args[1] << std::endl;
+						return 1;
+					}
+				}
+			} else if (curr_sect == BSS) {
+				std::string label = line.substr(0, line.find(':'));
+				std::string instr = line.substr(line.find(':') + 1, line.find(' ') - line.find(':') - 1);
+				size_t size = std::strtoull(line.substr(line.find(' ') + 1).c_str(), nullptr, 10);
+				data_labels[label] = output_buffer.size() + bss_size;
+				if (instr == "resb") {
+					bss_size += size;
+				} else if (instr == "resw") {
+					bss_size += size * 2;
+				} else if (instr == "resd") {
+					bss_size += size * 4;
+				} else if (instr == "resq") {
+					bss_size += size * 8;
+				} else {
+					std::cerr << input_name << ':' << i + 1 << ": error: unknown directive " << instr << std::endl;
+					return 1;
+				}
 			}
 		}
 	}

@@ -49,13 +49,14 @@ enum op_type op_type(std::string s) {
 
 // instruction handlers
 
-bool global(std::vector<std::string> &args, size_t linenum) {
+bool global(std::vector<std::string> &args) {
 	if (args.size() != 1)
 		return false;
 	return true;
 }
 
-bool mov(std::vector<std::string> &args, size_t linenum) {
+bool mov(std::vector<std::string> &args) {
+	return true;
 	if (args.size() != 2)
 		return false;
 	// check argument types
@@ -97,10 +98,26 @@ bool mov(std::vector<std::string> &args, size_t linenum) {
 	return true;
 }
 
+bool syscall(std::vector<std::string> &args) {
+	if (args.size() != 0)
+		return false;
+	output_buffer.push_back(0x0f);
+	output_buffer.push_back(0x05);
+	return true;
+}
+
+bool _xor(std::vector<std::string> &args) {
+	if (args.size() != 2)
+		return false;
+	return true;
+}
+
 // instruction, handler
 std::unordered_map<std::string, handler> _handlers{
 	{"global", global},
 	{"mov", mov},
+	{"syscall", syscall},
+	{"xor", _xor},
 };
 
 bool handle(std::string &s, std::vector<std::string> &args, size_t linenum) {
@@ -108,7 +125,7 @@ bool handle(std::string &s, std::vector<std::string> &args, size_t linenum) {
 		std::cerr << input_name << ':' << linenum << ": error: unknown instruction " << s << std::endl;
 		return false;
 	}
-	if (!_handlers[s](args, linenum)) {
+	if (!_handlers[s](args)) {
 		std::cerr << input_name << ':' << linenum << ": error: invalid combination of opcode and operands" << std::endl;
 		return false;
 	}
