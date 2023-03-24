@@ -3,28 +3,33 @@
 // input file
 std::ifstream input;
 // input file name
-std::string input_name;
+const char *input_name;
 // output file
 std::ofstream output;
+// output file name
+const char *output_name;
 // lines of input file
 std::vector<std::string> lines;
 // labels in data section (name, offset)
 std::unordered_map<std::string, uint64_t> data_labels;
 std::vector<std::string> text_labels;
-std::unordered_map<std::string, int> text_labels_map;
+std::unordered_map<std::string, uint8_t> text_labels_map;
 // symbols (positions)
-std::vector<uint64_t> relocations;
+std::vector<std::pair<uint32_t, short>> relocations;
 // symbol table (name, offset)
 std::unordered_map<std::string, uint64_t> reloc_table;
 // output buffer
 std::vector<uint8_t> output_buffer;
+uint64_t data_size = 0;
 uint64_t data_offset = 0;
-uint64_t bss_offset = 0;
+uint64_t text_size = 0;
 uint64_t text_offset = 0;
 uint64_t bss_size = 0;
-uint64_t data_size = 0;
-
-std::string &filename(void) { return input_name; }
+uint64_t bss_offset = 0;
+uint64_t cum = 0;
+uint64_t num = 0;
+// last label that was not a dot
+std::string prev_label;
 
 void print_help(const char *name) {
 	std::cout << "Usage: " << name << " [options] input\n";
@@ -58,6 +63,7 @@ int main(int argc, char *argv[]) {
 			} else if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--output") == 0) {
 				if (i + 1 < argc) {
 					output.open(argv[i + 1]);
+					output_name = argv[i + 1];
 					if (!output.is_open()) {
 						std::cerr << "Error: Could not open output file " << argv[i + 1] << std::endl;
 						return 1;
@@ -79,6 +85,7 @@ int main(int argc, char *argv[]) {
 	}
 	if (!output.is_open()) {
 		output.open("a.out");
+		output_name = "a.out";
 		if (!output.is_open()) {
 			std::cerr << "Error: Could not open output file a.out" << std::endl;
 			return 1;
@@ -106,7 +113,7 @@ int main(int argc, char *argv[]) {
 		if (in_string)
 			std::cerr << input_name << ":" << i + 1 << ": error: unterminated string constant" << std::endl;
 		// remove leading and trailing whitespace
-		line = std::regex_replace(line, std::regex("^\\s*(.*?)\\s*$"), "$1");
+		profile(line = std::regex_replace(line, std::regex("^\\s*(.*?)\\s*$"), "$1"));
 		// remove whitespace between tokens
 		size_t l = 0;
 		size_t r = line.find('"', l);
@@ -116,9 +123,9 @@ int main(int argc, char *argv[]) {
 			r = line.find('"', r + 1);
 		}
 		std::regex p("\\s*([,+\\-*\\/:\\\"])\\s*");
-		if (r == std::string::npos)
-			line = std::regex_replace(line, p, "$1");
-		else {
+		if (r == std::string::npos) {
+			profile(line = std::regex_replace(line, p, "$1"))
+		} else {
 			while (r != std::string::npos) {
 				if (l == 0)
 					line = std::regex_replace(line.substr(l, r - l), p, "$1") + line.substr(r);
@@ -142,11 +149,9 @@ int main(int argc, char *argv[]) {
 			line = line.substr(0, l) + std::regex_replace(line.substr(l, line.size() - l), p, "$1");
 		}
 	}
-
+	std::cout << "done preprocessing" << std::endl;
 	// go line by line and parse labels
 	sect curr_sect = UNDEF;
-	// last label that was not a dot
-	std::string prev_label;
 	for (size_t i = 0; i < lines.size(); i++) {
 		std::string &line = lines[i];
 		while (line.size() == 0 && ++i < lines.size())
@@ -164,7 +169,6 @@ int main(int argc, char *argv[]) {
 				std::cerr << input_name << ':' << i + 1 << ": error: unknown section " << line.substr(8) << std::endl;
 				return 1;
 			}
-			data_size = 0;
 			prev_label = "";
 		} else if (line.find(':') != std::string::npos && line.find_first_of(" \t\"'") > line.find(':')) {
 			if (line.size() == 1) {
@@ -183,7 +187,7 @@ int main(int argc, char *argv[]) {
 					while (r != 0 && r != std::string::npos && line[r - 1] == '\\')
 						r = line.find('\"', r + 1);
 					while (l != std::string::npos && r != std::string::npos) {
-						len += r - l - 3;
+						len += r - l - 2;
 						l = line.find('\"', r + 1);
 						r = line.find('\"', l + 1);
 					}
@@ -232,6 +236,8 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
+	std::cout << "Average time: " << ((double)cum / (double)num * 2 / 1000) << "us" << std::endl;
+
 	curr_sect = UNDEF;
 	// go line by line and parse instructions
 	for (size_t i = 0; i < lines.size(); i++) {
@@ -241,6 +247,9 @@ int main(int argc, char *argv[]) {
 		if (i == lines.size())
 			break;
 		if (line.starts_with("section ")) {
+			if (curr_sect == TEXT) {
+				text_size = output_buffer.size() - text_offset;
+			}
 			if (line == "section .text") {
 				curr_sect = TEXT;
 				text_offset = output_buffer.size() + bss_size;
@@ -255,8 +264,15 @@ int main(int argc, char *argv[]) {
 			if (curr_sect == TEXT) {
 				// parse instruction
 				std::string instr = line.substr(0, line.find(' '));
-				if (instr.ends_with(':'))
+				if (instr.ends_with(':')) {
+					instr = instr.substr(0, instr.size() - 1);
+					if (instr[0] != '.')
+						prev_label = instr.substr(0, instr.find('.'));
+					else
+						instr = prev_label + instr;
+					reloc_table[instr] = output_buffer.size() + bss_size;
 					continue;
+				}
 				std::vector<std::string> args;
 				size_t pos = line.find(' ');
 				while (pos != std::string::npos) {
@@ -374,5 +390,24 @@ int main(int argc, char *argv[]) {
 			}
 		}
 	}
+	if (text_size == 0)
+		text_size = output_buffer.size() - text_offset;
+
+	// relocations (.text only because .data symbols are defined in advance)
+	for (std::pair<uint64_t, short> reloc : relocations) {
+		uint32_t symid = output_buffer[reloc.first] + (output_buffer[reloc.first + 1] << 8) + (output_buffer[reloc.first + 2] << 16) +
+						 (output_buffer[reloc.first + 3] << 24);
+		int32_t pos = reloc_table.at(text_labels[symid]) - reloc.first - 4;
+		output_buffer[reloc.first] = pos & 0xff;
+		output_buffer[reloc.first + 1] = (pos >> 8) & 0xff;
+		output_buffer[reloc.first + 2] = (pos >> 16) & 0xff;
+		output_buffer[reloc.first + 3] = (pos >> 24) & 0xff;
+	}
+
+	generate_elf(output, output_buffer, data_size, bss_size);
+
+	// make file executable
+	chmod(output_name, S_IRWXU | S_IRWXG | S_IXOTH | S_IROTH);
+
 	return 0;
 }
