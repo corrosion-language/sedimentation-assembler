@@ -2,3 +2,5 @@ a.out
 pasm
 test.asm
 *.o
+callgrind*
+.vscode/
