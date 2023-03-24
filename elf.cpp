@@ -13,12 +13,12 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	//  section headers
 	//  section data
 	//  section names
-	//  symbol table
-	//  string table
-	//  symbol names
 
 	// virtual address of the first section
 	uint64_t vaddr = 0x400000;
+
+	// page size
+	uint64_t page_size = getpagesize();
 
 	// ELF header
 	elf_header ehdr;
@@ -32,74 +32,74 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	ehdr.flags = 0;
 	ehdr.ehsize = sizeof(elf_header);
 	ehdr.phentsize = sizeof(program_header);
-	ehdr.phnum = 2 + !!data_size + !!bss_size;
+	ehdr.phnum = 2 + !!data_size + !!bss_size; // 2 for null, text
 	ehdr.shentsize = sizeof(section_header);
-	ehdr.shnum = 5 + !!data_size + !!bss_size;
-	ehdr.shstrndx = 2 + !!data_size + !!bss_size; // third one from end
+	ehdr.shnum = 3 + !!data_size + !!bss_size; // 3 for null, text, shstrtab
+	ehdr.shstrndx = ehdr.shnum - 1; // no section names
 	f.write((const char *)&ehdr, sizeof(elf_header));
 
 	// program headers
-	// first segment (idk what this is but it's required i think)
 	program_header phdr;
+	// null
 	phdr.type = 1; // loadable
 	phdr.flags = 0b100; // read
 	phdr.offset = 0;
 	phdr.vaddr = vaddr;
-	phdr.paddr = vaddr;
-	phdr.filesz = (2 + !!data_size + !!bss_size) * sizeof(program_header) + sizeof(elf_header); // size of elf header + program headers
-	phdr.memsz = phdr.filesz;
-	phdr.align = 0x1000;
+	phdr.paddr = phdr.vaddr;
+	phdr.filesz = ehdr.shoff;
+	phdr.memsz = ehdr.shoff;
+	phdr.align = page_size;
 	f.write((const char *)&phdr, sizeof(program_header));
 
-	// second segment (text)
+	// .text
 	phdr.type = 1; // loadable
-	phdr.flags = 0b101; // read + execute
-	phdr.offset = 0x1000;
-	phdr.vaddr = vaddr + 0x1000;
+	phdr.flags = 0b101; // read, execute
+	phdr.offset = 0x1000 + ((data_size + page_size - 1) & ~(page_size - 1)); // text is right after rodata
+	phdr.vaddr = phdr.vaddr + 0x1000; // align to page size
 	phdr.paddr = phdr.vaddr;
 	phdr.filesz = output_buffer.size() - data_size;
 	phdr.memsz = phdr.filesz;
-	phdr.align = 0x1000;
+	phdr.align = page_size;
 	f.write((const char *)&phdr, sizeof(program_header));
 
-	// third segment (rodata)
+	// .rodata
 	if (data_size) {
 		phdr.type = 1; // loadable
 		phdr.flags = 0b100; // read
-		phdr.offset = 0x2000;
-		phdr.vaddr = vaddr + 0x2000;
+		phdr.offset = 0x1000;
+		phdr.vaddr = phdr.vaddr + ((phdr.memsz + page_size - 1) & ~(page_size - 1));
 		phdr.paddr = phdr.vaddr;
 		phdr.filesz = data_size;
-		phdr.memsz = phdr.filesz;
-		phdr.align = 0x1000;
+		phdr.memsz = data_size;
+		phdr.align = page_size;
 		f.write((const char *)&phdr, sizeof(program_header));
 	}
 
-	// fourth segment (bss)
+	// third segment (bss)
 	if (bss_size) {
 		phdr.type = 1; // loadable
-		phdr.flags = 0b110; // read + write
-		phdr.offset = 0x2000 + ((!!data_size) << 12);
-		phdr.vaddr = vaddr + phdr.offset;
+		phdr.flags = 0b110; // read, write
+		phdr.offset = 0;
+		phdr.vaddr = phdr.vaddr + ((phdr.memsz + page_size - 1) & ~(page_size - 1)); // align to page size
 		phdr.paddr = phdr.vaddr;
 		phdr.filesz = 0;
 		phdr.memsz = bss_size;
-		phdr.align = 0x1000;
+		phdr.align = page_size;
 		f.write((const char *)&phdr, sizeof(program_header));
 	}
 
 	// section headers
-	// first section (null)
 	section_header shdr;
+	// null section
 	bzero(&shdr, sizeof(section_header));
 	f.write((const char *)&shdr, sizeof(section_header));
 
-	// second section (text)
+	// text section
 	shdr.name = 1;
 	shdr.type = 1; // progbits
-	shdr.flags = 0x02 | 0x04; // alloc, execinstr
+	shdr.flags = 0x2 | 0x4; // alloc, execinstr
 	shdr.addr = vaddr + 0x1000;
-	shdr.offset = 0x1000;
+	shdr.offset = 0x1000 + ((data_size + page_size - 1) & ~(page_size - 1));
 	shdr.size = output_buffer.size() - data_size;
 	shdr.link = 0;
 	shdr.info = 0;
@@ -107,13 +107,13 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	shdr.entsize = 0;
 	f.write((const char *)&shdr, sizeof(section_header));
 
-	// third section (rodata)
+	// rodata section
 	if (data_size) {
 		shdr.name = 7;
 		shdr.type = 1; // progbits
-		shdr.flags = 0x02; // alloc
-		shdr.addr = vaddr + 0x2000;
-		shdr.offset = 0x2000;
+		shdr.flags = 0x2; // alloc
+		shdr.addr = vaddr + 0x1000 + ((shdr.size + page_size - 1) & ~(page_size - 1));
+		shdr.offset = 0x1000;
 		shdr.size = data_size;
 		shdr.link = 0;
 		shdr.info = 0;
@@ -122,95 +122,49 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 		f.write((const char *)&shdr, sizeof(section_header));
 	}
 
-	// fourth section (bss)
+	// bss section
 	if (bss_size) {
 		shdr.name = 15;
 		shdr.type = 8; // nobits
-		shdr.flags = 0x03; // alloc, write
-		shdr.addr = vaddr + 0x2000 + ((!!data_size) << 12);
-		shdr.offset = 0x2000 + ((!!data_size) << 12);
+		shdr.flags = 0x2 | 0x1; // alloc, write
+		shdr.addr = phdr.vaddr;
+		shdr.offset = 0;
 		shdr.size = bss_size;
 		shdr.link = 0;
 		shdr.info = 0;
-		shdr.addralign = 4;
+		shdr.addralign = 1;
 		shdr.entsize = 0;
 		f.write((const char *)&shdr, sizeof(section_header));
 	}
 
-	// fifth section (shstrtab)
+	// shstrtab section
 	shdr.name = 20;
 	shdr.type = 3; // strtab
 	shdr.flags = 0;
 	shdr.addr = 0;
-	shdr.offset = 0x2000 + ((data_size + 15) & ~15);
-	shdr.size = 46;
+	shdr.offset = ehdr.shoff + ehdr.shentsize * ehdr.shnum;
+	shdr.size = 30;
 	shdr.link = 0;
 	shdr.info = 0;
 	shdr.addralign = 1;
 	shdr.entsize = 0;
 	f.write((const char *)&shdr, sizeof(section_header));
 
-	// sixth section (strtab)
-	shdr.name = 30;
-	shdr.type = 3; // strtab
-	shdr.flags = 0;
-	shdr.addr = 0;
-	shdr.offset = 0x2000 + ((data_size + 15) & ~15) + 46;
-	shdr.size = 8;
-	shdr.link = 0;
-	shdr.info = 0;
-	shdr.addralign = 1;
-	shdr.entsize = 0;
-	f.write((const char *)&shdr, sizeof(section_header));
+	// write shstrtab
+	f.write("\0.text\0.rodata\0.bss\0.shstrtab\0", 30);
 
-	// seventh section (symtab)
-	shdr.name = 38;
-	shdr.type = 2; // symtab
-	shdr.flags = 0;
-	shdr.addr = 0;
-	shdr.offset = 0x2000 + ((data_size + 15) & ~15) + 46 + 8;
-	shdr.size = sizeof(symbol) * 2;
-	shdr.link = 3 + !!data_size + !!bss_size; // strtab index
-	shdr.info = 2; // last symbol index + 1
-	shdr.addralign = 8;
-	shdr.entsize = sizeof(symbol);
-	f.write((const char *)&shdr, sizeof(section_header));
+	// seek to multiple of page size
+	f.seekp(((size_t)f.tellp() + page_size - 1) & ~(page_size - 1));
 
-	// pad with zeros until 0x1000
-	f.seekp(0x1000);
+	// write data
+	f.write((const char *)output_buffer.data(), data_size);
+
+	// seek to multiple of page size
+	f.seekp(((size_t)f.tellp() + page_size - 1) & ~(page_size - 1));
 
 	// write text
 	f.write((const char *)output_buffer.data() + data_size, output_buffer.size() - data_size);
 
-	// pad with zeros until 0x2000
-	f.seekp(0x2000);
-
-	// write rodata
-	if (data_size)
-		f.write((const char *)output_buffer.data(), data_size);
-
-	// pad with zeros until multiple of 16
-	f.seekp((f.tellp() + (std::streamoff)15) & ~15);
-
-	// write shstrtab
-	f.write("\0.text\0.rodata\0.bss\0.shstrtab\0.strtab\0.symtab\0", 46);
-
-	// write strtab
-	f.write("\0_start\0", 8);
-
-	// write symtab
-	symbol sym;
-	bzero(&sym, sizeof(symbol));
-	f.write((const char *)&sym, sizeof(symbol));
-
-	sym.name = 1;
-	sym.info = 0x12; // global, function
-	sym.other = 0;
-	sym.shndx = 1; // text
-	sym.value = vaddr + 0x1000;
-	sym.size = output_buffer.size() - data_size;
-	f.write((const char *)&sym, sizeof(symbol));
-
-	std::cout << "Wrote " << f.tellp() << " bytes" << std::endl;
+	// close file
 	f.close();
 }

@@ -7,6 +7,7 @@
 #include <iostream>
 #include <stdint.h>
 #include <string.h>
+#include <unistd.h>
 #include <vector>
 
 struct elf_header {
