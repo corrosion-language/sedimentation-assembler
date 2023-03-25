@@ -175,16 +175,55 @@ bool inc(std::vector<std::string> &args) {
 			if (a1 & 8)
 				output_buffer.push_back(0x41);
 			output_buffer.push_back(0xff);
-			output_buffer.push_back(a1 & 7);
+			output_buffer.push_back(0xc0 | (a1 & 7));
 		} else if (s1 == 32) {
 			if (a1 & 8)
 				output_buffer.push_back(0x41);
 			output_buffer.push_back(0xff);
-			output_buffer.push_back(a1 & 7);
+			output_buffer.push_back(0xc0 | (a1 & 7));
 		} else if (s1 == 64) {
 			output_buffer.push_back(0x48 | ((a1 & 8) >> 3));
 			output_buffer.push_back(0xff);
-			output_buffer.push_back(a1 & 7);
+			output_buffer.push_back(0xc0 | (a1 & 7));
+		} else
+			return false;
+	} else if (t1 == MEM) {
+		return false;
+	} else if (t1 == OFF) {
+		return false;
+	} else
+		return false;
+	return true;
+}
+
+bool dec(std::vector<std::string> &args) {
+	if (args.size() != 1)
+		return false;
+	enum op_type t1 = op_type(args[0]);
+	if (t1 == REG) {
+		short s1 = reg_size(args[0]);
+		short a1 = reg_num(args[0]);
+		a1 += (args[0][1] == 'h') * 4;
+		if (s1 == 8) {
+			if (args[0][1] != 'h' && a1 > 4)
+				output_buffer.push_back(0x40 | ((a1 & 8) >> 3));
+			output_buffer.push_back(0xfe);
+			output_buffer.push_back(0xc8 | (a1 & 7));
+		} else if (s1 == 16) {
+			output_buffer.push_back(0x66);
+			if (a1 & 8)
+				output_buffer.push_back(0x41);
+			output_buffer.push_back(0xff);
+			output_buffer.push_back(0xc8 | (a1 & 7));
+		} else if (s1 == 32) {
+			if (a1 & 8)
+				output_buffer.push_back(0x41);
+			output_buffer.push_back(0xff);
+			output_buffer.push_back(0xc8 | (a1 & 7));
+		} else if (s1 == 64) {
+			output_buffer.push_back(0x48 | ((a1 & 8) >> 3));
+			output_buffer.push_back(0xff);
+			output_buffer.push_back(0xc8 | (a1 & 7));
 		} else
 			return false;
 	} else if (t1 == MEM) {
@@ -235,7 +274,7 @@ bool movzx(std::vector<std::string> &args) {
 
 // instruction, handler
 const std::unordered_map<std::string, handler> _handlers{
-	{"mov", mov}, {"syscall", syscall}, {"xor", _xor}, {"jmp", jmp}, {"nop", nop}, {"inc", inc}, {"movzx", movzx},
+	{"mov", mov}, {"syscall", syscall}, {"xor", _xor}, {"jmp", jmp}, {"nop", nop}, {"inc", inc}, {"dec", dec}, {"movzx", movzx},
 };
 
 bool handle(std::string &s, std::vector<std::string> &args, size_t linenum) {
