@@ -15,7 +15,10 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	//  section names
 
 	// virtual address of the first section
-	uint64_t vaddr = 0x400000;
+	uint64_t vaddr;
+	rand_bytes((char *)&vaddr, 8);
+	vaddr <<= 4;
+	vaddr = 0x400000;
 
 	// page size
 	uint64_t page_size = getpagesize();

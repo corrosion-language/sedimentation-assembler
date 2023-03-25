@@ -3,7 +3,6 @@
 #define ELF_HPP
 
 #include <fstream>
-#include <iomanip>
 #include <iostream>
 #include <stdint.h>
 #include <string.h>
