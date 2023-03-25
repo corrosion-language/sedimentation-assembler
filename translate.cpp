@@ -196,9 +196,46 @@ bool inc(std::vector<std::string> &args) {
 	return true;
 }
 
+bool movzx(std::vector<std::string> &args) {
+	if (args.size() != 2)
+		return false;
+	enum op_type t1 = op_type(args[0]);
+	enum op_type t2 = op_type(args[1]);
+	if (t1 != REG)
+		return false;
+	if (t2 != REG && t2 != MEM && t2 != OFF)
+		return false;
+	short s1 = reg_size(args[0]);
+	short s2 = reg_size(args[1]);
+	if (s1 <= s2)
+		return false;
+	short a1 = reg_num(args[0]);
+	short a2 = reg_num(args[1]);
+	a2 += (args[1][1] == 'h') * 4;
+	if (s1 == 64 && args[1][1] == 'h')
+		return false;
+	if (s1 == 16)
+		output_buffer.push_back(0x66);
+	// rex byte if needed
+	if (s1 == 64 || (s2 == 8 && a2 > 4 && args[1][1] != 'h'))
+		output_buffer.push_back(0x40 | ((s1 == 64) << 3) | ((a1 & 8) >> 1) | ((a2 & 8) >> 3));
+	output_buffer.push_back(0x0f);
+	output_buffer.push_back(0xb6 + (s2 == 16));
+	if (t2 == REG)
+		output_buffer.push_back(0xc0 | (a2 & 7) | ((a1 & 7) << 3));
+	else if (t2 == MEM) {
+		auto tmp = parse_mem(args[1]);
+		output_buffer.insert(output_buffer.end(), tmp.begin(), tmp.end());
+	} else if (t2 == OFF) {
+		auto tmp = parse_off(args[1]);
+		output_buffer.insert(output_buffer.end(), tmp.begin(), tmp.end());
+	}
+	return true;
+}
+
 // instruction, handler
 const std::unordered_map<std::string, handler> _handlers{
-	{"mov", mov}, {"syscall", syscall}, {"xor", _xor}, {"jmp", jmp}, {"nop", nop}, {"inc", inc},
+	{"mov", mov}, {"syscall", syscall}, {"xor", _xor}, {"jmp", jmp}, {"nop", nop}, {"inc", inc}, {"movzx", movzx},
 };
 
 bool handle(std::string &s, std::vector<std::string> &args, size_t linenum) {

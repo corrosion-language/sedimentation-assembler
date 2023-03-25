@@ -29,4 +29,5 @@ int reg_num(std::string);
 int reg_size(std::string);
 enum op_type op_type(std::string);
 std::vector<uint8_t> parse_mem(std::string);
+std::vector<uint8_t> parse_off(std::string);
 std::pair<unsigned long long, short> parse_imm(std::string);

@@ -46,6 +46,8 @@ enum op_type op_type(std::string s) {
 
 std::vector<uint8_t> parse_mem(std::string in) {}
 
+std::vector<uint8_t> parse_off(std::string in) {}
+
 std::pair<unsigned long long, short> parse_imm(std::string s) {
 	// detect base
 	int base = 0;
