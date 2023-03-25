@@ -9,6 +9,8 @@
 #include <unistd.h>
 #include <vector>
 
+extern std::vector<size_t> data_relocations;
+
 struct elf_header {
 	uint8_t ident[16];
 	uint16_t type, machine;

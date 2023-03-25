@@ -69,7 +69,12 @@ bool mov(std::vector<std::string> &args) {
 		} else if (a2.second == -2 || a2.second > s1) {
 			error = "overflow in immediate value";
 			return false;
+		} else if (a2.second == -3) {
+			a2 = {a2.first, 64};
+			data_relocations.push_back(output_buffer.size() + 2);
 		}
+		if (s1 < a2.second)
+			return false;
 		if (s1 == 64 && a2.second <= 32)
 			s1 = 32;
 		a1 += (args[0][1] == 'h') * 4;
@@ -141,7 +146,7 @@ bool jmp(std::vector<std::string> &args) {
 	if (args[0][0] == '.')
 		args[0] = prev_label + args[0];
 	output_buffer.push_back(0xe9);
-	relocations.push_back({output_buffer.size(), 1});
+	text_relocations.push_back({output_buffer.size(), 1});
 	uint32_t symid = text_labels_map.at(args[0]);
 	output_buffer.push_back(symid & 0xff);
 	output_buffer.push_back((symid >> 8) & 0xff);

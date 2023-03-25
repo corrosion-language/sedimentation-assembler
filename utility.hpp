@@ -2,6 +2,8 @@
 #include <string>
 #include <unordered_map>
 
+extern std::unordered_map<std::string, uint64_t> data_labels;
+
 enum op_type { INVALID, REG, MEM, IMM, OFF };
 enum sect { UNDEF, TEXT, RODATA, BSS };
 

@@ -16,9 +16,8 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 
 	// virtual address of the first section
 	uint64_t vaddr;
-	rand_bytes((char *)&vaddr, 8);
-	vaddr <<= 4;
-	vaddr = 0x400000;
+	rand_bytes((char *)&vaddr + 2, 4);
+	vaddr &= 0x7fffffff0000;
 
 	// page size
 	uint64_t page_size = getpagesize();
@@ -123,6 +122,12 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 		shdr.addralign = 4;
 		shdr.entsize = 0;
 		f.write((const char *)&shdr, sizeof(section_header));
+	}
+
+	// perform data relocations
+	for (size_t &r : data_relocations) {
+		uint64_t *p = (uint64_t *)(output_buffer.data() + r);
+		*p += shdr.addr;
 	}
 
 	// bss section

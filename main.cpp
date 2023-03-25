@@ -13,19 +13,16 @@ std::vector<std::string> lines;
 // labels in data section (name, offset)
 std::unordered_map<std::string, uint64_t> data_labels;
 std::vector<std::string> text_labels;
-std::unordered_map<std::string, uint8_t> text_labels_map;
+std::unordered_map<std::string, size_t> text_labels_map;
 // symbols (positions)
-std::vector<std::pair<uint32_t, short>> relocations;
+std::vector<std::pair<uint32_t, short>> text_relocations;
+std::vector<size_t> data_relocations;
 // symbol table (name, offset)
 std::unordered_map<std::string, uint64_t> reloc_table;
 // output buffer
 std::vector<uint8_t> output_buffer;
 uint64_t data_size = 0;
-uint64_t data_offset = 0;
-uint64_t text_size = 0;
-uint64_t text_offset = 0;
 uint64_t bss_size = 0;
-uint64_t bss_offset = 0;
 uint64_t cum = 0;
 uint64_t num = 0;
 // last label that was not a dot
@@ -247,18 +244,12 @@ int main(int argc, char *argv[]) {
 		if (i == lines.size())
 			break;
 		if (line.starts_with("section ")) {
-			if (curr_sect == TEXT) {
-				text_size = output_buffer.size() - text_offset;
-			}
 			if (line == "section .text") {
 				curr_sect = TEXT;
-				text_offset = output_buffer.size() + bss_size;
 			} else if (line == "section .rodata") {
 				curr_sect = RODATA;
-				data_offset = output_buffer.size() + bss_size;
 			} else if (line == "section .bss") {
 				curr_sect = BSS;
-				bss_offset = output_buffer.size();
 			}
 		} else {
 			if (curr_sect == TEXT) {
@@ -390,18 +381,12 @@ int main(int argc, char *argv[]) {
 			}
 		}
 	}
-	if (text_size == 0)
-		text_size = output_buffer.size() - text_offset;
 
-	// relocations (.text only because .data symbols are defined in advance)
-	for (std::pair<uint64_t, short> reloc : relocations) {
-		uint32_t symid = output_buffer[reloc.first] + (output_buffer[reloc.first + 1] << 8) + (output_buffer[reloc.first + 2] << 16) +
-						 (output_buffer[reloc.first + 3] << 24);
+	// text relocations
+	for (std::pair<uint64_t, short> reloc : text_relocations) {
+		uint32_t symid = *(uint32_t *)(output_buffer.data() + reloc.first);
 		int32_t pos = reloc_table.at(text_labels[symid]) - reloc.first - 4;
-		output_buffer[reloc.first] = pos & 0xff;
-		output_buffer[reloc.first + 1] = (pos >> 8) & 0xff;
-		output_buffer[reloc.first + 2] = (pos >> 16) & 0xff;
-		output_buffer[reloc.first + 3] = (pos >> 24) & 0xff;
+		*(uint32_t *)(output_buffer.data() + reloc.first) = pos;
 	}
 
 	generate_elf(output, output_buffer, data_size, bss_size);

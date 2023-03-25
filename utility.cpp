@@ -49,6 +49,10 @@ std::vector<uint8_t> parse_mem(std::string in) {}
 std::vector<uint8_t> parse_off(std::string in) {}
 
 std::pair<unsigned long long, short> parse_imm(std::string s) {
+	// if label, return label
+	if (data_labels.find(s) != data_labels.end()) {
+		return {data_labels.at(s), -3};
+	}
 	// detect base
 	int base = 0;
 	if (s.starts_with("0x"))
