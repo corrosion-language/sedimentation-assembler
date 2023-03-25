@@ -4,12 +4,6 @@ std::string error = "";
 
 // instruction handlers
 
-bool global(std::vector<std::string> &args) {
-	if (args.size() != 1)
-		return false;
-	return true;
-}
-
 bool mov(std::vector<std::string> &args) {
 	if (args.size() != 2)
 		return false;
@@ -204,7 +198,7 @@ bool inc(std::vector<std::string> &args) {
 
 // instruction, handler
 const std::unordered_map<std::string, handler> _handlers{
-	{"global", global}, {"mov", mov}, {"syscall", syscall}, {"xor", _xor}, {"jmp", jmp}, {"nop", nop}, {"inc", inc},
+	{"mov", mov}, {"syscall", syscall}, {"xor", _xor}, {"jmp", jmp}, {"nop", nop}, {"inc", inc},
 };
 
 bool handle(std::string &s, std::vector<std::string> &args, size_t linenum) {
