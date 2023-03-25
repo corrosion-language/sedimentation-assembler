@@ -57,7 +57,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	// .text
 	phdr.type = 1; // loadable
 	phdr.flags = 0b101; // read, execute
-	phdr.offset = 0x1000 + ((data_size + page_size - 1) & ~(page_size - 1)); // text is right after rodata
+	phdr.offset = 0x1000;
 	phdr.vaddr = phdr.vaddr + 0x1000; // align to page size
 	phdr.paddr = phdr.vaddr;
 	phdr.filesz = output_buffer.size() - data_size;
@@ -69,7 +69,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	if (data_size) {
 		phdr.type = 1; // loadable
 		phdr.flags = 0b100; // read
-		phdr.offset = 0x1000;
+		phdr.offset = 0x1000 + ((output_buffer.size() - data_size + page_size - 1) & ~(page_size - 1));
 		phdr.vaddr = phdr.vaddr + ((phdr.memsz + page_size - 1) & ~(page_size - 1));
 		phdr.paddr = phdr.vaddr;
 		phdr.filesz = data_size;
@@ -102,7 +102,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	shdr.type = 1; // progbits
 	shdr.flags = 0x2 | 0x4; // alloc, execinstr
 	shdr.addr = vaddr + 0x1000;
-	shdr.offset = 0x1000 + ((data_size + page_size - 1) & ~(page_size - 1));
+	shdr.offset = 0x1000;
 	shdr.size = output_buffer.size() - data_size;
 	shdr.link = 0;
 	shdr.info = 0;
@@ -116,7 +116,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 		shdr.type = 1; // progbits
 		shdr.flags = 0x2; // alloc
 		shdr.addr = vaddr + 0x1000 + ((shdr.size + page_size - 1) & ~(page_size - 1));
-		shdr.offset = 0x1000;
+		shdr.offset = 0x1000 + ((data_size + page_size - 1) & ~(page_size - 1));
 		shdr.size = data_size;
 		shdr.link = 0;
 		shdr.info = 0;
@@ -159,14 +159,14 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	// seek to multiple of page size
 	f.seekp(((size_t)f.tellp() + page_size - 1) & ~(page_size - 1));
 
-	// write data
-	f.write((const char *)output_buffer.data(), data_size);
+	// write text
+	f.write((const char *)output_buffer.data() + data_size, output_buffer.size() - data_size);
 
 	// seek to multiple of page size
 	f.seekp(((size_t)f.tellp() + page_size - 1) & ~(page_size - 1));
 
-	// write text
-	f.write((const char *)output_buffer.data() + data_size, output_buffer.size() - data_size);
+	// write data
+	f.write((const char *)output_buffer.data(), data_size);
 
 	// close file
 	f.close();
