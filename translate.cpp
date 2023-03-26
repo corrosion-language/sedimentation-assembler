@@ -128,7 +128,7 @@ bool mov(std::vector<std::string> &args) {
 		}
 		if (s1 < a2.second)
 			return false;
-		if (s1 == 64 && a2.second <= 32)
+		if (s1 == 64 && a2.second <= 32 && !(a2.first & 0x80000000))
 			s1 = 32;
 		a1 += (args[0][1] == 'h') * 4;
 		if (s1 == 8) {
@@ -259,7 +259,7 @@ bool jmp(std::vector<std::string> &args) {
 	if (args[0][0] == '.')
 		args[0] = prev_label + args[0];
 	output_buffer.push_back(0xe9);
-	text_relocations.push_back({output_buffer.size(), 1});
+	text_relocations.push_back(output_buffer.size());
 	uint32_t symid = text_labels_map.at(args[0]);
 	output_buffer.push_back(symid & 0xff);
 	output_buffer.push_back((symid >> 8) & 0xff);
@@ -674,10 +674,47 @@ bool _and(std::vector<std::string> &args) { return _arith(args, and_optable); }
 bool _or(std::vector<std::string> &args) { return _arith(args, or_optable); }
 bool _xor(std::vector<std::string> &args) { return _arith(args, xor_optable); }
 
+bool call(std::vector<std::string> &args) {
+	if (args.size() != 1)
+		return false;
+	if (args[0][0] == '.')
+		args[0] = prev_label + args[0];
+	output_buffer.push_back(0xe8);
+	text_relocations.push_back(output_buffer.size());
+	uint32_t symid = text_labels_map.at(args[0]);
+	output_buffer.push_back(symid & 0xff);
+	output_buffer.push_back((symid >> 8) & 0xff);
+	output_buffer.push_back((symid >> 16) & 0xff);
+	output_buffer.push_back((symid >> 24) & 0xff);
+	return true;
+}
+
+bool ret(std::vector<std::string> &args) {
+	if (args.size() > 1)
+		return false;
+	if (args.size()) {
+		try {
+			uint32_t tmp = std::stoi(args[0]);
+			if (tmp > 0xffff)
+				return false;
+			output_buffer.push_back(0xc2);
+			output_buffer.push_back(tmp & 0xff);
+			output_buffer.push_back((tmp >> 8) & 0xff);
+			return true;
+		} catch (std::invalid_argument) {
+			return false;
+		} catch (std::out_of_range) {
+			return false;
+		}
+	}
+	output_buffer.push_back(0xc3);
+	return true;
+}
+
 // instruction, handler
 const std::unordered_map<std::string, handler> _handlers{
-	{"mov", mov}, {"syscall", syscall}, {"jmp", jmp}, {"nop", nop}, {"inc", inc},  {"dec", dec}, {"movzx", movzx},
-	{"adc", adc}, {"add", add},			{"sub", sub}, {"cmp", cmp}, {"and", _and}, {"or", _or},	 {"xor", _xor},
+	{"mov", mov}, {"syscall", syscall}, {"jmp", jmp}, {"nop", nop},	 {"inc", inc}, {"dec", dec},  {"movzx", movzx}, {"adc", adc},
+	{"add", add}, {"sub", sub},			{"cmp", cmp}, {"and", _and}, {"or", _or},  {"xor", _xor}, {"call", call},	{"ret", ret},
 };
 
 bool handle(std::string &s, std::vector<std::string> &args, size_t linenum) {

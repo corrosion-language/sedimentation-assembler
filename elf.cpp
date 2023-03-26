@@ -22,13 +22,23 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	// page size
 	uint64_t page_size = getpagesize();
 
+	// list of symbols to include
+	std::vector<std::string> syms;
+	uint64_t strtab_size = 1;
+	for (auto &s : reloc_table) {
+		if (s.first.find(".") == std::string::npos) {
+			syms.push_back(s.first);
+			strtab_size += s.first.size() + 1;
+		}
+	}
+
 	// ELF header
 	elf_header ehdr;
 	memcpy(ehdr.ident, "\x7f\x45LF\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00", 16);
 	ehdr.type = 2; // executable
 	ehdr.machine = 0x3e; // x86-64
 	ehdr.version = 1; // current
-	ehdr.entry = vaddr + 0x1000; // beginning of second segment (first segment cannot be larger than 0x1000)
+	ehdr.entry = vaddr + 0x1000 + reloc_table.at("_start");
 	ehdr.phoff = sizeof(elf_header);
 	ehdr.shoff = (2 + !!data_size + !!bss_size) * sizeof(program_header) + sizeof(elf_header);
 	ehdr.flags = 0;
@@ -36,7 +46,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	ehdr.phentsize = sizeof(program_header);
 	ehdr.phnum = 2 + !!data_size + !!bss_size; // 2 for null, text
 	ehdr.shentsize = sizeof(section_header);
-	ehdr.shnum = 3 + !!data_size + !!bss_size; // 3 for null, text, shstrtab
+	ehdr.shnum = 5 + !!data_size + !!bss_size; // 3 for null, text, symtab, strtab, shstrtab
 	ehdr.shstrndx = ehdr.shnum - 1; // no section names
 	f.write((const char *)&ehdr, sizeof(elf_header));
 
@@ -56,7 +66,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	// .text
 	phdr.type = 1; // loadable
 	phdr.flags = 0b101; // read, execute
-	phdr.offset = 0x1000;
+	phdr.offset = ((736 + (syms.size() + 1) * sizeof(symbol) + strtab_size + page_size - 1) & ~(page_size - 1));
 	phdr.vaddr = phdr.vaddr + 0x1000; // align to page size
 	phdr.paddr = phdr.vaddr;
 	phdr.filesz = output_buffer.size() - data_size;
@@ -68,7 +78,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	if (data_size) {
 		phdr.type = 1; // loadable
 		phdr.flags = 0b100; // read
-		phdr.offset = 0x1000 + ((output_buffer.size() - data_size + page_size - 1) & ~(page_size - 1));
+		phdr.offset = phdr.offset + ((phdr.filesz + page_size - 1) & ~(page_size - 1));
 		phdr.vaddr = phdr.vaddr + ((phdr.memsz + page_size - 1) & ~(page_size - 1));
 		phdr.paddr = phdr.vaddr;
 		phdr.filesz = data_size;
@@ -77,7 +87,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 		f.write((const char *)&phdr, sizeof(program_header));
 	}
 
-	// third segment (bss)
+	// .bss
 	if (bss_size) {
 		phdr.type = 1; // loadable
 		phdr.flags = 0b110; // read, write
@@ -151,21 +161,69 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 		}
 	}
 
-	// shstrtab section
+	// symbol table
 	shdr.name = 20;
-	shdr.type = 3; // strtab
+	shdr.type = 2; // symtab
 	shdr.flags = 0;
 	shdr.addr = 0;
 	shdr.offset = ehdr.shoff + ehdr.shentsize * ehdr.shnum;
-	shdr.size = 30;
+	shdr.size = (syms.size() + 1) * sizeof(symbol);
+	shdr.link = ehdr.shnum - 2; // strtab
+	shdr.info = syms.size() + 1; // index of last non-local symbol + 1
+	shdr.addralign = 8;
+	shdr.entsize = sizeof(symbol);
+	f.write((const char *)&shdr, sizeof(section_header));
+
+	// strtab section
+	shdr.name = 28;
+	shdr.type = 3; // strtab
+	shdr.flags = 0;
+	shdr.addr = 0;
+	shdr.offset = shdr.offset + shdr.size;
+	shdr.size = strtab_size;
 	shdr.link = 0;
 	shdr.info = 0;
 	shdr.addralign = 1;
 	shdr.entsize = 0;
 	f.write((const char *)&shdr, sizeof(section_header));
 
+	// shstrtab section
+	shdr.name = 36;
+	shdr.type = 3; // strtab
+	shdr.flags = 0;
+	shdr.addr = 0;
+	shdr.offset = shdr.offset + shdr.size;
+	shdr.size = 46;
+	shdr.link = 0;
+	shdr.info = 0;
+	shdr.addralign = 1;
+	shdr.entsize = 0;
+	f.write((const char *)&shdr, sizeof(section_header));
+
+	uint64_t i = 1;
+	symbol sym;
+	// null symbol
+	bzero(&sym, sizeof(symbol));
+	f.write((const char *)&sym, sizeof(symbol));
+	// write symtab
+	for (std::string &s : syms) {
+		sym.name = i;
+		i += s.size() + 1;
+		sym.info = 0x10; // global
+		sym.other = 0;
+		sym.shndx = 1; // text
+		sym.value = vaddr + 0x1000 + reloc_table[s];
+		sym.size = 0;
+		f.write((const char *)&sym, sizeof(symbol));
+	}
+
+	// write strtab
+	f.seekp(f.tellp() + (std::streamoff)1);
+	for (std::string &s : syms)
+		f.write(s.c_str(), s.size() + 1);
+
 	// write shstrtab
-	f.write("\0.text\0.rodata\0.bss\0.shstrtab\0", 30);
+	f.write("\0.text\0.rodata\0.bss\0.symtab\0.strtab\0.shstrtab", 46);
 
 	// seek to multiple of page size
 	f.seekp(((size_t)f.tellp() + page_size - 1) & ~(page_size - 1));

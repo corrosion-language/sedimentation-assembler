@@ -16,7 +16,7 @@ std::unordered_map<std::string, uint64_t> bss_labels;
 std::vector<std::string> text_labels;
 std::unordered_map<std::string, size_t> text_labels_map;
 // symbols (positions)
-std::vector<std::pair<uint32_t, short>> text_relocations;
+std::vector<uint32_t> text_relocations;
 std::vector<size_t> data_relocations;
 std::vector<size_t> bss_relocations;
 // symbol table (name, offset)
@@ -349,10 +349,10 @@ int main(int argc, char *argv[]) {
 	}
 
 	// text relocations
-	for (std::pair<uint64_t, short> reloc : text_relocations) {
-		uint32_t symid = *(uint32_t *)(output_buffer.data() + reloc.first);
-		int32_t pos = reloc_table.at(text_labels[symid]) - reloc.first - 4;
-		*(uint32_t *)(output_buffer.data() + reloc.first) = pos;
+	for (uint64_t reloc : text_relocations) {
+		uint32_t symid = *(uint32_t *)(output_buffer.data() + reloc);
+		int32_t pos = reloc_table.at(text_labels[symid]) - reloc - 4;
+		*(uint32_t *)(output_buffer.data() + reloc) = pos;
 	}
 
 	generate_elf(output, output_buffer, data_size, bss_size);
