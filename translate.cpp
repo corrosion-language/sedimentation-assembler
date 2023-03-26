@@ -13,8 +13,10 @@ bool mov(std::vector<std::string> &args) {
 	if (t1 == REG && t2 == REG) {
 		int s1 = reg_size(args[0]);
 		int s2 = reg_size(args[1]);
-		if (s1 != s2)
+		if (s1 != s2) {
+			error = "register sizes do not match";
 			return false;
+		}
 		int a1 = reg_num(args[0]);
 		int a2 = reg_num(args[1]);
 		if (s1 == 8) {
@@ -126,8 +128,10 @@ bool mov(std::vector<std::string> &args) {
 			a2 = {a2.first, 32};
 			reloc = 2;
 		}
-		if (s1 < a2.second)
+		if (s1 < a2.second) {
+			error = "immediate value out of range";
 			return false;
+		}
 		if (s1 == 64 && a2.second <= 32 && !(a2.first & 0x80000000))
 			s1 = 32;
 		a1 += (args[0][1] == 'h') * 4;
@@ -178,8 +182,7 @@ bool mov(std::vector<std::string> &args) {
 			output_buffer.push_back((a2.first >> 40) & 0xff);
 			output_buffer.push_back((a2.first >> 48) & 0xff);
 			output_buffer.push_back((a2.first >> 56) & 0xff);
-		} else
-			return false;
+		}
 	} else if (t1 == MEM && t2 == IMM) {
 		auto a2 = parse_imm(args[1]);
 		short reloc = 0;
@@ -196,8 +199,10 @@ bool mov(std::vector<std::string> &args) {
 		short s1 = -1;
 		short tmp = 0x7fff;
 		std::vector<uint8_t> data = parse_mem(args[0], s1, tmp);
-		if (s1 < a2.second)
+		if (s1 < a2.second) {
+			error = "immediate value out of range";
 			return false;
+		}
 		if (data.empty())
 			return false;
 		if (s1 == 16) {
@@ -303,8 +308,7 @@ bool inc(std::vector<std::string> &args) {
 			output_buffer.push_back(0x48 | ((a1 & 8) >> 3));
 			output_buffer.push_back(0xff);
 			output_buffer.push_back(0xc0 | (a1 & 7));
-		} else
-			return false;
+		}
 	} else if (t1 == MEM) {
 		short s1 = -1;
 		short tmp = 0x7fff;
@@ -364,8 +368,7 @@ bool dec(std::vector<std::string> &args) {
 			output_buffer.push_back(0x48 | ((a1 & 8) >> 3));
 			output_buffer.push_back(0xff);
 			output_buffer.push_back(0xc8 | (a1 & 7));
-		} else
-			return false;
+		}
 	} else if (t1 == MEM) {
 		short s1 = -1;
 		short tmp = 0x7fff;
@@ -413,8 +416,10 @@ bool movzx(std::vector<std::string> &args) {
 		short a1 = reg_num(args[0]);
 		short a2 = reg_num(args[1]);
 		a2 += (args[1][1] == 'h') * 4;
-		if (s1 == 64 && args[1][1] == 'h')
+		if (s1 == 64 && args[1][1] == 'h') {
+			error = "cannot use high byte register with REX prefix";
 			return false;
+		}
 		if (s1 == 16)
 			output_buffer.push_back(0x66);
 		// rex byte if needed
@@ -491,8 +496,10 @@ bool _arith(std::vector<std::string> &args, const uint8_t opcodes[6]) {
 			a2 = {a2.first, 32};
 			reloc = 2;
 		}
-		if (s1 < a2.second)
+		if (s1 < a2.second) {
+			error = "immediate value not in range";
 			return false;
+		}
 		a1 += (args[0][1] == 'h') * 4;
 		if (a1 == 0) {
 			if (s1 == 16)
@@ -695,15 +702,19 @@ bool ret(std::vector<std::string> &args) {
 	if (args.size()) {
 		try {
 			uint32_t tmp = std::stoi(args[0]);
-			if (tmp > 0xffff)
+			if (tmp > 0xffff) {
+				error = "overflow in immediate value";
 				return false;
+			}
 			output_buffer.push_back(0xc2);
 			output_buffer.push_back(tmp & 0xff);
 			output_buffer.push_back((tmp >> 8) & 0xff);
 			return true;
 		} catch (std::invalid_argument) {
+			error = "invalid immediate value";
 			return false;
 		} catch (std::out_of_range) {
+			error = "overflow in immediate value";
 			return false;
 		}
 	}
