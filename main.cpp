@@ -12,11 +12,13 @@ const char *output_name;
 std::vector<std::string> lines;
 // labels in data section (name, offset)
 std::unordered_map<std::string, uint64_t> data_labels;
+std::unordered_map<std::string, uint64_t> bss_labels;
 std::vector<std::string> text_labels;
 std::unordered_map<std::string, size_t> text_labels_map;
 // symbols (positions)
 std::vector<std::pair<uint32_t, short>> text_relocations;
 std::vector<size_t> data_relocations;
+std::vector<size_t> bss_relocations;
 // symbol table (name, offset)
 std::unordered_map<std::string, uint64_t> reloc_table;
 // output buffer
@@ -172,35 +174,7 @@ int main(int argc, char *argv[]) {
 				std::cerr << input_name << ':' << i + 1 << ": error: empty label" << std::endl;
 				return 1;
 			}
-			if (curr_sect == RODATA) {
-				data_labels[line.substr(0, line.find(':'))] = data_size;
-				uint64_t len = std::count(line.begin(), line.end(), ',') + 1;
-				char c = line[line.find('d', line.find(':')) + 1];
-				if (c == 'b') {
-					size_t l = line.find('\"', line.find(':'));
-					while (l != 0 && l != std::string::npos && line[l - 1] == '\\')
-						l = line.find('\"', l + 1);
-					size_t r = line.find('\"', l + 1);
-					while (r != 0 && r != std::string::npos && line[r - 1] == '\\')
-						r = line.find('\"', r + 1);
-					while (l != std::string::npos && r != std::string::npos) {
-						len += r - l - 2;
-						l = line.find('\"', r + 1);
-						r = line.find('\"', l + 1);
-					}
-					if (l != std::string::npos) {
-						std::cerr << input_name << ':' << i + 1 << ": error: unterminated string constant" << std::endl;
-						return 1;
-					}
-				} else if (c == 'w')
-					len *= 2;
-				else if (c == 'd')
-					len *= 4;
-				else if (c == 'q')
-					len *= 8;
-				data_size += len;
-
-			} else if (curr_sect == TEXT) {
+			if (curr_sect == TEXT) {
 				std::string label = line.substr(0, line.size() - 1);
 				if (line[0] == '.') {
 					if (prev_label == "") {
@@ -214,21 +188,11 @@ int main(int argc, char *argv[]) {
 				line = label + ":";
 				text_labels_map[label] = text_labels.size();
 				text_labels.push_back(label);
-			} else if (curr_sect == BSS) {
-				std::string label = line.substr(0, line.find(':'));
-				data_labels[label] = bss_size;
-				char c = line[line.find("res") + 3];
-				int len = std::stoi(line.substr(line.find("res") + 5));
-				if (c == 'w')
-					len *= 2;
-				else if (c == 'd')
-					len *= 4;
-				else if (c == 'q')
-					len *= 8;
-				bss_size += len;
 			} else if (curr_sect == UNDEF) {
 				std::cerr << input_name << ':' << i + 1 << ": error: label outside of section" << std::endl;
 				return 1;
+			} else {
+				continue;
 			}
 		}
 	}
@@ -261,7 +225,7 @@ int main(int argc, char *argv[]) {
 						prev_label = instr.substr(0, instr.find('.'));
 					else
 						instr = prev_label + instr;
-					reloc_table[instr] = output_buffer.size() + bss_size;
+					reloc_table[instr] = output_buffer.size();
 					continue;
 				}
 				std::vector<std::string> args;
@@ -299,7 +263,7 @@ int main(int argc, char *argv[]) {
 					args.push_back(line.substr(pos + 1, next - pos - 1));
 					pos = next;
 				}
-				reloc_table[label] = output_buffer.size() + bss_size;
+				size_t tmp = output_buffer.size();
 				for (size_t i = 0; i < args.size(); i++) {
 					if (args[i][0] == '"') {
 						for (size_t j = 1; j < args[i].size() - 1; j++) {
@@ -361,11 +325,13 @@ int main(int argc, char *argv[]) {
 						return 1;
 					}
 				}
+				data_size += output_buffer.size() - tmp;
+				data_labels[label] = tmp;
 			} else if (curr_sect == BSS) {
 				std::string label = line.substr(0, line.find(':'));
 				std::string instr = line.substr(line.find(':') + 1, line.find(' ') - line.find(':') - 1);
 				size_t size = std::strtoull(line.substr(line.find(' ') + 1).c_str(), nullptr, 10);
-				data_labels[label] = output_buffer.size() + bss_size;
+				bss_labels[label] = bss_size;
 				if (instr == "resb") {
 					bss_size += size;
 				} else if (instr == "resw") {

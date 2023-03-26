@@ -114,8 +114,8 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 		shdr.name = 7;
 		shdr.type = 1; // progbits
 		shdr.flags = 0x2; // alloc
-		shdr.addr = vaddr + 0x1000 + ((shdr.size + page_size - 1) & ~(page_size - 1));
-		shdr.offset = 0x1000 + ((data_size + page_size - 1) & ~(page_size - 1));
+		shdr.addr = shdr.addr + ((shdr.size + page_size - 1) & ~(page_size - 1));
+		shdr.offset = shdr.offset + ((data_size + page_size - 1) & ~(page_size - 1));
 		shdr.size = data_size;
 		shdr.link = 0;
 		shdr.info = 0;
@@ -135,7 +135,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 		shdr.name = 15;
 		shdr.type = 8; // nobits
 		shdr.flags = 0x2 | 0x1; // alloc, write
-		shdr.addr = phdr.vaddr;
+		shdr.addr = shdr.addr + ((shdr.size + page_size - 1) & ~(page_size - 1));
 		shdr.offset = 0;
 		shdr.size = bss_size;
 		shdr.link = 0;
@@ -143,6 +143,12 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 		shdr.addralign = 1;
 		shdr.entsize = 0;
 		f.write((const char *)&shdr, sizeof(section_header));
+	}
+
+	// perform bss relocations
+	for (size_t &r : bss_relocations) {
+		uint32_t *p = (uint32_t *)(output_buffer.data() + r);
+		*p += shdr.addr;
 	}
 
 	// shstrtab section

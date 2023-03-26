@@ -3,6 +3,7 @@
 #include <unordered_map>
 
 extern std::unordered_map<std::string, uint64_t> data_labels;
+extern std::unordered_map<std::string, uint64_t> bss_labels;
 extern std::string error;
 
 enum op_type { INVALID, REG, MEM, IMM };

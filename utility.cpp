@@ -87,6 +87,9 @@ std::vector<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 	if (data_labels.find(tokens[tokens.size() - 1]) != data_labels.end()) {
 		tokens[tokens.size() - 1] = std::to_string(data_labels.at(tokens[tokens.size() - 1]));
 		reloc = 0;
+	} else if (bss_labels.find(tokens[tokens.size() - 1]) != bss_labels.end()) {
+		tokens[tokens.size() - 1] = std::to_string(bss_labels.at(tokens[tokens.size() - 1]));
+		reloc = 1;
 	}
 	if (tokens.size() > 1 && data_labels.find(tokens[tokens.size() - 2]) != data_labels.end()) {
 		uint32_t tmp = data_labels.at(tokens[tokens.size() - 2]);
@@ -99,6 +102,17 @@ std::vector<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 		ops.pop_back();
 		tokens.pop_back();
 		reloc = 0;
+	} else if (tokens.size() > 1 && bss_labels.find(tokens[tokens.size() - 2]) != bss_labels.end()) {
+		uint32_t tmp = bss_labels.at(tokens[tokens.size() - 2]);
+		if (ops[ops.size() - 1] == '+')
+			tokens[tokens.size() - 2] = std::to_string(tmp + std::stoi(tokens[tokens.size() - 1]));
+		else if (ops[ops.size() - 1] == '-')
+			tokens[tokens.size() - 2] = std::to_string(tmp - std::stoi(tokens[tokens.size() - 1]));
+		else
+			return {};
+		ops.pop_back();
+		tokens.pop_back();
+		reloc = 1;
 	}
 
 	for (size_t i = 0; i < ops.size(); i++)
@@ -147,8 +161,10 @@ std::vector<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 				out.push_back(0x04);
 				out.push_back(0b00100101);
 				int off = std::stoi(tokens[0]);
-				if (reloc != 0x7fff)
+				if (reloc == 0)
 					reloc = out.size();
+				else if (reloc == 1)
+					reloc = out.size() | 0x8000;
 				out.push_back(off & 0xff);
 				out.push_back((off >> 8) & 0xff);
 				out.push_back((off >> 16) & 0xff);
@@ -170,8 +186,10 @@ std::vector<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 				// we cannot directly address sp, so we add a sib byte with no index
 				out.push_back(0x24);
 			// offset
-			if (reloc != 0x7fff)
+			if (reloc == 0)
 				reloc = out.size();
+			else if (reloc == 1)
+				reloc = out.size() | 0x8000;
 			out.push_back(off & 0xff);
 			out.push_back((off >> 8) & 0xff);
 			out.push_back((off >> 16) & 0xff);
@@ -217,7 +235,7 @@ std::vector<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 		else
 			return {};
 		// size override
-		if (reg_size(tokens[0]) == 32)
+		if (reg_size(tokens[0]) == 16)
 			out.push_back(0x67);
 		// rex prefix if necessary
 		if (base >= 8 || index >= 8)
@@ -226,22 +244,24 @@ std::vector<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 			out[0] |= 1;
 		if (index >= 8)
 			out[0] |= 2;
-		// modrm
-		out.push_back(0x04 | (!!offset << 7));
-		// sib
 		bool force = false;
+		if ((base & 7) == 5)
+			force = true;
 		if (base == -1) {
 			base = 5;
 			out[out.size() - 1] &= ~0x80;
 		}
-		if (base == 5)
-			force = true;
 		if (index == -1)
 			index = 4;
+		// modrm
+		out.push_back(0x04 | ((offset || force) << 7));
+		// sib
 		out.push_back((scale << 6) | ((index & 7) << 3) | (base & 7));
 		// offset
-		if (reloc != 0x7fff)
+		if (reloc == 0)
 			reloc = out.size();
+		else if (reloc == 1)
+			reloc = out.size() | 0x8000;
 		if (offset || force) {
 			out.push_back(offset & 0xff);
 			out.push_back((offset >> 8) & 0xff);
@@ -256,6 +276,8 @@ std::pair<unsigned long long, short> parse_imm(std::string s) {
 	// if label, return label
 	if (data_labels.find(s) != data_labels.end()) {
 		return {data_labels.at(s), -3};
+	} else if (bss_labels.find(s) != bss_labels.end()) {
+		return {bss_labels.at(s), -4};
 	}
 	// detect base
 	int base = 0;

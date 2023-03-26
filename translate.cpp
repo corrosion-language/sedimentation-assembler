@@ -69,8 +69,10 @@ bool mov(std::vector<std::string> &args) {
 		}
 		a1 &= 7;
 		output_buffer.push_back(0x8a ^ (s1 != 8));
-		if (tmp != 0x7fff)
+		if (tmp != 0x7fff && !(tmp & 0x8000))
 			data_relocations.push_back(output_buffer.size() + tmp);
+		else if (tmp != 0x7fff)
+			bss_relocations.push_back(output_buffer.size() + (tmp & 0x7fff));
 		output_buffer.push_back((a1 << 3) | data[0]);
 		output_buffer.insert(output_buffer.end(), data.begin() + 1, data.end());
 	} else if (t1 == MEM && t2 == REG) {
@@ -99,8 +101,10 @@ bool mov(std::vector<std::string> &args) {
 		}
 		a1 &= 7;
 		output_buffer.push_back(0x88 ^ (s1 != 8));
-		if (tmp != 0x7fff)
+		if (tmp != 0x7fff && !(tmp & 0x8000))
 			data_relocations.push_back(output_buffer.size() + tmp);
+		else if (tmp != 0x7fff)
+			bss_relocations.push_back(output_buffer.size() + (tmp & 0x7fff));
 		output_buffer.push_back((a1 << 3) | data[0]);
 		output_buffer.insert(output_buffer.end(), data.begin() + 1, data.end());
 	} else if (t1 == REG && t2 == IMM) {
@@ -117,6 +121,9 @@ bool mov(std::vector<std::string> &args) {
 		} else if (a2.second == -3) {
 			a2 = {a2.first, 32};
 			data_relocations.push_back(output_buffer.size() + 2);
+		} else if (a2.second == -4) {
+			a2 = {a2.first, 32};
+			bss_relocations.push_back(output_buffer.size() + 2);
 		}
 		if (s1 < a2.second)
 			return false;
@@ -158,13 +165,16 @@ bool mov(std::vector<std::string> &args) {
 			return false;
 	} else if (t1 == MEM && t2 == IMM) {
 		auto a2 = parse_imm(args[1]);
-		bool reloc = false;
+		short reloc = 0;
 		if (a2.second == -1) {
 			error = "invalid immediate value";
 			return false;
 		} else if (a2.second == -3) {
 			a2 = {a2.first, 32};
-			reloc = true;
+			reloc = 1;
+		} else if (a2.second == -4) {
+			a2 = {a2.first, 32};
+			reloc = 2;
 		}
 		short s1 = -1;
 		short tmp = 0x7fff;
@@ -190,11 +200,15 @@ bool mov(std::vector<std::string> &args) {
 			output_buffer.push_back(0x48);
 		}
 		output_buffer.push_back(0xc6 ^ (s1 != 8));
-		if (tmp != 0x7fff)
+		if (tmp != 0x7fff && !(tmp & 0x8000))
 			data_relocations.push_back(output_buffer.size() + tmp);
+		else if (tmp != 0x7fff)
+			bss_relocations.push_back(output_buffer.size() + (tmp & 0x7fff));
 		output_buffer.insert(output_buffer.end(), data.begin(), data.end());
-		if (reloc)
+		if (reloc == 1)
 			data_relocations.push_back(output_buffer.size());
+		else if (reloc == 2)
+			bss_relocations.push_back(output_buffer.size() + (tmp & 0x7fff));
 		output_buffer.push_back(a2.first & 0xff);
 		if (s1 >= 16)
 			output_buffer.push_back((a2.first >> 8) & 0xff);
@@ -300,6 +314,10 @@ bool inc(std::vector<std::string> &args) {
 		} else if (s1 == 64)
 			output_buffer.push_back(0x48);
 		output_buffer.push_back(0xfe ^ (s1 != 8));
+		if (tmp != 0x7fff && !(tmp & 0x8000))
+			data_relocations.push_back(output_buffer.size() + tmp);
+		else if (tmp != 0x7fff)
+			bss_relocations.push_back(output_buffer.size() + (tmp & 0x7fff));
 		output_buffer.insert(output_buffer.end(), data.begin(), data.end());
 	} else {
 		return false;
@@ -358,6 +376,10 @@ bool dec(std::vector<std::string> &args) {
 			output_buffer.push_back(0x48);
 		output_buffer.push_back(0xfe ^ (s1 != 8));
 		output_buffer.push_back(data[0] | 0x08);
+		if (tmp != 0x7fff && !(tmp & 0x8000))
+			data_relocations.push_back(output_buffer.size() + tmp);
+		else if (tmp != 0x7fff)
+			bss_relocations.push_back(output_buffer.size() + (tmp & 0x7fff));
 		output_buffer.insert(output_buffer.end(), data.begin() + 1, data.end());
 	} else {
 		return false;
@@ -415,6 +437,10 @@ bool movzx(std::vector<std::string> &args) {
 			output_buffer.push_back(0x48);
 		output_buffer.push_back(0x0f);
 		output_buffer.push_back(0xb6 | (s2 == 16));
+		if (tmp != 0x7fff && !(tmp & 0x8000))
+			data_relocations.push_back(output_buffer.size() + tmp);
+		else if (tmp != 0x7fff)
+			bss_relocations.push_back(output_buffer.size() + (tmp & 0x7fff));
 		output_buffer.push_back(((a1 & 7) << 3) | data[0]);
 		output_buffer.insert(output_buffer.end(), data.begin() + 1, data.end());
 	} else {

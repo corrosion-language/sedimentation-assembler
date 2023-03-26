@@ -10,6 +10,7 @@
 #include <vector>
 
 extern std::vector<size_t> data_relocations;
+extern std::vector<size_t> bss_relocations;
 
 struct elf_header {
 	uint8_t ident[16];
