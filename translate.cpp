@@ -265,11 +265,16 @@ bool jmp(std::vector<std::string> &args) {
 		args[0] = prev_label + args[0];
 	output_buffer.push_back(0xe9);
 	text_relocations.push_back(output_buffer.size());
-	uint32_t symid = text_labels_map.at(args[0]);
-	output_buffer.push_back(symid & 0xff);
-	output_buffer.push_back((symid >> 8) & 0xff);
-	output_buffer.push_back((symid >> 16) & 0xff);
-	output_buffer.push_back((symid >> 24) & 0xff);
+	try {
+		uint32_t symid = text_labels_map.at(args[0]);
+		output_buffer.push_back(symid & 0xff);
+		output_buffer.push_back((symid >> 8) & 0xff);
+		output_buffer.push_back((symid >> 16) & 0xff);
+		output_buffer.push_back((symid >> 24) & 0xff);
+	} catch (std::out_of_range) {
+		error = "undefined label " + args[0];
+		return false;
+	}
 	return true;
 }
 
@@ -688,11 +693,16 @@ bool call(std::vector<std::string> &args) {
 		args[0] = prev_label + args[0];
 	output_buffer.push_back(0xe8);
 	text_relocations.push_back(output_buffer.size());
-	uint32_t symid = text_labels_map.at(args[0]);
-	output_buffer.push_back(symid & 0xff);
-	output_buffer.push_back((symid >> 8) & 0xff);
-	output_buffer.push_back((symid >> 16) & 0xff);
-	output_buffer.push_back((symid >> 24) & 0xff);
+	try {
+		uint32_t symid = text_labels_map.at(args[0]);
+		output_buffer.push_back(symid & 0xff);
+		output_buffer.push_back((symid >> 8) & 0xff);
+		output_buffer.push_back((symid >> 16) & 0xff);
+		output_buffer.push_back((symid >> 24) & 0xff);
+	} catch (std::out_of_range) {
+		error = "undefined symbol " + args[0];
+		return false;
+	}
 	return true;
 }
 

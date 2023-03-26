@@ -34,7 +34,11 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	ehdr.type = 2; // executable
 	ehdr.machine = 0x3e; // x86-64
 	ehdr.version = 1; // current
-	ehdr.entry = vaddr + 0x1000 + reloc_table.at("_start") - data_size;
+	ehdr.entry = vaddr + 0x1000 - data_size;
+	if (reloc_table.find("_start") != reloc_table.end())
+		ehdr.entry += reloc_table["_start"];
+	else
+		std::cerr << "warning: no _start symbol found, using default entry point" << std::endl;
 	ehdr.phoff = sizeof(elf_header);
 	ehdr.shoff = (2 + !!data_size + !!bss_size) * sizeof(program_header) + sizeof(elf_header);
 	ehdr.flags = 0;
@@ -205,7 +209,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	for (auto s : reloc_table) {
 		sym.name = i;
 		i += s.first.size() + 1;
-		sym.info = (global_syms.find(s.first) != global_syms.end()) << 4; // global
+		sym.info = 0x10; // global
 		sym.other = 0;
 		sym.shndx = 1; // text
 		sym.value = vaddr + 0x1000 + s.second - data_size;
