@@ -122,12 +122,12 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 		shdr.addralign = 4;
 		shdr.entsize = 0;
 		f.write((const char *)&shdr, sizeof(section_header));
-	}
 
-	// perform data relocations
-	for (size_t &r : data_relocations) {
-		uint32_t *p = (uint32_t *)(output_buffer.data() + r);
-		*p += shdr.addr;
+		// perform data relocations
+		for (size_t &r : data_relocations) {
+			uint32_t *p = (uint32_t *)(output_buffer.data() + r);
+			*p += shdr.addr;
+		}
 	}
 
 	// bss section
@@ -143,12 +143,12 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 		shdr.addralign = 1;
 		shdr.entsize = 0;
 		f.write((const char *)&shdr, sizeof(section_header));
-	}
 
-	// perform bss relocations
-	for (size_t &r : bss_relocations) {
-		uint32_t *p = (uint32_t *)(output_buffer.data() + r);
-		*p += shdr.addr;
+		// perform bss relocations
+		for (size_t &r : bss_relocations) {
+			uint32_t *p = (uint32_t *)(output_buffer.data() + r);
+			*p += shdr.addr;
+		}
 	}
 
 	// shstrtab section
