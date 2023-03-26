@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
 	// go line by line and parse labels
 	sect curr_sect = UNDEF;
 	for (size_t i = 0; i < lines.size(); i++) {
-		std::string &line = lines[i];
+		std::string line = lines[i];
 		while (line.size() == 0 && ++i < lines.size())
 			line = lines[i];
 		if (i == lines.size())
@@ -238,7 +238,7 @@ int main(int argc, char *argv[]) {
 	curr_sect = UNDEF;
 	// go line by line and parse instructions
 	for (size_t i = 0; i < lines.size(); i++) {
-		std::string &line = lines[i];
+		std::string line = lines[i];
 		while (line.size() == 0 && ++i < lines.size())
 			line = lines[i];
 		if (i == lines.size())

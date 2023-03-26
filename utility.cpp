@@ -33,20 +33,224 @@ enum op_type op_type(std::string s) {
 		size_t r = s.find(']');
 		if (l == std::string::npos || r == std::string::npos)
 			return INVALID;
-		std::string sym = s.substr(l + 1, r - l - 1);
-		// if we are using something related to a register as an offset, return MEM
-		if (reg_size(s.substr(l + 1, 2)) != -1 || reg_size(s.substr(l + 1, 3)) != -1)
-			return MEM;
-		// otherwise return OFF (offset)
-		return OFF;
+		return MEM;
 	}
 	// otherwise return IMM (immediate)
 	return IMM;
 }
 
-std::vector<uint8_t> parse_mem(std::string in) {}
+// this function will NOT handle invalid input properly
+std::vector<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
+	// off can be: label + num, label, num
+	// [reg + reg * scale + off] SIB
+	// [reg + reg * scale] SIB
+	// [reg + reg + off] SIB
+	// [reg + reg] SIB
+	// [reg * scale + off] SIB
+	// [reg * scale] SIB
+	// [reg + off] NO SIB
+	// [reg] NO SIB
+	// [off] NO SIB
+	if (size == -1) {
+		short tmp;
+		if (in.starts_with("byte "))
+			tmp = 8;
+		else if (in.starts_with("word "))
+			tmp = 16;
+		else if (in.starts_with("dword "))
+			tmp = 32;
+		else if (in.starts_with("qword "))
+			tmp = 64;
+		else {
+			error = "operation size not specified";
+			return {};
+		}
+		size = tmp;
+		in = in.substr(5 + (tmp >= 32));
+	}
+	in = in.substr(0, in.length() - 1);
+	std::vector<std::string> tokens;
+	std::vector<char> ops;
+	size_t l = 0;
+	size_t r = std::min(in.find('*'), in.find("+"));
+	while (l++ != std::string::npos) {
+		tokens.push_back(in.substr(l, r - l));
+		if (l != 1)
+			ops.push_back(in[l - 1]);
+		l = r;
+		r = std::min(in.find('*', l + 1), std::min(in.find('+', l + 1), in.find('-', l + 1)));
+	}
+	if (tokens.size() == 0)
+		return {};
 
-std::vector<uint8_t> parse_off(std::string in) {}
+	// resolve labels and combine with imms if possible
+	if (data_labels.find(tokens[tokens.size() - 1]) != data_labels.end()) {
+		tokens[tokens.size() - 1] = std::to_string(data_labels.at(tokens[tokens.size() - 1]));
+		reloc = 0;
+	}
+	if (tokens.size() > 1 && data_labels.find(tokens[tokens.size() - 2]) != data_labels.end()) {
+		uint32_t tmp = data_labels.at(tokens[tokens.size() - 2]);
+		if (ops[ops.size() - 1] == '+')
+			tokens[tokens.size() - 2] = std::to_string(tmp + std::stoi(tokens[tokens.size() - 1]));
+		else if (ops[ops.size() - 1] == '-')
+			tokens[tokens.size() - 2] = std::to_string(tmp - std::stoi(tokens[tokens.size() - 1]));
+		else
+			return {};
+		ops.pop_back();
+		tokens.pop_back();
+		reloc = 0;
+	}
+
+	for (size_t i = 0; i < ops.size(); i++)
+		if (ops[i] == '-')
+			tokens[i + 1] = std::to_string(-std::stoi(tokens[i + 1]));
+
+	std::vector<uint8_t> out;
+
+	// check to see if we need to use SIB
+	if (tokens.size() == 1 || (reg_num(tokens[1]) == -1 && ops[0] == '+')) {
+		// no sib
+		if (tokens.size() == 1) {
+			short a1 = reg_num(tokens[0]);
+			if (a1 != -1) {
+				// register
+				// size override
+				if (reg_size(tokens[0]) == 16)
+					out.push_back(0x67);
+				// rex prefix if necessary
+				if (a1 >= 8) {
+					out.push_back(0x41);
+					// check for collisions with rip relative addressing
+					if (a1 == 13) {
+						out.push_back(0x45);
+						out.push_back(0x00);
+						return out;
+					}
+					// collisions with SIB addressing
+					if ((a1 & 7) == 0b100) {
+						out.push_back(0x04);
+						out.push_back(0b00100000 | (a1 & 7));
+						return out;
+					}
+				}
+				// modrm
+				out.push_back(((a1 == 5) << 6) | (a1 & 7));
+				// cannot directly address bp, so we do it with an offset of 0
+				if (a1 == 5)
+					out.push_back(0x00);
+				else if (a1 == 4)
+					// we also cannot directly address sp, so we add a sib byte with no index
+					out.push_back(0x24);
+			} else {
+				// offset
+				// modrm
+				out.push_back(0x04);
+				out.push_back(0b00100101);
+				int off = std::stoi(tokens[0]);
+				if (reloc != 0x7fff)
+					reloc = out.size();
+				out.push_back(off & 0xff);
+				out.push_back((off >> 8) & 0xff);
+				out.push_back((off >> 16) & 0xff);
+				out.push_back((off >> 24) & 0xff);
+			}
+		} else {
+			// must be reg + offset
+			short a1 = reg_num(tokens[0]);
+			int off = std::stoi(tokens[1]);
+			// size override
+			if (reg_size(tokens[0]) == 16)
+				out.push_back(0x67);
+			// rex prefix if necessary
+			if (a1 >= 8)
+				out.push_back(0x41);
+			// modrm
+			out.push_back(0x80 | (a1 & 7));
+			if ((a1 & 7) == 4)
+				// we cannot directly address sp, so we add a sib byte with no index
+				out.push_back(0x24);
+			// offset
+			if (reloc != 0x7fff)
+				reloc = out.size();
+			out.push_back(off & 0xff);
+			out.push_back((off >> 8) & 0xff);
+			out.push_back((off >> 16) & 0xff);
+			out.push_back((off >> 24) & 0xff);
+		}
+	} else {
+		// sib
+		short base;
+		short index;
+		short scale;
+		int offset;
+		if (ops[0] != '*') {
+			base = reg_num(tokens[0]);
+			tokens.erase(tokens.begin());
+			ops.erase(ops.begin());
+		} else
+			base = -1;
+		if (ops[ops.size() - 1] != '*' && reg_num(tokens[tokens.size() - 1]) == -1) {
+			offset = std::stoi(tokens[tokens.size() - 1]);
+			tokens.pop_back();
+			ops.pop_back();
+		} else
+			offset = 0;
+		if (tokens.size() == 0) {
+			index = -1;
+			scale = 0;
+		} else if (tokens.size() == 1) {
+			index = reg_num(tokens[0]);
+			scale = 1;
+		} else if (tokens.size() == 2) {
+			index = reg_num(tokens[0]);
+			scale = std::stoi(tokens[1]);
+		} else
+			return {};
+		if (scale == 1)
+			scale = 0;
+		else if (scale == 2)
+			scale = 1;
+		else if (scale == 4)
+			scale = 2;
+		else if (scale == 8)
+			scale = 3;
+		else
+			return {};
+		// size override
+		if (reg_size(tokens[0]) == 32)
+			out.push_back(0x67);
+		// rex prefix if necessary
+		if (base >= 8 || index >= 8)
+			out.push_back(0x40 | ((index >= 8) << 1) | (base >= 8));
+		if (base >= 8)
+			out[0] |= 1;
+		if (index >= 8)
+			out[0] |= 2;
+		// modrm
+		out.push_back(0x04 | (!!offset << 7));
+		// sib
+		bool force = false;
+		if (base == -1) {
+			base = 5;
+			out[out.size() - 1] &= ~0x80;
+		}
+		if (base == 5)
+			force = true;
+		if (index == -1)
+			index = 4;
+		out.push_back((scale << 6) | ((index & 7) << 3) | (base & 7));
+		// offset
+		if (reloc != 0x7fff)
+			reloc = out.size();
+		if (offset || force) {
+			out.push_back(offset & 0xff);
+			out.push_back((offset >> 8) & 0xff);
+			out.push_back((offset >> 16) & 0xff);
+			out.push_back((offset >> 24) & 0xff);
+		}
+	}
+	return out;
+}
 
 std::pair<unsigned long long, short> parse_imm(std::string s) {
 	// if label, return label

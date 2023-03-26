@@ -3,8 +3,9 @@
 #include <unordered_map>
 
 extern std::unordered_map<std::string, uint64_t> data_labels;
+extern std::string error;
 
-enum op_type { INVALID, REG, MEM, IMM, OFF };
+enum op_type { INVALID, REG, MEM, IMM };
 enum sect { UNDEF, TEXT, RODATA, BSS };
 
 static const std::unordered_map<std::string, int> _reg_size{
@@ -30,6 +31,5 @@ static const std::unordered_map<std::string, uint8_t> _reg_num{
 int reg_num(std::string);
 int reg_size(std::string);
 enum op_type op_type(std::string);
-std::vector<uint8_t> parse_mem(std::string);
-std::vector<uint8_t> parse_off(std::string);
+std::vector<uint8_t> parse_mem(std::string, short &, short &);
 std::pair<unsigned long long, short> parse_imm(std::string);
