@@ -21,6 +21,7 @@ std::vector<size_t> data_relocations;
 std::vector<size_t> bss_relocations;
 // symbol table (name, offset)
 std::unordered_map<std::string, uint64_t> reloc_table;
+std::set<std::string> global_syms;
 // output buffer
 std::vector<uint8_t> output_buffer;
 uint64_t data_size = 0;
@@ -226,6 +227,9 @@ int main(int argc, char *argv[]) {
 					else
 						instr = prev_label + instr;
 					reloc_table[instr] = output_buffer.size();
+					continue;
+				} else if (instr == "global") {
+					global_syms.insert(line.substr(line.find(' ') + 1));
 					continue;
 				}
 				std::vector<std::string> args;

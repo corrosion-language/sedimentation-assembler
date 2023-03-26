@@ -23,13 +23,9 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	uint64_t page_size = getpagesize();
 
 	// list of symbols to include
-	std::vector<std::string> syms;
 	uint64_t strtab_size = 1;
 	for (auto &s : reloc_table) {
-		if (s.first.find(".") == std::string::npos) {
-			syms.push_back(s.first);
-			strtab_size += s.first.size() + 1;
-		}
+		strtab_size += s.first.size() + 1;
 	}
 
 	// ELF header
@@ -38,7 +34,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	ehdr.type = 2; // executable
 	ehdr.machine = 0x3e; // x86-64
 	ehdr.version = 1; // current
-	ehdr.entry = vaddr + 0x1000 + reloc_table.at("_start");
+	ehdr.entry = vaddr + 0x1000 + reloc_table.at("_start") - data_size;
 	ehdr.phoff = sizeof(elf_header);
 	ehdr.shoff = (2 + !!data_size + !!bss_size) * sizeof(program_header) + sizeof(elf_header);
 	ehdr.flags = 0;
@@ -66,7 +62,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	// .text
 	phdr.type = 1; // loadable
 	phdr.flags = 0b101; // read, execute
-	phdr.offset = ((736 + (syms.size() + 1) * sizeof(symbol) + strtab_size + page_size - 1) & ~(page_size - 1));
+	phdr.offset = ((736 + (reloc_table.size() + 1) * sizeof(symbol) + strtab_size + page_size - 1) & ~(page_size - 1));
 	phdr.vaddr = phdr.vaddr + 0x1000; // align to page size
 	phdr.paddr = phdr.vaddr;
 	phdr.filesz = output_buffer.size() - data_size;
@@ -167,9 +163,9 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	shdr.flags = 0;
 	shdr.addr = 0;
 	shdr.offset = ehdr.shoff + ehdr.shentsize * ehdr.shnum;
-	shdr.size = (syms.size() + 1) * sizeof(symbol);
+	shdr.size = (reloc_table.size() + 1) * sizeof(symbol);
 	shdr.link = ehdr.shnum - 2; // strtab
-	shdr.info = syms.size() + 1; // index of last non-local symbol + 1
+	shdr.info = reloc_table.size() + 1; // index of last non-local symbol + 1
 	shdr.addralign = 8;
 	shdr.entsize = sizeof(symbol);
 	f.write((const char *)&shdr, sizeof(section_header));
@@ -206,21 +202,21 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	bzero(&sym, sizeof(symbol));
 	f.write((const char *)&sym, sizeof(symbol));
 	// write symtab
-	for (std::string &s : syms) {
+	for (auto s : reloc_table) {
 		sym.name = i;
-		i += s.size() + 1;
-		sym.info = 0x10; // global
+		i += s.first.size() + 1;
+		sym.info = (global_syms.find(s.first) != global_syms.end()) << 4; // global
 		sym.other = 0;
 		sym.shndx = 1; // text
-		sym.value = vaddr + 0x1000 + reloc_table[s];
+		sym.value = vaddr + 0x1000 + s.second - data_size;
 		sym.size = 0;
 		f.write((const char *)&sym, sizeof(symbol));
 	}
 
 	// write strtab
 	f.seekp(f.tellp() + (std::streamoff)1);
-	for (std::string &s : syms)
-		f.write(s.c_str(), s.size() + 1);
+	for (auto &s : reloc_table)
+		f.write(s.first.c_str(), s.first.size() + 1);
 
 	// write shstrtab
 	f.write("\0.text\0.rodata\0.bss\0.symtab\0.strtab\0.shstrtab", 46);

@@ -4,6 +4,7 @@
 
 #include <fstream>
 #include <iostream>
+#include <set>
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
@@ -13,6 +14,7 @@
 extern std::vector<size_t> data_relocations;
 extern std::vector<size_t> bss_relocations;
 extern std::unordered_map<std::string, uint64_t> reloc_table;
+extern std::set<std::string> global_syms;
 
 struct elf_header {
 	uint8_t ident[16];
