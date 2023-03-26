@@ -192,60 +192,23 @@ int main(int argc, char *argv[]) {
 			} else if (curr_sect == UNDEF) {
 				std::cerr << input_name << ':' << i + 1 << ": error: label outside of section" << std::endl;
 				return 1;
-			} else {
-				continue;
-			}
-		}
-	}
-
-	std::cout << "Average time: " << ((double)cum / (double)num * 2 / 1000) << "us" << std::endl;
-
-	curr_sect = UNDEF;
-	// go line by line and parse instructions
-	for (size_t i = 0; i < lines.size(); i++) {
-		std::string line = lines[i];
-		while (line.size() == 0 && ++i < lines.size())
-			line = lines[i];
-		if (i == lines.size())
-			break;
-		if (line.starts_with("section ")) {
-			if (line == "section .text") {
-				curr_sect = TEXT;
-			} else if (line == "section .rodata") {
-				curr_sect = RODATA;
-			} else if (line == "section .bss") {
-				curr_sect = BSS;
-			}
-		} else {
-			if (curr_sect == TEXT) {
-				// parse instruction
-				std::string instr = line.substr(0, line.find(' '));
-				if (instr.ends_with(':')) {
-					instr = instr.substr(0, instr.size() - 1);
-					if (instr[0] != '.')
-						prev_label = instr.substr(0, instr.find('.'));
-					else
-						instr = prev_label + instr;
-					reloc_table[instr] = output_buffer.size();
-					continue;
-				} else if (instr == "global") {
-					global_syms.insert(line.substr(line.find(' ') + 1));
-					continue;
-				}
-				std::vector<std::string> args;
-				size_t pos = line.find(' ');
-				while (pos != std::string::npos) {
-					size_t next = line.find(',', pos + 1);
-					if (next == std::string::npos) {
-						next = line.size();
-						args.push_back(line.substr(pos + 1, next - pos - 1));
-						break;
-					}
-					args.push_back(line.substr(pos + 1, next - pos - 1));
-					pos = next;
-				}
-				if (!handle(instr, args, i + 1))
+			} else if (curr_sect == BSS) {
+				std::string label = line.substr(0, line.find(':'));
+				std::string instr = line.substr(line.find(':') + 1, line.find(' ') - line.find(':') - 1);
+				size_t size = std::strtoull(line.substr(line.find(' ') + 1).c_str(), nullptr, 10);
+				bss_labels[label] = bss_size;
+				if (instr == "resb") {
+					bss_size += size;
+				} else if (instr == "resw") {
+					bss_size += size * 2;
+				} else if (instr == "resd") {
+					bss_size += size * 4;
+				} else if (instr == "resq") {
+					bss_size += size * 8;
+				} else {
+					std::cerr << input_name << ':' << i + 1 << ": error: unknown directive " << instr << std::endl;
 					return 1;
+				}
 			} else if (curr_sect == RODATA) {
 				std::string label = line.substr(0, line.find(':'));
 				std::string instr = line.substr(line.find(':') + 1, line.find(' ') - line.find(':') - 1);
@@ -331,23 +294,58 @@ int main(int argc, char *argv[]) {
 				}
 				data_size += output_buffer.size() - tmp;
 				data_labels[label] = tmp;
-			} else if (curr_sect == BSS) {
-				std::string label = line.substr(0, line.find(':'));
-				std::string instr = line.substr(line.find(':') + 1, line.find(' ') - line.find(':') - 1);
-				size_t size = std::strtoull(line.substr(line.find(' ') + 1).c_str(), nullptr, 10);
-				bss_labels[label] = bss_size;
-				if (instr == "resb") {
-					bss_size += size;
-				} else if (instr == "resw") {
-					bss_size += size * 2;
-				} else if (instr == "resd") {
-					bss_size += size * 4;
-				} else if (instr == "resq") {
-					bss_size += size * 8;
-				} else {
-					std::cerr << input_name << ':' << i + 1 << ": error: unknown directive " << instr << std::endl;
-					return 1;
+			}
+		}
+	}
+
+	std::cout << "Average time: " << ((double)cum / (double)num * 2 / 1000) << "us" << std::endl;
+
+	curr_sect = UNDEF;
+	// go line by line and parse instructions
+	for (size_t i = 0; i < lines.size(); i++) {
+		std::string line = lines[i];
+		while (line.size() == 0 && ++i < lines.size())
+			line = lines[i];
+		if (i == lines.size())
+			break;
+		if (line.starts_with("section ")) {
+			if (line == "section .text") {
+				curr_sect = TEXT;
+			} else if (line == "section .rodata") {
+				curr_sect = RODATA;
+			} else if (line == "section .bss") {
+				curr_sect = BSS;
+			}
+		} else {
+			if (curr_sect == TEXT) {
+				// parse instruction
+				std::string instr = line.substr(0, line.find(' '));
+				if (instr.ends_with(':')) {
+					instr = instr.substr(0, instr.size() - 1);
+					if (instr[0] != '.')
+						prev_label = instr.substr(0, instr.find('.'));
+					else
+						instr = prev_label + instr;
+					reloc_table[instr] = output_buffer.size();
+					continue;
+				} else if (instr == "global") {
+					global_syms.insert(line.substr(line.find(' ') + 1));
+					continue;
 				}
+				std::vector<std::string> args;
+				size_t pos = line.find(' ');
+				while (pos != std::string::npos) {
+					size_t next = line.find(',', pos + 1);
+					if (next == std::string::npos) {
+						next = line.size();
+						args.push_back(line.substr(pos + 1, next - pos - 1));
+						break;
+					}
+					args.push_back(line.substr(pos + 1, next - pos - 1));
+					pos = next;
+				}
+				if (!handle(instr, args, i + 1))
+					return 1;
 			}
 		}
 	}
