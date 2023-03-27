@@ -199,12 +199,12 @@ bool mov(std::vector<std::string> &args) {
 		short s1 = -1;
 		short tmp = 0x7fff;
 		std::vector<uint8_t> data = parse_mem(args[0], s1, tmp);
+		if (data.empty())
+			return false;
 		if (s1 < a2.second) {
 			error = "immediate value out of range";
 			return false;
 		}
-		if (data.empty())
-			return false;
 		if (s1 == 16) {
 			output_buffer.push_back(0x66);
 		}
@@ -732,6 +732,36 @@ bool ret(std::vector<std::string> &args) {
 	return true;
 }
 
+const std::unordered_map<std::string, uint8_t> jcc_optable{
+	{"ja", 0x87},  {"jae", 0x83}, {"jb", 0x82},	  {"jbe", 0x86}, {"jc", 0x82},	 {"je", 0x84},	{"jz", 0x84},	{"jg", 0x8f},
+	{"jge", 0x8d}, {"jl", 0x8c},  {"jle", 0x8e},  {"jna", 0x86}, {"jnae", 0x82}, {"jnb", 0x83}, {"jnbe", 0x87}, {"jnc", 0x83},
+	{"jne", 0x85}, {"jng", 0x8e}, {"jnge", 0x8c}, {"jnl", 0x8d}, {"jnle", 0x8f}, {"jno", 0x81}, {"jnp", 0x8b},	{"jns", 0x89},
+	{"jnz", 0x85}, {"jo", 0x80},  {"jp", 0x8a},	  {"jpe", 0x8a}, {"jpo", 0x8b},	 {"js", 0x88},	{"jz", 0x84},
+};
+
+bool jcc(std::string &s, std::vector<std::string> &args) {
+	if (jcc_optable.find(s) == jcc_optable.end())
+		return false;
+	if (args.size() != 1)
+		return false;
+	if (args[0][0] == '.')
+		args[0] = prev_label + args[0];
+	output_buffer.push_back(0x0f);
+	output_buffer.push_back(jcc_optable.at(s));
+	text_relocations.push_back(output_buffer.size());
+	try {
+		uint32_t symid = text_labels_map.at(args[0]);
+		output_buffer.push_back(symid & 0xff);
+		output_buffer.push_back((symid >> 8) & 0xff);
+		output_buffer.push_back((symid >> 16) & 0xff);
+		output_buffer.push_back((symid >> 24) & 0xff);
+	} catch (std::out_of_range) {
+		error = "undefined symbol " + args[0];
+		return false;
+	}
+	return true;
+}
+
 // instruction, handler
 const std::unordered_map<std::string, handler> _handlers{
 	{"mov", mov}, {"syscall", syscall}, {"jmp", jmp}, {"nop", nop},	 {"inc", inc}, {"dec", dec},  {"movzx", movzx}, {"adc", adc},
@@ -739,6 +769,16 @@ const std::unordered_map<std::string, handler> _handlers{
 };
 
 bool handle(std::string &s, std::vector<std::string> &args, size_t linenum) {
+	if (s[0] == 'j' && s != "jmp") {
+		error = "";
+		if (!jcc(s, args)) {
+			if (error.empty())
+				error = "invalid combination of opcode and operands";
+			std::cerr << input_name << ':' << linenum << ": error: " << error << std::endl;
+			return false;
+		}
+		return true;
+	}
 	if (_handlers.find(s) == _handlers.end()) {
 		std::cerr << input_name << ':' << linenum << ": error: unknown instruction " << s << std::endl;
 		return false;

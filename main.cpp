@@ -327,7 +327,11 @@ int main(int argc, char *argv[]) {
 						instr = prev_label + instr;
 					reloc_table[instr] = output_buffer.size();
 					continue;
-				} else if (instr == "global") {
+				} else {
+					for (size_t i = 0; i < instr.size(); i++)
+						instr[i] = tolower(instr[i]);
+				}
+				if (instr == "global") {
 					continue;
 				}
 				std::vector<std::string> args;
