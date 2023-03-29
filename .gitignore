@@ -1,5 +1,5 @@
 a.out
-pasm
+sedimentation
 test.asm
 *.o
 callgrind*
