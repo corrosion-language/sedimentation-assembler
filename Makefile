@@ -6,7 +6,7 @@ OBJS=$(SRCS:.cpp=.o)
 debug: sedimentation
 	./sedimentation test.asm
 
-release: CFLAGS += -O3
+release: CFLAGS += -O2
 release: sedimentation
 	strip -s sedimentation
 
