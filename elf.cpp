@@ -74,10 +74,10 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	phdr.align = page_size;
 	f.write((const char *)&phdr, sizeof(program_header));
 
-	// .rodata
+	// .data
 	if (data_size) {
 		phdr.type = 1; // loadable
-		phdr.flags = 0b100; // read
+		phdr.flags = 0b110; // read, write
 		phdr.offset = phdr.offset + ((phdr.filesz + page_size - 1) & ~(page_size - 1));
 		phdr.vaddr = phdr.vaddr + ((phdr.memsz + page_size - 1) & ~(page_size - 1));
 		phdr.paddr = phdr.vaddr;
@@ -119,11 +119,11 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	shdr.entsize = 0;
 	f.write((const char *)&shdr, sizeof(section_header));
 
-	// rodata section
+	// data section
 	if (data_size) {
 		shdr.name = 7;
 		shdr.type = 1; // progbits
-		shdr.flags = 0x2; // alloc
+		shdr.flags = 0x2 | 0x1; // alloc, write
 		shdr.addr = shdr.addr + ((shdr.size + page_size - 1) & ~(page_size - 1));
 		shdr.offset = shdr.offset + ((data_size + page_size - 1) & ~(page_size - 1));
 		shdr.size = data_size;
@@ -142,7 +142,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 
 	// bss section
 	if (bss_size) {
-		shdr.name = 15;
+		shdr.name = 13;
 		shdr.type = 8; // nobits
 		shdr.flags = 0x2 | 0x1; // alloc, write
 		shdr.addr = shdr.addr + ((shdr.size + page_size - 1) & ~(page_size - 1));
@@ -162,7 +162,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	}
 
 	// symbol table
-	shdr.name = 20;
+	shdr.name = 18;
 	shdr.type = 2; // symtab
 	shdr.flags = 0;
 	shdr.addr = 0;
@@ -175,7 +175,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	f.write((const char *)&shdr, sizeof(section_header));
 
 	// strtab section
-	shdr.name = 28;
+	shdr.name = 26;
 	shdr.type = 3; // strtab
 	shdr.flags = 0;
 	shdr.addr = 0;
@@ -188,7 +188,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	f.write((const char *)&shdr, sizeof(section_header));
 
 	// shstrtab section
-	shdr.name = 36;
+	shdr.name = 34;
 	shdr.type = 3; // strtab
 	shdr.flags = 0;
 	shdr.addr = 0;
@@ -223,7 +223,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 		f.write(s.first.c_str(), s.first.size() + 1);
 
 	// write shstrtab
-	f.write("\0.text\0.rodata\0.bss\0.symtab\0.strtab\0.shstrtab", 46);
+	f.write("\0.text\0.data\0.bss\0.symtab\0.strtab\0.shstrtab", 44);
 
 	// seek to multiple of page size
 	f.seekp(((size_t)f.tellp() + page_size - 1) & ~(page_size - 1));

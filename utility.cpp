@@ -129,7 +129,7 @@ std::vector<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 			if (a1 != -1) {
 				// register
 				// size override
-				if (reg_size(tokens[0]) == 16)
+				if (reg_size(tokens[0]) == 32)
 					out.push_back(0x67);
 				// rex prefix if necessary
 				if (a1 >= 8) {
@@ -175,7 +175,7 @@ std::vector<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 			short a1 = reg_num(tokens[0]);
 			int off = std::stoi(tokens[1]);
 			// size override
-			if (reg_size(tokens[0]) == 16)
+			if (reg_size(tokens[0]) == 32)
 				out.push_back(0x67);
 			// rex prefix if necessary
 			if (a1 >= 8)
@@ -235,7 +235,7 @@ std::vector<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 		else
 			return {};
 		// size override
-		if (reg_size(tokens[0]) == 16)
+		if (reg_size(tokens[0]) == 32)
 			out.push_back(0x67);
 		// rex prefix if necessary
 		if (base >= 8 || index >= 8)

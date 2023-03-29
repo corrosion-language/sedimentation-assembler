@@ -7,7 +7,6 @@ extern std::unordered_map<std::string, uint64_t> bss_labels;
 extern std::string error;
 
 enum op_type { INVALID, REG, MEM, IMM };
-enum sect { UNDEF, TEXT, RODATA, BSS };
 
 static const std::unordered_map<std::string, int> _reg_size{
 	{"((?:r[89])|(?:r1[0-5]))b", 8}, // r8b - r15b
