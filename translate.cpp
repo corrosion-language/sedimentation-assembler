@@ -1,794 +1,286 @@
 #include "translate.hpp"
+#include <sys/mman.h>
 
 std::string error = "";
 
-// instruction handlers
+bool inited = false;
+size_t map_size;
+char *map;
 
-bool mov(std::vector<std::string> &args) {
-	if (args.size() != 2)
-		return false;
-	// check argument types
-	enum op_type t1 = op_type(args[0]);
-	enum op_type t2 = op_type(args[1]);
-	if (t1 == REG && t2 == REG) {
-		int s1 = reg_size(args[0]);
-		int s2 = reg_size(args[1]);
-		if (s1 != s2) {
-			error = "register sizes do not match";
-			return false;
-		}
-		int a1 = reg_num(args[0]);
-		int a2 = reg_num(args[1]);
-		if (s1 == 8) {
-			if (a1 >= 4 || a2 >= 4) {
-				if (args[0][1] == 'h' || args[1][1] == 'h')
-					return false;
-				a1 += (args[0][1] == 'h') * 4;
-				a2 += (args[1][1] == 'h') * 4;
-				output_buffer.push_back(0x40 | ((a1 & 8) >> 3) | ((a2 & 8) >> 1));
-			}
-			output_buffer.push_back(0x88);
-			output_buffer.push_back(0xc0 | (a2 << 3) | a1);
-		} else if (s1 == 16) {
-			output_buffer.push_back(0x66);
-			if ((a1 | a2) & 8)
-				output_buffer.push_back(0x40 | ((a1 & 8) >> 3) | ((a2 & 8) >> 1));
-			output_buffer.push_back(0x89);
-			output_buffer.push_back(0xc0 | (a2 << 3) | a1);
-		} else if (s1 == 32) {
-			if ((a1 | a2) & 8)
-				output_buffer.push_back(0x40 | ((a1 & 8) >> 3) | ((a2 & 8) >> 1));
-			output_buffer.push_back(0x89);
-			output_buffer.push_back(0xc0 | (a2 << 3) | a1);
-		} else if (s1 == 64) {
-			output_buffer.push_back(0x48 | ((a1 & 8) >> 3) | ((a2 & 8) >> 1));
-			output_buffer.push_back(0x89);
-			output_buffer.push_back(0xc0 | (a2 << 3) | a1);
-		}
-	} else if (t1 == REG && t2 == MEM) {
-		short s1 = reg_size(args[0]);
-		short s2 = s1;
-		short tmp = 0x7fff;
-		std::vector<uint8_t> data = parse_mem(args[1], s2, tmp);
-		if (data.empty())
-			return false;
-		if (s1 == 16) {
-			output_buffer.push_back(0x66);
-		}
-		if (data[0] == 0x67) {
-			output_buffer.push_back(0x67);
-			data.erase(data.begin());
-			tmp -= (tmp != 0x7fff);
-		}
-		short a1 = reg_num(args[0]);
-		a1 += (args[0][1] == 'h') * 4;
-		if ((data[0] & 0xf0) == 0x40) {
-			output_buffer.push_back(data[0]);
-			data.erase(data.begin());
-			tmp -= (tmp != 0x7fff);
-			output_buffer[output_buffer.size() - 1] |= ((s1 == 64) << 3) | ((a1 & 8) >> 1);
-		} else if (s1 == 64 || (s1 == 8 && a1 >= 4 && args[0][1] != 'h'))
-			output_buffer.push_back(0x40 | ((s1 == 64) << 3) | ((a1 & 8) >> 1));
-		a1 &= 7;
-		output_buffer.push_back(0x8b ^ (s1 == 8));
-		if (tmp != 0x7fff && !(tmp & 0x8000))
-			data_relocations.push_back(output_buffer.size() + tmp);
-		else if (tmp != 0x7fff)
-			bss_relocations.push_back(output_buffer.size() + (tmp & 0x7fff));
-		output_buffer.push_back((a1 << 3) | data[0]);
-		output_buffer.insert(output_buffer.end(), data.begin() + 1, data.end());
-	} else if (t1 == MEM && t2 == REG) {
-		short s2 = reg_size(args[1]);
-		short s1 = s2;
-		short tmp = 0x7fff;
-		std::vector<uint8_t> data = parse_mem(args[0], s1, tmp);
-		if (data.empty())
-			return false;
-		if (s1 == 16) {
-			output_buffer.push_back(0x66);
-		}
-		if (data[0] == 0x67) {
-			output_buffer.push_back(0x67);
-			data.erase(data.begin());
-			tmp -= (tmp != 0x7fff);
-		}
-		short a2 = reg_num(args[1]);
-		a2 += (args[1][1] == 'h') * 4;
-		if ((data[0] & 0xf0) == 0x40) {
-			output_buffer.push_back(data[0]);
-			data.erase(data.begin());
-			tmp -= (tmp != 0x7fff);
-			output_buffer[output_buffer.size() - 1] |= ((s1 == 64) << 3) | ((a2 & 8) >> 1);
-		} else if (s1 == 64 || (s1 == 8 && a2 >= 4 && args[0][1] != 'h'))
-			output_buffer.push_back(0x40 | ((s1 == 64) << 3) | ((a2 & 8) >> 1));
-		a2 &= 7;
-		output_buffer.push_back(0x89 ^ (s1 == 8));
-		if (tmp != 0x7fff && !(tmp & 0x8000))
-			data_relocations.push_back(output_buffer.size() + tmp);
-		else if (tmp != 0x7fff)
-			bss_relocations.push_back(output_buffer.size() + (tmp & 0x7fff));
-		output_buffer.push_back((a2 << 3) | data[0]);
-		output_buffer.insert(output_buffer.end(), data.begin() + 1, data.end());
-	} else if (t1 == REG && t2 == IMM) {
-		int s1 = reg_size(args[0]);
-		int a1 = reg_num(args[0]);
-		// detect base
-		auto a2 = parse_imm(args[1]);
-		short reloc = 0;
-		if (a2.second == -1) {
-			error = "invalid immediate value";
-			return false;
-		} else if (a2.second == -2 || a2.second > s1) {
-			error = "overflow in immediate value";
-			return false;
-		} else if (a2.second == -3) {
-			a2 = {a2.first, 32};
-			reloc = 1;
-		} else if (a2.second == -4) {
-			a2 = {a2.first, 32};
-			reloc = 2;
-		}
-		if (s1 < a2.second) {
-			error = "immediate value out of range";
-			return false;
-		}
-		if (s1 == 64 && a2.second <= 32 && !(a2.first & 0x80000000))
-			s1 = 32;
-		a1 += (args[0][1] == 'h') * 4;
-		if (s1 == 8) {
-			if (args[0][1] != 'h' && a1 > 4)
-				output_buffer.push_back(0x40 | ((a1 & 8) >> 3));
-			output_buffer.push_back(0xb0 + (a1 & 7));
-			if (reloc == 1)
-				data_relocations.push_back(output_buffer.size());
-			else if (reloc == 2)
-				bss_relocations.push_back(output_buffer.size());
-			output_buffer.push_back(a2.first);
-		} else if (s1 == 16) {
-			output_buffer.push_back(0x66);
-			if (a1 & 8)
-				output_buffer.push_back(0x41);
-			output_buffer.push_back(0xb8 + (a1 & 7));
-			if (reloc == 1)
-				data_relocations.push_back(output_buffer.size());
-			else if (reloc == 2)
-				data_relocations.push_back(output_buffer.size());
-			output_buffer.push_back(a2.first & 0xff);
-			output_buffer.push_back(a2.first >> 8);
-		} else if (s1 == 32) {
-			if (a1 & 8)
-				output_buffer.push_back(0x41);
-			output_buffer.push_back(0xb8 + (a1 & 7));
-			if (reloc == 1)
-				data_relocations.push_back(output_buffer.size());
-			else if (reloc == 2)
-				bss_relocations.push_back(output_buffer.size());
-			output_buffer.push_back(a2.first & 0xff);
-			output_buffer.push_back((a2.first >> 8) & 0xff);
-			output_buffer.push_back((a2.first >> 16) & 0xff);
-			output_buffer.push_back((a2.first >> 24) & 0xff);
-		} else if (s1 == 64) {
-			output_buffer.push_back(0x48 | ((a1 & 8) >> 3));
-			output_buffer.push_back(0xb8 + (a1 & 7));
-			if (reloc == 1)
-				data_relocations.push_back(output_buffer.size());
-			else if (reloc == 2)
-				bss_relocations.push_back(output_buffer.size());
-			output_buffer.push_back(a2.first & 0xff);
-			output_buffer.push_back((a2.first >> 8) & 0xff);
-			output_buffer.push_back((a2.first >> 16) & 0xff);
-			output_buffer.push_back((a2.first >> 24) & 0xff);
-			output_buffer.push_back((a2.first >> 32) & 0xff);
-			output_buffer.push_back((a2.first >> 40) & 0xff);
-			output_buffer.push_back((a2.first >> 48) & 0xff);
-			output_buffer.push_back((a2.first >> 56) & 0xff);
-		}
-	} else if (t1 == MEM && t2 == IMM) {
-		auto a2 = parse_imm(args[1]);
-		short reloc = 0;
-		if (a2.second == -1) {
-			error = "invalid immediate value";
-			return false;
-		} else if (a2.second == -3) {
-			a2 = {a2.first, 32};
-			reloc = 1;
-		} else if (a2.second == -4) {
-			a2 = {a2.first, 32};
-			reloc = 2;
-		}
-		short s1 = -1;
-		short tmp = 0x7fff;
-		std::vector<uint8_t> data = parse_mem(args[0], s1, tmp);
-		if (data.empty())
-			return false;
-		if (s1 < a2.second) {
-			error = "immediate value out of range";
-			return false;
-		}
-		if (s1 == 16) {
-			output_buffer.push_back(0x66);
-		}
-		if (data[0] == 0x67) {
-			output_buffer.push_back(0x67);
-			data.erase(data.begin());
-			tmp -= (tmp != 0x7fff);
-		}
-		if ((data[0] & 0xf0) == 0x40) {
-			output_buffer.push_back(data[0]);
-			data.erase(data.begin());
-			tmp -= (tmp != 0x7fff);
-			output_buffer[output_buffer.size() - 1] |= (s1 == 64) << 3;
-		} else if (s1 == 64) {
-			output_buffer.push_back(0x48);
-		}
-		output_buffer.push_back(0xc7 ^ (s1 == 8));
-		if (tmp != 0x7fff && !(tmp & 0x8000))
-			data_relocations.push_back(output_buffer.size() + tmp);
-		else if (tmp != 0x7fff)
-			bss_relocations.push_back(output_buffer.size() + (tmp & 0x7fff));
-		output_buffer.insert(output_buffer.end(), data.begin(), data.end());
-		if (reloc == 1)
-			data_relocations.push_back(output_buffer.size());
-		else if (reloc == 2)
-			bss_relocations.push_back(output_buffer.size() + (tmp & 0x7fff));
-		output_buffer.push_back(a2.first & 0xff);
-		if (s1 >= 16)
-			output_buffer.push_back((a2.first >> 8) & 0xff);
-		if (s1 >= 32) {
-			output_buffer.push_back((a2.first >> 16) & 0xff);
-			output_buffer.push_back((a2.first >> 24) & 0xff);
-		}
-		if (s1 >= 64) {
-			output_buffer.push_back((a2.first >> 32) & 0xff);
-			output_buffer.push_back((a2.first >> 40) & 0xff);
-			output_buffer.push_back((a2.first >> 48) & 0xff);
-			output_buffer.push_back((a2.first >> 56) & 0xff);
-		}
-	} else {
+void init() {
+	inited = true;
+	FILE *tmp = fopen("instr.dat", "r");
+	fseek(tmp, 0, SEEK_END);
+	map_size = ftell(tmp);
+	map = (char *)mmap(NULL, map_size, PROT_READ, MAP_PRIVATE, fileno(tmp), 0);
+	fclose(tmp);
+}
+
+bool handle(const std::string &s, const std::vector<std::string> &args, const size_t linenum) {
+	if (!inited)
+		init();
+	std::vector<std::string> matches;
+	char *l = map;
+	char *r = std::find(l, map + map_size, '\n');
+	do {
+		if (std::string(l, l + s.size()) == s)
+			matches.push_back(std::string(l, r));
+		l = r + 1;
+		r = std::find(l, map + map_size, '\n');
+	} while (r < map + map_size);
+	if (matches.empty()) {
+		std::cerr << input_name << ":" << linenum << ": error: unknown instruction " << s << std::endl;
 		return false;
 	}
-	return true;
-}
-
-bool syscall(std::vector<std::string> &args) {
-	if (args.size() != 0)
-		return false;
-	output_buffer.push_back(0x0f);
-	output_buffer.push_back(0x05);
-	return true;
-}
-
-bool jmp(std::vector<std::string> &args) {
-	if (args.size() != 1)
-		return false;
-	if (args[0][0] == '.')
-		args[0] = prev_label + args[0];
-	output_buffer.push_back(0xe9);
-	text_relocations.push_back(output_buffer.size());
-	try {
-		uint32_t symid = text_labels_map.at(args[0]);
-		output_buffer.push_back(symid & 0xff);
-		output_buffer.push_back((symid >> 8) & 0xff);
-		output_buffer.push_back((symid >> 16) & 0xff);
-		output_buffer.push_back((symid >> 24) & 0xff);
-	} catch (std::out_of_range) {
-		error = "undefined label " + args[0];
-		return false;
-	}
-	return true;
-}
-
-bool nop(std::vector<std::string> &args) {
-	if (args.size() != 0)
-		return false;
-	output_buffer.push_back(0x90);
-	return true;
-}
-
-bool inc(std::vector<std::string> &args) {
-	if (args.size() != 1)
-		return false;
-	enum op_type t1 = op_type(args[0]);
-	if (t1 == REG) {
-		short s1 = reg_size(args[0]);
-		short a1 = reg_num(args[0]);
-		a1 += (args[0][1] == 'h') * 4;
-		if (s1 == 8) {
-			if (args[0][1] != 'h' && a1 > 4)
-				output_buffer.push_back(0x40 | ((a1 & 8) >> 3));
-			output_buffer.push_back(0xfe);
-			output_buffer.push_back(0xc0 | (a1 & 7));
-		} else if (s1 == 16) {
-			output_buffer.push_back(0x66);
-			if (a1 & 8)
-				output_buffer.push_back(0x41);
-			output_buffer.push_back(0xff);
-			output_buffer.push_back(0xc0 | (a1 & 7));
-		} else if (s1 == 32) {
-			if (a1 & 8)
-				output_buffer.push_back(0x41);
-			output_buffer.push_back(0xff);
-			output_buffer.push_back(0xc0 | (a1 & 7));
-		} else if (s1 == 64) {
-			output_buffer.push_back(0x48 | ((a1 & 8) >> 3));
-			output_buffer.push_back(0xff);
-			output_buffer.push_back(0xc0 | (a1 & 7));
-		}
-	} else if (t1 == MEM) {
-		short s1 = -1;
-		short tmp = 0x7fff;
-		std::vector<uint8_t> data = parse_mem(args[0], s1, tmp);
-		if (data.empty())
-			return false;
-		if (s1 == 16)
-			output_buffer.push_back(0x66);
-		if (data[0] == 0x67) {
-			output_buffer.push_back(0x67);
-			data.erase(data.begin());
-			tmp -= (tmp != 0x7fff);
-		}
-		if ((data[0] & 0xf0) == 0x40) {
-			output_buffer.push_back(data[0] | ((s1 == 64) << 3));
-			data.erase(data.begin());
-			tmp -= (tmp != 0x7fff);
-		} else if (s1 == 64)
-			output_buffer.push_back(0x48);
-		output_buffer.push_back(0xff ^ (s1 == 8));
-		if (tmp != 0x7fff && !(tmp & 0x8000))
-			data_relocations.push_back(output_buffer.size() + tmp);
-		else if (tmp != 0x7fff)
-			bss_relocations.push_back(output_buffer.size() + (tmp & 0x7fff));
-		output_buffer.insert(output_buffer.end(), data.begin(), data.end());
-	} else {
-		return false;
-	}
-	return true;
-}
-
-bool dec(std::vector<std::string> &args) {
-	if (args.size() != 1)
-		return false;
-	enum op_type t1 = op_type(args[0]);
-	if (t1 == REG) {
-		short s1 = reg_size(args[0]);
-		short a1 = reg_num(args[0]);
-		a1 += (args[0][1] == 'h') * 4;
-		if (s1 == 8) {
-			if (args[0][1] != 'h' && a1 > 4)
-				output_buffer.push_back(0x40 | ((a1 & 8) >> 3));
-			output_buffer.push_back(0xfe);
-			output_buffer.push_back(0xc8 | (a1 & 7));
-		} else if (s1 == 16) {
-			output_buffer.push_back(0x66);
-			if (a1 & 8)
-				output_buffer.push_back(0x41);
-			output_buffer.push_back(0xff);
-			output_buffer.push_back(0xc8 | (a1 & 7));
-		} else if (s1 == 32) {
-			if (a1 & 8)
-				output_buffer.push_back(0x41);
-			output_buffer.push_back(0xff);
-			output_buffer.push_back(0xc8 | (a1 & 7));
-		} else if (s1 == 64) {
-			output_buffer.push_back(0x48 | ((a1 & 8) >> 3));
-			output_buffer.push_back(0xff);
-			output_buffer.push_back(0xc8 | (a1 & 7));
-		}
-	} else if (t1 == MEM) {
-		short s1 = -1;
-		short tmp = 0x7fff;
-		std::vector<uint8_t> data = parse_mem(args[0], s1, tmp);
-		if (data.empty())
-			return false;
-		if (s1 == 16)
-			output_buffer.push_back(0x66);
-		if (data[0] == 0x67) {
-			output_buffer.push_back(0x67);
-			data.erase(data.begin());
-			tmp -= (tmp != 0x7fff);
-		}
-		if ((data[0] & 0xf0) == 0x40) {
-			output_buffer.push_back(data[0] | ((s1 == 64) << 3));
-			data.erase(data.begin());
-			tmp -= (tmp != 0x7fff);
-		} else if (s1 == 64)
-			output_buffer.push_back(0x48);
-		output_buffer.push_back(0xff ^ (s1 == 8));
-		output_buffer.push_back(data[0] | 0x08);
-		if (tmp != 0x7fff && !(tmp & 0x8000))
-			data_relocations.push_back(output_buffer.size() + tmp);
-		else if (tmp != 0x7fff)
-			bss_relocations.push_back(output_buffer.size() + (tmp & 0x7fff));
-		output_buffer.insert(output_buffer.end(), data.begin() + 1, data.end());
-	} else {
-		return false;
-	}
-	return true;
-}
-
-bool movzx(std::vector<std::string> &args) {
-	if (args.size() != 2)
-		return false;
-	enum op_type t1 = op_type(args[0]);
-	enum op_type t2 = op_type(args[1]);
-	if (t1 != REG)
-		return false;
-	if (t2 == REG) {
-		short s1 = reg_size(args[0]);
-		short s2 = reg_size(args[1]);
-		if (s1 <= s2)
-			return false;
-		short a1 = reg_num(args[0]);
-		short a2 = reg_num(args[1]);
-		a2 += (args[1][1] == 'h') * 4;
-		if (s1 == 64 && args[1][1] == 'h') {
-			error = "cannot use high byte register with REX prefix";
-			return false;
-		}
-		if (s1 == 16)
-			output_buffer.push_back(0x66);
-		// rex byte if needed
-		if (s1 == 64 || (s2 == 8 && a2 > 4 && args[1][1] != 'h'))
-			output_buffer.push_back(0x40 | ((s1 == 64) << 3) | ((a1 & 8) >> 1) | ((a2 & 8) >> 3));
-		output_buffer.push_back(0x0f);
-		output_buffer.push_back(0xb6 | (s2 == 16));
-		output_buffer.push_back(0xc0 | (a2 & 7) | ((a1 & 7) << 3));
-	} else if (t2 == MEM) {
-		short s1 = reg_size(args[0]);
-		short s2 = -1;
-		short tmp = 0x7fff;
-		std::vector<uint8_t> data = parse_mem(args[1], s2, tmp);
-		if (data.empty())
-			return false;
-		if (s1 <= s2)
-			return false;
-		if (s1 == 16)
-			output_buffer.push_back(0x66);
-		if (data[0] == 0x67) {
-			output_buffer.push_back(0x67);
-			data.erase(data.begin());
-			tmp -= (tmp != 0x7fff);
-		}
-		short a1 = reg_num(args[0]);
-		if ((data[0] & 0xf0) == 0x40) {
-			output_buffer.push_back(data[0] | ((a1 & 8) >> 1) | ((s1 == 64) << 3));
-			data.erase(data.begin());
-			tmp -= (tmp != 0x7fff);
-		} else if (s1 == 64)
-			output_buffer.push_back(0x48);
-		output_buffer.push_back(0x0f);
-		output_buffer.push_back(0xb6 | (s2 == 16));
-		if (tmp != 0x7fff && !(tmp & 0x8000))
-			data_relocations.push_back(output_buffer.size() + tmp);
-		else if (tmp != 0x7fff)
-			bss_relocations.push_back(output_buffer.size() + (tmp & 0x7fff));
-		output_buffer.push_back(((a1 & 7) << 3) | data[0]);
-		output_buffer.insert(output_buffer.end(), data.begin() + 1, data.end());
-	} else {
-		return false;
-	}
-	return true;
-}
-
-const uint8_t adc_optable[6] = {0x15, 0x81, 0x83, 0x11, 0x13, 0x10};
-const uint8_t add_optable[6] = {0x05, 0x81, 0x83, 0x01, 0x03, 0x00};
-const uint8_t sub_optable[6] = {0x2d, 0x81, 0x83, 0x29, 0x2b, 0x28};
-const uint8_t cmp_optable[6] = {0x3d, 0x81, 0x83, 0x39, 0x3b, 0x38};
-const uint8_t and_optable[6] = {0x25, 0x81, 0x83, 0x21, 0x23, 0x20};
-const uint8_t or_optable[6] = {0x0d, 0x81, 0x83, 0x09, 0x0b, 0x08};
-const uint8_t xor_optable[6] = {0x35, 0x81, 0x83, 0x31, 0x33, 0x30};
-
-bool _arith(std::vector<std::string> &args, const uint8_t opcodes[6]) {
-	if (args.size() != 2)
-		return false;
-	enum op_type t1 = op_type(args[0]);
-	enum op_type t2 = op_type(args[1]);
-	short reloc = 0;
-	if (t1 == REG && t2 == IMM) {
-		int s1 = reg_size(args[0]);
-		int a1 = reg_num(args[0]);
-		auto a2 = parse_imm(args[1]);
-		if (a2.second == -1 || a2.second == 64) {
-			error = "invalid immediate value";
-			return false;
-		} else if (a2.second == -2 || a2.second > s1) {
-			error = "overflow in immediate value";
-			return false;
-		} else if (a2.second == -3) {
-			a2 = {a2.first, 32};
-			reloc = 1;
-		} else if (a2.second == -4) {
-			a2 = {a2.first, 32};
-			reloc = 2;
-		}
-		if (s1 < a2.second) {
-			error = "immediate value not in range";
-			return false;
-		}
-		a1 += (args[0][1] == 'h') * 4;
-		if (a1 == 0) {
-			if (s1 == 16)
-				output_buffer.push_back(0x66);
-			if (s1 == 64)
-				output_buffer.push_back(0x48);
-			output_buffer.push_back(opcodes[0] ^ (s1 == 8));
-			if (reloc == 1)
-				data_relocations.push_back(output_buffer.size());
-			else if (reloc == 2)
-				bss_relocations.push_back(output_buffer.size());
-			output_buffer.push_back(a2.first & 0xff);
-			if (s1 >= 16)
-				output_buffer.push_back((a2.first >> 8) & 0xff);
-			if (s1 >= 32) {
-				output_buffer.push_back((a2.first >> 16) & 0xff);
-				output_buffer.push_back((a2.first >> 24) & 0xff);
+	std::vector<std::pair<enum op_type, short>> types;
+	for (const std::string &arg : args) {
+		enum op_type type = op_type(arg);
+		if (type == REG) {
+			types.push_back({REG, reg_size(arg)});
+		} else if (type == MEM) {
+			types.push_back({MEM, mem_size(arg)});
+		} else if (type == IMM) {
+			auto tmp = parse_imm(arg);
+			if (tmp.second == -1) {
+				std::cerr << input_name << ":" << linenum << ": error: " << error << std::endl;
+				return false;
+			} else if (tmp.second <= -2) {
+				types.push_back({IMM, 32});
+			} else {
+				types.push_back({IMM, tmp.second});
 			}
 		} else {
-			if (s1 == 16)
-				output_buffer.push_back(0x66);
-			if (s1 == 64 || (a1 >= 4 && args[0][1] != 'h'))
-				output_buffer.push_back(0x40 | ((s1 == 64) << 3) | ((a1 & 8) >> 3));
-			if (a2.second == 8 && s1 != 8)
-				output_buffer.push_back(opcodes[2]);
-			else
-				output_buffer.push_back(opcodes[1] ^ (s1 == 8));
-			output_buffer.push_back(0xc0 | opcodes[5] | (a1 & 7));
-			if (reloc == 1)
-				data_relocations.push_back(output_buffer.size());
-			else if (reloc == 2)
-				bss_relocations.push_back(output_buffer.size());
-			output_buffer.push_back(a2.first & 0xff);
-			if (a2.second != 8 && s1 >= 16)
-				output_buffer.push_back((a2.first >> 8) & 0xff);
-			if (a2.second != 8 && s1 >= 32) {
-				output_buffer.push_back((a2.first >> 16) & 0xff);
-				output_buffer.push_back((a2.first >> 24) & 0xff);
-			}
-		}
-	} else if (t1 == MEM && t2 == IMM) {
-		auto a2 = parse_imm(args[1]);
-		short reloc = 0;
-		if (a2.second == -1) {
-			error = "invalid immediate value";
 			return false;
-		} else if (a2.second == -3) {
-			a2 = {a2.first, 32};
-			reloc = 1;
-		} else if (a2.second == -4) {
-			a2 = {a2.first, 32};
-			reloc = 2;
 		}
-		short s1 = -1;
-		short tmp = 0x7fff;
-		std::vector<uint8_t> data = parse_mem(args[0], s1, tmp);
-		if (s1 < a2.second)
-			return false;
-		if (data.empty())
-			return false;
-		if (s1 == 16)
-			output_buffer.push_back(0x66);
-		if (data[0] == 0x67) {
-			output_buffer.push_back(0x67);
-			data.erase(data.begin());
-			tmp -= (tmp != 0x7fff);
-		}
-		if ((data[0] & 0xf0) == 0x40) {
-			output_buffer.push_back(data[0] | ((s1 == 64) << 3));
-			data.erase(data.begin());
-			tmp -= (tmp != 0x7fff);
-		} else if (s1 == 64)
-			output_buffer.push_back(0x48);
-		if (a2.second == 8 && s1 != 8)
-			output_buffer.push_back(opcodes[2]);
-		else
-			output_buffer.push_back(opcodes[1] ^ (s1 == 8));
-		if (tmp != 0x7fff && !(tmp & 0x8000))
-			data_relocations.push_back(output_buffer.size() + tmp);
-		else if (tmp != 0x7fff)
-			bss_relocations.push_back(output_buffer.size() + tmp);
-		output_buffer.push_back(opcodes[5] | data[0]);
-		output_buffer.insert(output_buffer.end(), data.begin() + 1, data.end());
-		if (reloc == 1)
-			data_relocations.push_back(output_buffer.size());
-		else if (reloc == 2)
-			bss_relocations.push_back(output_buffer.size());
-		output_buffer.push_back(a2.first & 0xff);
-		if (a2.second != 8 && s1 >= 16)
-			output_buffer.push_back((a2.first >> 8) & 0xff);
-		if (a2.second != 8 && s1 >= 32) {
-			output_buffer.push_back((a2.first >> 16) & 0xff);
-			output_buffer.push_back((a2.first >> 24) & 0xff);
-		}
-	} else if (t1 == REG && t2 == REG) {
-		short s1 = reg_size(args[0]);
-		short s2 = reg_size(args[1]);
-		if (s1 != s2)
-			return false;
-		short a1 = reg_num(args[0]);
-		short a2 = reg_num(args[1]);
-		a1 += (args[0][1] == 'h') * 4;
-		a2 += (args[1][1] == 'h') * 4;
-		if (s1 == 16)
-			output_buffer.push_back(0x66);
-		if (s1 == 64 || (s1 == 8 && a1 >= 4 && args[0][1] != 'h'))
-			output_buffer.push_back(0x40 | ((s1 == 64) << 3) | ((a1 & 8) >> 1) | ((a2 & 8) >> 3));
-		output_buffer.push_back(opcodes[4] ^ (s1 == 8));
-		output_buffer.push_back(0xc0 | ((a1 & 7) << 3) | (a2 & 7));
-	} else if (t1 == MEM && t2 == REG) {
-		short s2 = reg_size(args[1]);
-		short s1 = s2;
-		short tmp = 0x7fff;
-		std::vector<uint8_t> data = parse_mem(args[0], s1, tmp);
-		if (data.empty())
-			return false;
-		if (s1 == 16)
-			output_buffer.push_back(0x66);
-		if (data[0] == 0x67) {
-			output_buffer.push_back(0x67);
-			data.erase(data.begin());
-			tmp -= (tmp != 0x7fff);
-		}
-		short a2 = reg_num(args[1]);
-		a2 += (args[1][1] == 'h') * 4;
-		if ((data[0] & 0xf0) == 0x40) {
-			output_buffer.push_back(data[0] | ((s1 == 64) << 3) | ((a2 & 8) >> 1));
-			data.erase(data.begin());
-			tmp -= (tmp != 0x7fff);
-		} else if (s1 == 64 || (s1 == 8 && a2 >= 4 && args[0][1] != 'h'))
-			output_buffer.push_back(0x40 | ((s1 == 64) << 3) | ((a2 & 8) >> 1));
-		output_buffer.push_back(opcodes[3] ^ (s1 == 8));
-		if (tmp != 0x7fff && !(tmp & 0x8000))
-			data_relocations.push_back(output_buffer.size() + tmp);
-		else if (tmp != 0x7fff)
-			bss_relocations.push_back(output_buffer.size() + (tmp & 0x7fff));
-		output_buffer.push_back(((a2 & 7) << 3) | data[0]);
-		output_buffer.insert(output_buffer.end(), data.begin() + 1, data.end());
-	} else if (t1 == REG && t2 == MEM) {
-		short s1 = reg_size(args[0]);
-		short s2 = s1;
-		short tmp = 0x7fff;
-		std::vector<uint8_t> data = parse_mem(args[1], s2, tmp);
-		if (data.empty())
-			return false;
-		if (s1 == 16)
-			output_buffer.push_back(0x66);
-		if (data[0] == 0x67) {
-			output_buffer.push_back(0x67);
-			data.erase(data.begin());
-			tmp -= (tmp != 0x7fff);
-		}
-		short a1 = reg_num(args[0]);
-		a1 += (args[0][1] == 'h') * 4;
-		if ((data[0] & 0xf0) == 0x40) {
-			output_buffer.push_back(data[0] | ((s1 == 64) << 3) | ((a1 & 8) >> 1));
-			data.erase(data.begin());
-			tmp -= (tmp != 0x7fff);
-		} else if (s1 == 64 || (s1 == 8 && a1 >= 4 && args[0][1] != 'h'))
-			output_buffer.push_back(0x40 | ((s1 == 64) << 3) | ((a1 & 8) >> 1));
-		output_buffer.push_back(opcodes[4] ^ (s1 == 8));
-		if (tmp != 0x7fff && !(tmp & 0x8000))
-			data_relocations.push_back(output_buffer.size() + tmp);
-		else if (tmp != 0x7fff)
-			bss_relocations.push_back(output_buffer.size() + (tmp & 0x7fff));
-		output_buffer.push_back(((a1 & 7) << 3) | data[0]);
-		output_buffer.insert(output_buffer.end(), data.begin() + 1, data.end());
-	} else {
-		return false;
 	}
-	return true;
-}
+	std::vector<std::pair<std::vector<std::string>, short>> valid;
+	for (size_t i = 0; i < matches.size(); i++) {
+		if (args.size() > 2)
+			continue;
+		std::string &line = matches[i];
+		std::vector<std::string> tokens;
+		size_t l = 0;
+		size_t r = line.find(' ');
+		while (r != std::string::npos) {
+			tokens.push_back(line.substr(l, r - l));
+			l = r + 1;
+			r = line.find(' ', l);
+		}
+		tokens.push_back(line.substr(l));
+		if (tokens.size() != args.size() + 2)
+			continue;
 
-bool adc(std::vector<std::string> &args) { return _arith(args, adc_optable); }
-bool add(std::vector<std::string> &args) { return _arith(args, add_optable); }
-bool sub(std::vector<std::string> &args) { return _arith(args, sub_optable); }
-bool cmp(std::vector<std::string> &args) { return _arith(args, cmp_optable); }
-bool _and(std::vector<std::string> &args) { return _arith(args, and_optable); }
-bool _or(std::vector<std::string> &args) { return _arith(args, or_optable); }
-bool _xor(std::vector<std::string> &args) { return _arith(args, xor_optable); }
-
-bool call(std::vector<std::string> &args) {
-	if (args.size() != 1)
-		return false;
-	if (args[0][0] == '.')
-		args[0] = prev_label + args[0];
-	output_buffer.push_back(0xe8);
-	text_relocations.push_back(output_buffer.size());
-	try {
-		uint32_t symid = text_labels_map.at(args[0]);
-		output_buffer.push_back(symid & 0xff);
-		output_buffer.push_back((symid >> 8) & 0xff);
-		output_buffer.push_back((symid >> 16) & 0xff);
-		output_buffer.push_back((symid >> 24) & 0xff);
-	} catch (std::out_of_range) {
-		error = "undefined symbol " + args[0];
-		return false;
-	}
-	return true;
-}
-
-bool ret(std::vector<std::string> &args) {
-	if (args.size() > 1)
-		return false;
-	if (args.size()) {
-		try {
-			uint32_t tmp = std::stoi(args[0]);
-			if (tmp > 0xffff) {
-				error = "overflow in immediate value";
+		bool matched = true;
+		short size = 0;
+		for (size_t j = 0; j < args.size(); j++) {
+			std::string &token = tokens[j + 1];
+			if (token[0] == 'R') {
+				if (types[j].first != REG) {
+					matched = false;
+					break;
+				}
+				if (types[j].second != _sizes[token[1] - 'A']) {
+					matched = false;
+					break;
+				}
+				size += _sizes[token[1] - 'A'];
+			} else if (token[0] == 'M') {
+				if (types[j].first != MEM && types[j].first != REG) {
+					matched = false;
+					break;
+				}
+				if (token[1] == '*') {
+					if (types[j].first != MEM) {
+						matched = false;
+						break;
+					} else {
+						continue;
+					}
+				}
+				if (types[j].second != -1 && types[j].second != _sizes[token[1] - 'A']) {
+					matched = false;
+					break;
+				}
+				size += _sizes[token[1] - 'A'];
+			} else if (token[0] == 'I') {
+				if (types[j].first != IMM) {
+					matched = false;
+					break;
+				}
+				if (types[j].second > _sizes[token[1] - 'A']) {
+					matched = false;
+					break;
+				}
+			} else if (token[0] == '0') {
+				if (reg_num(args[j]) != std::stoi(token.substr(0, 1), nullptr, 16)) {
+					matched = false;
+					break;
+				}
+				if (types[j].second != _sizes[token[1] - 'A']) {
+					matched = false;
+					break;
+				}
+				size += _sizes[token[1] - 'A'];
+			} else {
+				std::cerr << "Error: misconfigured instruction set" << std::endl;
 				return false;
 			}
-			output_buffer.push_back(0xc2);
-			output_buffer.push_back(tmp & 0xff);
-			output_buffer.push_back((tmp >> 8) & 0xff);
-			return true;
-		} catch (std::invalid_argument) {
-			error = "invalid immediate value";
-			return false;
-		} catch (std::out_of_range) {
-			error = "overflow in immediate value";
+		}
+		if (matched) {
+			valid.push_back({tokens, size});
+		}
+	}
+	if (valid.empty()) {
+		std::cerr << input_name << ":" << linenum << ": error: invalid combination of opcode and operands" << std::endl;
+		return false;
+	}
+	for (size_t i = 1; i < valid.size(); i++) {
+		if (valid[i].second != valid[i - 1].second) {
+			std::cerr << input_name << ":" << linenum << ": error: operation size not specified" << std::endl;
 			return false;
 		}
 	}
-	output_buffer.push_back(0xc3);
-	return true;
-}
-
-const std::unordered_map<std::string, uint8_t> jcc_optable{
-	{"ja", 0x87},  {"jae", 0x83}, {"jb", 0x82},	  {"jbe", 0x86}, {"jc", 0x82},	 {"je", 0x84},	{"jz", 0x84},	{"jg", 0x8f},
-	{"jge", 0x8d}, {"jl", 0x8c},  {"jle", 0x8e},  {"jna", 0x86}, {"jnae", 0x82}, {"jnb", 0x83}, {"jnbe", 0x87}, {"jnc", 0x83},
-	{"jne", 0x85}, {"jng", 0x8e}, {"jnge", 0x8c}, {"jnl", 0x8d}, {"jnle", 0x8f}, {"jno", 0x81}, {"jnp", 0x8b},	{"jns", 0x89},
-	{"jnz", 0x85}, {"jo", 0x80},  {"jp", 0x8a},	  {"jpe", 0x8a}, {"jpo", 0x8b},	 {"js", 0x88},	{"jz", 0x84},
-};
-
-bool jcc(std::string &s, std::vector<std::string> &args) {
-	if (jcc_optable.find(s) == jcc_optable.end())
-		return false;
-	if (args.size() != 1)
-		return false;
-	if (args[0][0] == '.')
-		args[0] = prev_label + args[0];
-	output_buffer.push_back(0x0f);
-	output_buffer.push_back(jcc_optable.at(s));
-	text_relocations.push_back(output_buffer.size());
-	try {
-		uint32_t symid = text_labels_map.at(args[0]);
-		output_buffer.push_back(symid & 0xff);
-		output_buffer.push_back((symid >> 8) & 0xff);
-		output_buffer.push_back((symid >> 16) & 0xff);
-		output_buffer.push_back((symid >> 24) & 0xff);
-	} catch (std::out_of_range) {
-		error = "undefined symbol " + args[0];
-		return false;
-	}
-	return true;
-}
-
-// instruction, handler
-const std::unordered_map<std::string, handler> _handlers{
-	{"mov", mov}, {"syscall", syscall}, {"jmp", jmp}, {"nop", nop},	 {"inc", inc}, {"dec", dec},  {"movzx", movzx}, {"adc", adc},
-	{"add", add}, {"sub", sub},			{"cmp", cmp}, {"and", _and}, {"or", _or},  {"xor", _xor}, {"call", call},	{"ret", ret},
-};
-
-bool handle(std::string &s, std::vector<std::string> &args, size_t linenum) {
-	if (s[0] == 'j' && s != "jmp") {
-		error = "";
-		if (!jcc(s, args)) {
-			if (error.empty())
-				error = "invalid combination of opcode and operands";
-			std::cerr << input_name << ':' << linenum << ": error: " << error << std::endl;
-			return false;
+	std::string best = "";
+	size_t bestlen = -1;
+	short bestreloc = 0x7fff;
+	for (const auto &p : valid) {
+		short reloc = 0x7fff;
+		std::string tmp = "";
+		if (types.size() == 0) {
+			for (size_t i = 0; i < p.first.back().size(); i += 2)
+				tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
+		} else if (types.size() == 1) {
+			if (types[0].second == 16)
+				tmp += 0x66;
+			if (types[0].first == REG) {
+				short a1 = reg_num(args[0]);
+				a1 += (args[0][1] == 'h') * 4;
+				size_t i = p.first.back()[0] == 'w';
+				if (args[0][1] == 'h' && i) {
+					std::cerr << input_name << ":" << linenum << ": error: invalid combination of opcode and operands" << std::endl;
+					return false;
+				}
+				if (i || (types[0].second == 8 && args[0][1] != 'h' && a1 >= 4) || a1 >= 8)
+					tmp += 0x40 | (i << 3) | (a1 & 8);
+				short reg = 0;
+				for (; i < p.first.back().size(); i += 2) {
+					if (p.first.back()[i] == '/') {
+						reg = std::stoi(p.first.back().substr(i + 1, 1), nullptr, 16);
+						break;
+					}
+					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
+				}
+				if (p.first[1][0] == 'R')
+					tmp.back() += a1;
+				else
+					tmp += 0xc0 | a1;
+				if (reg != -1)
+					tmp.back() |= reg << 3;
+			} else if (p.first[1][0] == 'M') {
+				short s1 = _sizes[p.first[1][1] - 'A'];
+				size_t w = p.first.back()[0] == 'w';
+				std::deque<uint8_t> data = parse_mem(args[0], s1, reloc);
+				if (data.empty()) {
+					if (error.empty())
+						error = "invalid addressing mode";
+					std::cerr << input_name << ":" << linenum << ": error: " << error << std::endl;
+					return false;
+				}
+				if (data[0] == 0x67) {
+					tmp += 0x67;
+					data.pop_front();
+					reloc -= reloc != 0x7fff;
+				}
+				if ((data[0] & 0xf0) == 0x40) {
+					tmp += data[0] | (w << 3);
+					data.pop_front();
+					reloc -= reloc != 0x7fff;
+				} else if (w)
+					tmp += 0x48;
+				short reg = 0;
+				for (size_t i = w; i < p.first.back().size(); i += 2) {
+					if (p.first.back()[i] == '/') {
+						reg = std::stoi(p.first.back().substr(i + 1, 1), nullptr, 16);
+						break;
+					}
+					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
+				}
+				if (reloc != 0x7fff && !(reloc & 0x8000))
+					reloc |= 0x4000;
+				else if (reloc != 0x7fff)
+					reloc ^= 0xa000;
+				tmp += data.front() | (reg << 3);
+				tmp.insert(tmp.end(), data.begin() + 1, data.end());
+			} else if (p.first[1][0] == 'I') {
+				auto a1 = parse_imm(args[0]);
+				short s1 = p.first[1][1] - 'A' + 1;
+				size_t i = p.first.back()[0] == 'w';
+				if (i)
+					tmp += 0x48;
+				for (; i < p.first.back().size(); i += 2) {
+					if (p.first.back()[i] == '/') {
+						tmp += std::stoi(p.first.back().substr(i + 1, 1), nullptr, 16);
+						break;
+					}
+					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
+				}
+				if (a1.second == -1) {
+					std::cerr << input_name << ":" << linenum << ": error: " << error << std::endl;
+					return false;
+				} else if (a1.second == -2) {
+					reloc = 0x8000 | tmp.size();
+				} else if (a1.second == -3) {
+					reloc = 0x4000 | tmp.size();
+				} else if (a1.second == -4) {
+					reloc = 0x2000 | tmp.size();
+				}
+				for (int i = 0; i < s1; i++)
+					tmp += (a1.first >> (i * 8)) & 0xff;
+			}
+		} else if (types.size() >= 2) {
+			if ((types[0].first != IMM && types[0].second == 16) || (types[1].first != IMM && types[1].second == 16))
+				tmp += 0x66;
+			// index, size
+			std::pair<short, short> reg{-1, -1};
+			std::pair<short, short> mem{-1, -1};
+			std::pair<short, short> imm{-1, -1};
+			for (size_t i = 1; i <= args.size(); i++) {
+				if (p.first[i][0] == 'R')
+					reg = {i, types[i].second};
+				else if (types[i].first == MEM)
+					mem = {i, types[i].second};
+				else if (types[i].first == IMM)
+					imm = {i, types[i].second};
+			}
+			std::deque<uint8_t> data;
+			if (mem.first != -1) {
+				short s1 = _sizes[p.first[mem.first][1] - 'A'];
+				data = parse_mem(args[mem.first - 1], s1, reloc);
+				if (data.empty()) {
+					if (error.empty())
+						error = "invalid addressing mode";
+					std::cerr << input_name << ":" << linenum << ": error: " << error << std::endl;
+					return false;
+				}
+			}
 		}
-		return true;
+		if (tmp.size() < bestlen) {
+			best = tmp;
+			bestlen = tmp.size();
+			bestreloc = reloc;
+		}
+		if (bestlen == 1)
+			break;
 	}
-	if (_handlers.find(s) == _handlers.end()) {
-		std::cerr << input_name << ':' << linenum << ": error: unknown instruction " << s << std::endl;
-		return false;
+	if (bestreloc != 0x7fff) {
+		if (bestreloc & 0x4000)
+			data_relocations.push_back(output_buffer.size() + (bestreloc & 0xff));
+		else if (bestreloc & 0x2000)
+			bss_relocations.push_back(output_buffer.size() + (bestreloc & 0xff));
+		else
+			text_relocations.push_back(output_buffer.size() + (bestreloc & 0xff));
 	}
-	error = "";
-	if (!_handlers.at(s)(args) || !error.empty()) {
-		if (error.empty())
-			error = "invalid combination of opcode and operands";
-		std::cerr << input_name << ':' << linenum << ": error: " << error << std::endl;
-		return false;
-	}
+	for (size_t i = 0; i < best.size(); i++)
+		output_buffer.push_back(best[i]);
 	return true;
 }

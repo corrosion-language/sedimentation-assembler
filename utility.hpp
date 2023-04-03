@@ -4,11 +4,12 @@
 
 extern std::unordered_map<std::string, uint64_t> data_labels;
 extern std::unordered_map<std::string, uint64_t> bss_labels;
+extern std::unordered_map<std::string, size_t> text_labels_map;
 extern std::string error;
 
 enum op_type { INVALID, REG, MEM, IMM };
 
-static const std::unordered_map<std::string, int> _reg_size{
+static const std::unordered_map<std::string, short> _reg_size{
 	{"((?:r[89])|(?:r1[0-5]))b", 8}, // r8b - r15b
 	{"((?:r[89])|(?:r1[0-5]))w", 16}, // r8w - r15w
 	{"((?:r[89])|(?:r1[0-5]))d", 32}, // r8d - r15d
@@ -23,13 +24,14 @@ static const std::unordered_map<std::string, int> _reg_size{
 	{"r(?:di|si|sp|bp)", 64}, // rdi rsi rsp rbp
 };
 
-static const std::unordered_map<std::string, uint8_t> _reg_num{
+static const std::unordered_map<std::string, short> _reg_num{
 	{"a", 0},  {"c", 1},  {"d", 2},	   {"b", 3},	{"sp", 4},	 {"bp", 5},	  {"si", 6},   {"di", 7},
 	{"r8", 8}, {"r9", 9}, {"r10", 10}, {"r11", 11}, {"r12", 12}, {"r13", 13}, {"r14", 14}, {"r15", 15},
 };
 
-int reg_num(std::string);
-int reg_size(std::string);
+short reg_num(std::string);
+short reg_size(std::string);
+short mem_size(std::string);
 enum op_type op_type(std::string);
-std::vector<uint8_t> parse_mem(std::string, short &, short &);
+std::deque<uint8_t> parse_mem(std::string, short &, short &);
 std::pair<unsigned long long, short> parse_imm(std::string);

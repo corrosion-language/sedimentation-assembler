@@ -1,0 +1,294 @@
+; this file is handmade i cant believe i didnt make a script for it
+; well at least i made it a format that isnt too hard to handwrite
+
+aaa 37
+aad d50a
+aad I8 d5
+aam d40a
+aas 3f
+
+adc 0A IA 14
+adc 0B IB 15
+adc 0C IC 15
+adc 0D ID w15
+adc MA IA 80/2
+adc MB IB 81/2
+adc MC IC 81/2
+adc MD IC w81/2
+adc MB IA 83/2
+adc MC IA 83/2
+adc MD IA w83/2
+adc MA RA 10
+adc MB RB 11
+adc MC RC 11
+adc MD RD w11
+adc RA MA 12
+adc RB MB 13
+adc RC MC 13
+adc RD MD w13
+
+add 0A IA 04
+add 0B IB 05
+add 0C IC 05
+add 0D ID w05
+add MA IA 80
+add MB IB 81
+add MC IC 81
+add MD IC w81
+add MB IA 83
+add MC IA 83
+add MD IA w83
+add MA RA 00
+add MB RB 01
+add MC RC 01
+add MD RD w01
+add RA MA 02
+add RB MB 03
+add RC MC 03
+add RD MD w03
+
+and 0A IA 24
+and 0B IB 25
+and 0C IC 25
+and 0D ID w25
+and MA IA 80/4
+and MB IB 81/4
+and MC IC 81/4
+and MD IC w81/4
+and MB IA 83/4
+and MC IA 83/4
+and MD IA w83/4
+and MA RA 20
+and MB RB 21
+and MC RC 21
+and MD RD w21
+and RA MA 22
+and RB MB 23
+and RC MC 23
+and RD MD w23
+
+bsf RA MA 0fbc
+bsf RB MB 0fbc
+bsf RC MC 0fbc
+
+bsr RA MA 0fbd
+bsr RB MB 0fbd
+bsr RC MC 0fbd
+
+bswap RC 0fc8
+bswap RD B w0fc8
+
+bt MB RB 0fa3
+bt MC RC 0fa3
+bt MD RD w0fa3
+bt MB IA 0fba/4
+bt MC IA 0fba/4
+bt MD IA w0fba/4
+
+btc MB RB 0fbb
+btc MC RC 0fbb
+btc MD RD w0fbb
+btc MB IA 0fba/7
+btc MC IA 0fba/7
+btc MD IA w0fba/7
+
+call IC e8
+
+cmp 0A IA 3c
+cmp 0B IB 3d
+cmp 0C IC 3d
+cmp 0D ID w3d
+cmp MA IA 80/7
+cmp MB IB 81/7
+cmp MC IC 81/7
+cmp MD IC w81/7
+cmp MB IA 83/7
+cmp MC IA 83/7
+cmp MD IA w83/7
+cmp MA RA 38
+cmp MB RB 39
+cmp MC RC 39
+cmp MD RD w39
+cmp RA MA 3a
+cmp RB MB 3b
+cmp RC MC 3b
+cmp RD MD w3b
+
+daa 27
+das 2f
+
+dec MA fe/1
+dec MB ff/1
+dec MC ff/1
+dec MD wff/1
+
+div MA f6/6
+div MB f7/6
+div MC f7/6
+div MD wf7/6
+
+hlt f4
+
+idiv MA f6/7
+idiv MB f7/7
+idiv MC f7/7
+idiv MD wf7/7
+
+imul MA f6/5
+imul MB f7/5
+imul MC f7/5
+imul MD wf7/5
+imul RB MB 0faf
+imul RC MC 0faf
+imul RD MD w0faf
+imul RB MB IA 6b
+imul RC MC IA 6b
+imul RD MD IA w6b
+imul RB MB IB 69
+imul RC MC IC 69
+imul RD MD ID w69
+
+inc MA fe/0
+inc MB ff/0
+inc MC ff/0
+inc MD wff/0
+
+int3 cc
+int IA cd
+into ce
+int1 f1
+
+jmp IC e9
+
+lea RB M* 8d
+lea RC M* 8d
+lea RD M* w8d
+
+mov MA RA 88
+mov MB RB 89
+mov MC RC 89
+mov MD RD w89
+mov RA MA 8a
+mov RB MB 8b
+mov RC MC 8b
+mov RD MD w8b
+mov RA IA b0
+mov RB IB b8
+mov RC IC b8
+mov RD ID wb8
+mov MA IA c6
+mov MB IB c7
+mov MC IC c7
+mov MD ID wc7
+
+mul MA f6/4
+mul MB f7/4
+mul MC f7/4
+mul MD wf7/4
+
+neg MA f6/3
+neg MB f7/3
+neg MC f7/3
+neg MD wf7/3
+
+nop 90
+
+not MA f6/2
+not MB f7/2
+not MC f7/2
+not MD wf7/2
+
+or 0A IA 0c
+or 0B IB 0d
+or 0C IC 0d
+or 0D ID w0d
+or MA IA 80/1
+or MB IB 81/1
+or MC IC 81/1
+or MD IC w81/1
+or MB IA 83/1
+or MC IA 83/1
+or MD IA w83/1
+or MA RA 08
+or MB RB 09
+or MC RC 09
+or MD RD w09
+or RA MA 0a
+or RB MB 0b
+or RC MC 0b
+or RD MD w0b
+
+pop MB 8f
+pop MD 8f
+pop RB 58
+pop RD 58
+
+popf 669d
+popfq 9d
+
+push MB ff/6
+push MD ff/6
+push RB 50
+push RD 50
+push IA 6a
+push IB 68
+push IC 68
+
+pushf 9c
+pushfq 669c
+
+sub 0A IA 2c
+sub 0B IB 2d
+sub 0C IC 2d
+sub 0D ID w2d
+sub MA IA 80/5
+sub MB IB 81/5
+sub MC IC 81/5
+sub MD IC w81/5
+sub MB IA 83/5
+sub MC IA 83/5
+sub MD IA w83/5
+sub MA RA 28
+sub MB RB 29
+sub MC RC 29
+sub MD RD w29
+sub RA MA 2a
+sub RB MB 2b
+sub RC MC 2b
+sub RD MD w2b
+
+syscall 0f05
+
+test 0A IA a8
+test 0B IB a9
+test 0C IC a9
+test 0D ID wa9
+test MA IA f6
+test MB IB f7
+test MC IC f7
+test MD ID wf7
+test MA RA 84
+test MB RB 85
+test MC RC 85 
+test MD RD w85
+
+xor 0A IA 34
+xor 0B IB 35
+xor 0C IC 35
+xor 0D ID w35
+xor MA IA 80/6
+xor MB IB 81/6
+xor MC IC 81/6
+xor MD IC w81/6
+xor MB IA 83/6
+xor MC IA 83/6
+xor MD IA w83/6
+xor MA RA 30
+xor MB RB 31
+xor MC RC 31
+xor MD RD w31
+xor RA MA 32
+xor RB MB 33
+xor RC MC 33
+xor RD MD w33
+
