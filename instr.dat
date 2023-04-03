@@ -10,7 +10,7 @@ aas 3f
 adc 0A IA 14
 adc 0B IB 15
 adc 0C IC 15
-adc 0D ID w15
+adc 0D IC w15
 adc MA IA 80/2
 adc MB IB 81/2
 adc MC IC 81/2
@@ -30,7 +30,7 @@ adc RD MD w13
 add 0A IA 04
 add 0B IB 05
 add 0C IC 05
-add 0D ID w05
+add 0D IC w05
 add MA IA 80
 add MB IB 81
 add MC IC 81
@@ -50,7 +50,7 @@ add RD MD w03
 and 0A IA 24
 and 0B IB 25
 and 0C IC 25
-and 0D ID w25
+and 0D IC w25
 and MA IA 80/4
 and MB IB 81/4
 and MC IC 81/4
@@ -92,12 +92,134 @@ btc MB IA 0fba/7
 btc MC IA 0fba/7
 btc MD IA w0fba/7
 
+btr MB RB 0fb3
+btr MC RC 0fb3
+btr MD RD w0fb3
+btr RB IA 0fba/6
+btr RC IA 0fba/6
+btr RD IA w0fba/6
+
+bts MB RB 0fab
+bts MC RC 0fab
+bts MD RD w0fab
+bts RB IA 0fba/5
+bts RC IA 0fba/5
+bts RD IA w0fba/5
+
 call IC e8
+
+cbw 98
+cwde 98
+cdqe w98
+
+clc f8
+cld fd
+
+cldemote MA 0f1c/0
+clflush MA 0fae/7
+clflushopt MA 660fae/7
+
+cli fa
+
+clwb MA 660fae/6
+
+cmc f5
+
+cmova RB MB 0f47
+cmova RC MC 0f47
+cmova RD MD w0f47
+cmovae RB MB 0f43
+cmovae RC MC 0f43
+cmovae RD MD w0f43
+cmovb RB MB 0f42
+cmovb RC MC 0f42
+cmovb RD MD w0f42
+cmovbe RB MB 0f46
+cmovbe RC MC 0f46
+cmovbe RD MD w0f46
+cmovc RB MB 0f42
+cmovc RC MC 0f42
+cmovc RD MD w0f42
+cmove RB MB 0f44
+cmove RC MC 0f44
+cmove RD MD w0f44
+cmovg RB MB 0f4f
+cmovg RC MC 0f4f
+cmovg RD MDw0f4f
+cmovge RB MB 0f4d
+cmovge RC MC 0f4d
+cmovge RD MD w0f4d
+cmovl RB MB 0f4c
+cmovl RC MC 0f4c
+cmovl RD MD w0f4c
+cmovle RB MB 0f4e
+cmovle RC MC 0f4e
+cmovle RD MD w0f4e
+cmovna RB MB 0f46
+cmovna RC MC 0f46
+cmovna RD MD w0f46
+cmovnae RB MB 0f42
+cmovnae RC MC 0f42
+cmovnae RD MD w0f42
+cmovnb RB MB 0f43
+cmovnb RC MC 0f43
+cmovnb RD MD w0f43
+cmovnbe RB MB 0f47
+cmovnbe RC MC 0f47
+cmovnbe RD MD w0f47
+cmovnc RB MB 0f43
+cmovnc RC MC 0f43
+cmovnc RD MD w0f43
+cmovne RB MB 0f45
+cmovne RC MC 0f45
+cmovne RD MD w0f45
+cmovng RB MB 0f4e
+cmovng RC MC 0f4e
+cmovng RD MD w0f4e
+cmovnge RB MB 0f4c
+cmovnge RC MC 0f4c
+cmovnge RD MD w0f4c
+cmovnl RB MB 0f4d
+cmovnl RC MC 0f4d
+cmovnl RD MD w0f4d
+cmovnle RB MB 0f4f
+cmovnle RC MC 0f4f
+cmovnle RD MD w0f4f
+cmovno RB MB 0f41
+cmovno RC MC 0f41
+cmovno RD MD w0f41
+cmovnp RB MB 0f4b
+cmovnp RC MC 0f4b
+cmovnp RD MD w0f4b
+cmovns RB MB 0f49
+cmovns RC MC 0f49
+cmovns RD MD w0f49
+cmovnz RB MB 0f45
+cmovnz RC MC 0f45
+cmovnz RD MD w0f45
+cmovo RB MB 0f40
+cmovo RC MC 0f40
+cmovo RD MD w0f40
+cmovp RB MB 0f4a
+cmovp RC MC 0f4a
+cmovp RD MD w0f4a
+cmovpe RB MB 0f4a
+cmovpe RC MC 0f4a
+cmovpe RD MD w0f4a
+cmovpo RB MB 0f4b
+cmovpo RC MC 0f4b
+cmovpo RD MD w0f4b
+cmovs RB MB 0f48
+cmovs RC MC 0f48
+cmovs RD MD w0f48
+cmovz RB MB 0f44
+cmovz RC MC 0f44
+cmovz RD MD w0f44
 
 cmp 0A IA 3c
 cmp 0B IB 3d
 cmp 0C IC 3d
-cmp 0D ID w3d
+cmp 0D IC w3d
 cmp MA IA 80/7
 cmp MB IB 81/7
 cmp MC IC 81/7
@@ -114,6 +236,15 @@ cmp RB MB 3b
 cmp RC MC 3b
 cmp RD MD w3b
 
+cmpxchg MA RA 0fb0
+cmpxchg MB RB 0fb1
+cmpxchg MC RC 0fb1
+cmpxchg MD RD w0fb1
+cmpxchg8b MD 0fc7/1
+cmpxchg16b ME w0fc7/1
+
+cpuid 0fa2
+
 daa 27
 das 2f
 
@@ -126,6 +257,48 @@ div MA f6/6
 div MB f7/6
 div MC f7/6
 div MD wf7/6
+
+f2xm1 d9f0
+fabs d9e1
+fadd MC d8/0
+fadd MD dc/0
+faddp dec1
+fiadd MC da/0
+fiadd MD de/0
+fbld df/4
+fchs d9e0
+fclex 9bdbe2
+fnclex dbe2
+fcom MC d8/2
+fcom MD dc/2
+fcom d8d1
+fcomp MC d8/3
+fcomp MD dc/3
+fcomp d8d9
+fcompp ded9
+fcos d9ff
+fdecstp d9f6
+fdiv MC d8/6
+fdiv MD dc/6
+fdivp def9
+fidiv MC da/6
+fidiv MD de/6
+fdivr MC d8/7
+fdivr MD dc/7
+fdivrp def1
+fidivr MC da/7
+fidivr MD de/7
+ficom MB de/2
+ficom MC da/2
+ficomp MB de/3
+ficmp MC da/3
+fild MB df/0
+fild MC db/0
+fild MD df/5
+fincstp d9f7
+finit 9bdbe3
+fninit dbe3
+fist
 
 hlt f4
 
@@ -146,7 +319,7 @@ imul RC MC IA 6b
 imul RD MD IA w6b
 imul RB MB IB 69
 imul RC MC IC 69
-imul RD MD ID w69
+imul RD MD IC w69
 
 inc MA fe/0
 inc MB ff/0
@@ -157,6 +330,97 @@ int3 cc
 int IA cd
 into ce
 int1 f1
+
+ja IC 0f87
+ja IC 0f87
+ja IC w0f87
+jae IC 0f83
+jae IC 0f83
+jae IC w0f83
+jb IC 0f82
+jb IC 0f82
+jb IC w0f82
+jbe IC 0f86
+jbe IC 0f86
+jbe IC w0f86
+jc IC 0f82
+jc IC 0f82
+jc IC w0f82
+je IC 0f84
+je IC 0f84
+je IC w0f84
+jg IC 0f8f
+jg IC 0f8f
+jg ICw0f8f
+jge IC 0f8d
+jge IC 0f8d
+jge IC w0f8d
+jl IC 0f8c
+jl IC 0f8c
+jl IC w0f8c
+jle IC 0f8e
+jle IC 0f8e
+jle IC w0f8e
+jna IC 0f86
+jna IC 0f86
+jna IC w0f86
+jnae IC 0f82
+jnae IC 0f82
+jnae IC w0f82
+jnb IC 0f83
+jnb IC 0f83
+jnb IC w0f83
+jnbe IC 0f87
+jnbe IC 0f87
+jnbe IC w0f87
+jnc IC 0f83
+jnc IC 0f83
+jnc IC w0f83
+jne IC 0f85
+jne IC 0f85
+jne IC w0f85
+jng IC 0f8e
+jng IC 0f8e
+jng IC w0f8e
+jnge IC 0f8c
+jnge IC 0f8c
+jnge IC w0f8c
+jnl IC 0f8d
+jnl IC 0f8d
+jnl IC w0f8d
+jnle IC 0f8f
+jnle IC 0f8f
+jnle IC w0f8f
+jno IC 0f81
+jno IC 0f81
+jno IC w0f81
+jnp IC 0f8b
+jnp IC 0f8b
+jnp IC w0f8b
+jns IC 0f89
+jns IC 0f89
+jns IC w0f89
+jnz IC 0f85
+jnz IC 0f85
+jnz IC w0f85
+jo IC 0f80
+jo IC 0f80
+jo IC w0f80
+jp IC 0f8a
+jp IC 0f8a
+jp IC w0f8a
+jpe IC 0f8a
+jpe IC 0f8a
+jpe IC w0f8a
+jpo IC 0f8b
+jpo IC 0f8b
+jpo IC w0f8b
+js IC 0f88
+js IC 0f88
+js IC w0f88
+jz IC 0f84
+jz IC 0f84
+jz IC w0f84
 
 jmp IC e9
 
@@ -201,7 +465,7 @@ not MD wf7/2
 or 0A IA 0c
 or 0B IB 0d
 or 0C IC 0d
-or 0D ID w0d
+or 0D IC w0d
 or MA IA 80/1
 or MB IB 81/1
 or MC IC 81/1
@@ -240,7 +504,7 @@ pushfq 669c
 sub 0A IA 2c
 sub 0B IB 2d
 sub 0C IC 2d
-sub 0D ID w2d
+sub 0D IC w2d
 sub MA IA 80/5
 sub MB IB 81/5
 sub MC IC 81/5
@@ -262,11 +526,11 @@ syscall 0f05
 test 0A IA a8
 test 0B IB a9
 test 0C IC a9
-test 0D ID wa9
+test 0D IC wa9
 test MA IA f6
 test MB IB f7
 test MC IC f7
-test MD ID wf7
+test MD IC wf7
 test MA RA 84
 test MB RB 85
 test MC RC 85 
@@ -275,7 +539,7 @@ test MD RD w85
 xor 0A IA 34
 xor 0B IB 35
 xor 0C IC 35
-xor 0D ID w35
+xor 0D IC w35
 xor MA IA 80/6
 xor MB IB 81/6
 xor MC IC 81/6
