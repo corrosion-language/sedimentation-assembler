@@ -16,8 +16,8 @@ extern std::vector<uint32_t> text_relocations;
 extern std::vector<size_t> data_relocations;
 extern std::vector<size_t> bss_relocations;
 
-const static short _sizes[] = {8, 16, 32, 64};
+const static short _sizes[] = {8, 16, 32, 64, 128};
 
-bool handle(const std::string &, const std::vector<std::string> &, const size_t);
+bool handle(const std::string &, std::vector<std::string>, const size_t);
 
 #endif

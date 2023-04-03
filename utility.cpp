@@ -84,6 +84,8 @@ std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 			tmp = 32;
 		else if (in.starts_with("qword "))
 			tmp = 64;
+		else if (in.starts_with("oword "))
+			tmp = 128;
 		else {
 			error = "operation size not specified";
 			return {};
@@ -312,6 +314,8 @@ std::pair<unsigned long long, short> parse_imm(std::string s) {
 		base = 2;
 	else
 		base = 10;
+	if (base != 10)
+		s = s.substr(2);
 	// parse
 	bool neg = s[0] == '-';
 	try {

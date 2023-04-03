@@ -16,7 +16,7 @@ void init() {
 	fclose(tmp);
 }
 
-bool handle(const std::string &s, const std::vector<std::string> &args, const size_t linenum) {
+bool handle(const std::string &s, std::vector<std::string> args, const size_t linenum) {
 	if (!inited)
 		init();
 	std::vector<std::string> matches;
@@ -69,7 +69,6 @@ bool handle(const std::string &s, const std::vector<std::string> &args, const si
 		tokens.push_back(line.substr(l));
 		if (tokens.size() != args.size() + 2)
 			continue;
-
 		bool matched = true;
 		short size = 0;
 		for (size_t j = 0; j < args.size(); j++) {
@@ -111,7 +110,7 @@ bool handle(const std::string &s, const std::vector<std::string> &args, const si
 					matched = false;
 					break;
 				}
-			} else if (token[0] == '0') {
+			} else if (isdigit(token[0]) || (token[0] >= 'a' && token[0] <= 'f')) {
 				if (reg_num(args[j]) != std::stoi(token.substr(0, 1), nullptr, 16)) {
 					matched = false;
 					break;
@@ -127,6 +126,16 @@ bool handle(const std::string &s, const std::vector<std::string> &args, const si
 			}
 		}
 		if (matched) {
+			std::vector<short> del;
+			for (int j = 1; j < args.size(); j++) {
+				if (isdigit(tokens[j][0]) || (tokens[j][0] >= 'a' && tokens[j][0] <= 'f'))
+					del.push_back(j - 1);
+			}
+			for (auto d : del) {
+				args.erase(args.begin() + d);
+				types.erase(types.begin() + d);
+				tokens.erase(tokens.begin() + d + 1);
+			}
 			valid.push_back({tokens, size});
 		}
 	}
@@ -142,9 +151,9 @@ bool handle(const std::string &s, const std::vector<std::string> &args, const si
 	}
 	std::string best = "";
 	size_t bestlen = -1;
-	short bestreloc = 0x7fff;
+	std::vector<short> bestreloc;
 	for (const auto &p : valid) {
-		short reloc = 0x7fff;
+		std::vector<short> reloc;
 		std::string tmp = "";
 		if (types.size() == 0) {
 			for (size_t i = 0; i < p.first.back().size(); i += 2)
@@ -179,7 +188,8 @@ bool handle(const std::string &s, const std::vector<std::string> &args, const si
 			} else if (p.first[1][0] == 'M') {
 				short s1 = _sizes[p.first[1][1] - 'A'];
 				size_t w = p.first.back()[0] == 'w';
-				std::deque<uint8_t> data = parse_mem(args[0], s1, reloc);
+				short tmpreloc;
+				std::deque<uint8_t> data = parse_mem(args[0], s1, tmpreloc);
 				if (data.empty()) {
 					if (error.empty())
 						error = "invalid addressing mode";
@@ -187,33 +197,33 @@ bool handle(const std::string &s, const std::vector<std::string> &args, const si
 					return false;
 				}
 				if (data[0] == 0x67) {
-					tmp += 0x67;
+					tmpreloc += 0x67;
 					data.pop_front();
-					reloc -= reloc != 0x7fff;
+					tmpreloc -= tmpreloc != 0x7fff;
 				}
 				if ((data[0] & 0xf0) == 0x40) {
-					tmp += data[0] | (w << 3);
+					tmpreloc += data[0] | (w << 3);
 					data.pop_front();
-					reloc -= reloc != 0x7fff;
+					tmpreloc -= tmpreloc != 0x7fff;
 				} else if (w)
-					tmp += 0x48;
+					tmpreloc += 0x48;
 				short reg = 0;
 				for (size_t i = w; i < p.first.back().size(); i += 2) {
 					if (p.first.back()[i] == '/') {
 						reg = std::stoi(p.first.back().substr(i + 1, 1), nullptr, 16);
 						break;
 					}
-					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
+					tmpreloc += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
 				}
-				if (reloc != 0x7fff && !(reloc & 0x8000))
-					reloc |= 0x4000;
-				else if (reloc != 0x7fff)
-					reloc ^= 0xa000;
+				if (tmpreloc != 0x7fff && !(tmpreloc & 0x8000))
+					reloc.push_back(0x4000 | tmpreloc);
+				else if (tmpreloc != 0x7fff)
+					reloc.push_back(0xa000 ^ tmpreloc);
 				tmp += data.front() | (reg << 3);
 				tmp.insert(tmp.end(), data.begin() + 1, data.end());
 			} else if (p.first[1][0] == 'I') {
 				auto a1 = parse_imm(args[0]);
-				short s1 = p.first[1][1] - 'A' + 1;
+				short s1 = _sizes[p.first[1][1] - 'A'];
 				size_t i = p.first.back()[0] == 'w';
 				if (i)
 					tmp += 0x48;
@@ -228,14 +238,14 @@ bool handle(const std::string &s, const std::vector<std::string> &args, const si
 					std::cerr << input_name << ":" << linenum << ": error: " << error << std::endl;
 					return false;
 				} else if (a1.second == -2) {
-					reloc = 0x8000 | tmp.size();
+					reloc.push_back(0x8000 | tmp.size());
 				} else if (a1.second == -3) {
-					reloc = 0x4000 | tmp.size();
+					reloc.push_back(0x4000 | tmp.size());
 				} else if (a1.second == -4) {
-					reloc = 0x2000 | tmp.size();
+					reloc.push_back(0x2000 | tmp.size());
 				}
-				for (int i = 0; i < s1; i++)
-					tmp += (a1.first >> (i * 8)) & 0xff;
+				for (int i = 0; i < s1; i += 8)
+					tmp += (a1.first >> i) & 0xff;
 			}
 		} else if (types.size() >= 2) {
 			if ((types[0].first != IMM && types[0].second == 16) || (types[1].first != IMM && types[1].second == 16))
@@ -246,21 +256,101 @@ bool handle(const std::string &s, const std::vector<std::string> &args, const si
 			std::pair<short, short> imm{-1, -1};
 			for (size_t i = 1; i <= args.size(); i++) {
 				if (p.first[i][0] == 'R')
-					reg = {i, types[i].second};
-				else if (types[i].first == MEM)
-					mem = {i, types[i].second};
-				else if (types[i].first == IMM)
-					imm = {i, types[i].second};
+					reg = {i, types[i - 1].second};
+				else if (p.first[i][0] == 'M')
+					mem = {i, types[i - 1].second};
+				else if (p.first[i][0] == 'I')
+					imm = {i, types[i - 1].second};
 			}
-			std::deque<uint8_t> data;
-			if (mem.first != -1) {
-				short s1 = _sizes[p.first[mem.first][1] - 'A'];
-				data = parse_mem(args[mem.first - 1], s1, reloc);
-				if (data.empty()) {
-					if (error.empty())
-						error = "invalid addressing mode";
-					std::cerr << input_name << ":" << linenum << ": error: " << error << std::endl;
-					return false;
+			if (mem.first == -1) {
+				short a1 = reg_num(args[reg.first - 1]);
+				size_t i = p.first.back()[0] == 'w';
+				if (i || (a1 & 8))
+					tmp += 0x48 | (a1 >= 8);
+				for (; i < p.first.back().size(); i += 2) {
+					if (p.first.back()[i] == '/') {
+						tmp += std::stoi(p.first.back().substr(i + 1, 1), nullptr, 16);
+						break;
+					}
+					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
+				}
+				tmp.back() += a1 & 7;
+				auto a2 = parse_imm(args[imm.first - 1]);
+				short s2 = _sizes[p.first[imm.first][1] - 'A'];
+				for (int i = 0; i < s2; i += 8)
+					tmp += (a2.first >> i) & 0xff;
+			} else {
+				short rex = 0;
+				short rm = 0x7fff;
+				short sib = 0x7fff;
+				std::deque<uint8_t> other;
+				if (mem.first != -1) {
+					short s1 = mem.second;
+					short tmpreloc;
+					other = parse_mem(args[mem.first - 1], s1, tmpreloc);
+					if (other.empty()) {
+						if (error.empty())
+							error = "invalid addressing mode";
+						std::cerr << input_name << ":" << linenum << ": error: " << error << std::endl;
+						return false;
+					}
+					if (other.front() == 0x67) {
+						tmp += 0x67;
+						other.pop_front();
+					}
+					if ((other.front() & 0xf0) == 0x40) {
+						rex = other.front();
+						other.pop_front();
+					}
+					if (!other.empty()) {
+						rm = other.front();
+						other.pop_front();
+					}
+					if (!other.empty()) {
+						sib = other.front();
+						other.pop_front();
+					}
+				}
+				if (p.first.back()[0] == 'w')
+					rex |= 0x48;
+				if (reg.first != -1) {
+					short a1 = reg_num(args[reg.first - 1]);
+					if (a1 & 8)
+						rex |= 0x40 | ((a1 & 8) >> 1);
+					if (rm == 0x7fff)
+						rm = 0xc0 | ((a1 & 7) << 3);
+					else
+						rm |= (a1 & 7) << 3;
+				}
+				if (rex != 0)
+					tmp += rex;
+				for (size_t i = p.first.back()[0] == 'w'; i < p.first.back().size(); i += 2) {
+					if (p.first.back()[i] == '/') {
+						rm |= std::stoi(p.first.back().substr(i + 1, 1), nullptr, 16) << 3;
+						break;
+					}
+					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
+				}
+				if (rm != 0x7fff)
+					tmp += rm;
+				if (sib != 0x7fff)
+					tmp += sib;
+				tmp.insert(tmp.end(), other.begin(), other.end());
+				if (imm.first != -1) {
+					auto a1 = parse_imm(args[imm.first - 1]);
+					short s1 = _sizes[p.first[imm.first][1] - 'A'];
+					if (a1.second == -1) {
+						std::cerr << input_name << ":" << linenum << ": error: " << error << std::endl;
+						return false;
+					} else if (a1.second == -2) {
+						reloc.push_back(0x8000 | tmp.size());
+					} else if (a1.second == -3) {
+						reloc.push_back(0x4000 | tmp.size());
+					} else if (a1.second == -4) {
+						reloc.push_back(0x2000 | tmp.size());
+					}
+					for (int i = 0; i < s1; i += 8)
+						tmp += (a1.first >> i) & 0xff;
 				}
 			}
 		}
@@ -272,13 +362,13 @@ bool handle(const std::string &s, const std::vector<std::string> &args, const si
 		if (bestlen == 1)
 			break;
 	}
-	if (bestreloc != 0x7fff) {
-		if (bestreloc & 0x4000)
-			data_relocations.push_back(output_buffer.size() + (bestreloc & 0xff));
-		else if (bestreloc & 0x2000)
-			bss_relocations.push_back(output_buffer.size() + (bestreloc & 0xff));
+	for (auto reloc : bestreloc) {
+		if (reloc & 0x4000)
+			data_relocations.push_back(output_buffer.size() + (reloc & 0xff));
+		else if (reloc & 0x2000)
+			bss_relocations.push_back(output_buffer.size() + (reloc & 0xff));
 		else
-			text_relocations.push_back(output_buffer.size() + (bestreloc & 0xff));
+			text_relocations.push_back(output_buffer.size() + (reloc & 0xff));
 	}
 	for (size_t i = 0; i < best.size(); i++)
 		output_buffer.push_back(best[i]);
