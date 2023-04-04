@@ -127,7 +127,7 @@ bool handle(const std::string &s, std::vector<std::string> args, const size_t li
 		}
 		if (matched) {
 			std::vector<short> del;
-			for (int j = 1; j < args.size(); j++) {
+			for (size_t j = 1; j < args.size(); j++) {
 				if (isdigit(tokens[j][0]) || (tokens[j][0] >= 'a' && tokens[j][0] <= 'f'))
 					del.push_back(j - 1);
 			}

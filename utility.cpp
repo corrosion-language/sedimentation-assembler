@@ -299,6 +299,8 @@ std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 
 std::pair<unsigned long long, short> parse_imm(std::string s) {
 	// if label, return label
+	if (s[0] == '.')
+		s = prev_label + s;
 	if (data_labels.find(s) != data_labels.end()) {
 		return {data_labels.at(s), -2};
 	} else if (bss_labels.find(s) != bss_labels.end()) {

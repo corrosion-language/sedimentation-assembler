@@ -2,6 +2,7 @@
 #include <string>
 #include <unordered_map>
 
+extern std::string prev_label;
 extern std::unordered_map<std::string, uint64_t> data_labels;
 extern std::unordered_map<std::string, uint64_t> bss_labels;
 extern std::unordered_map<std::string, size_t> text_labels_map;
