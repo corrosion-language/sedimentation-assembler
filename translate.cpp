@@ -16,12 +16,14 @@ void init() {
 	fclose(tmp);
 }
 
-bool handle(const std::string &s, std::vector<std::string> args, const size_t linenum) {
+bool handle(std::string s, std::vector<std::string> args, const size_t linenum) {
+	error = "";
 	if (!inited)
 		init();
 	std::vector<std::string> matches;
 	char *l = map;
 	char *r = std::find(l, map + map_size, '\n');
+	s += ' ';
 	do {
 		if (std::string(l, l + s.size()) == s)
 			matches.push_back(std::string(l, r));
@@ -110,6 +112,11 @@ bool handle(const std::string &s, std::vector<std::string> args, const size_t li
 					matched = false;
 					break;
 				}
+			} else if (token[0] == 'L') {
+				if (std::stoi(args[j]) != std::stoi(token.substr(1))) {
+					matched = false;
+					break;
+				}
 			} else if (isdigit(token[0]) || (token[0] >= 'a' && token[0] <= 'f')) {
 				if (reg_num(args[j]) != std::stoi(token.substr(0, 1), nullptr, 16)) {
 					matched = false;
@@ -126,9 +133,16 @@ bool handle(const std::string &s, std::vector<std::string> args, const size_t li
 			}
 		}
 		if (matched) {
+			for (size_t j = 0; j < args.size(); j++) {
+				if (types[j].second == -1) {
+					types[j].second = _sizes[tokens[j + 1][1] - 'A'];
+				}
+			}
 			std::vector<short> del;
 			for (size_t j = 1; j < args.size(); j++) {
 				if (isdigit(tokens[j][0]) || (tokens[j][0] >= 'a' && tokens[j][0] <= 'f'))
+					del.push_back(j - 1);
+				else if (tokens[j][0] == 'L')
 					del.push_back(j - 1);
 			}
 			for (auto d : del) {
@@ -342,12 +356,8 @@ bool handle(const std::string &s, std::vector<std::string> args, const size_t li
 					if (a1.second == -1) {
 						std::cerr << input_name << ":" << linenum << ": error: " << error << std::endl;
 						return false;
-					} else if (a1.second == -2) {
-						reloc.push_back(0x8000 | tmp.size());
-					} else if (a1.second == -3) {
-						reloc.push_back(0x4000 | tmp.size());
-					} else if (a1.second == -4) {
-						reloc.push_back(0x2000 | tmp.size());
+					} else if (a1.second < -1) {
+						reloc.push_back((1 << (17 + a1.second)) | tmp.size());
 					}
 					for (int i = 0; i < s1; i += 8)
 						tmp += (a1.first >> i) & 0xff;
@@ -363,11 +373,11 @@ bool handle(const std::string &s, std::vector<std::string> args, const size_t li
 			break;
 	}
 	for (auto reloc : bestreloc) {
-		if (reloc & 0x4000)
+		if (reloc & 0x8000)
 			data_relocations.push_back(output_buffer.size() + (reloc & 0xff));
-		else if (reloc & 0x2000)
+		else if (reloc & 0x4000)
 			bss_relocations.push_back(output_buffer.size() + (reloc & 0xff));
-		else
+		else if (reloc & 0x2000)
 			text_relocations.push_back(output_buffer.size() + (reloc & 0xff));
 	}
 	for (size_t i = 0; i < best.size(); i++)

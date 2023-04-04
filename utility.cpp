@@ -53,7 +53,7 @@ enum op_type op_type(std::string s) {
 
 // this function will NOT handle invalid input properly
 std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
-	if (reg_num(in) != -1) {
+	if (reg_size(in) != -1) {
 		std::deque<uint8_t> out;
 		short s1 = reg_size(in);
 		short a1 = reg_num(in);
@@ -74,7 +74,7 @@ std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 	// [reg + off] NO SIB
 	// [reg] NO SIB
 	// [off] NO SIB
-	if (size == -1) {
+	if (size == -1 || in[0] != '[') {
 		short tmp;
 		if (in.starts_with("byte "))
 			tmp = 8;
@@ -108,6 +108,13 @@ std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 	if (tokens.size() == 0)
 		return {};
 
+	for (size_t i = 0; i < ops.size(); i++) {
+		if (ops[i] == '-') {
+			tokens[i + 1] = std::to_string(-std::stoi(tokens[i + 1]));
+			ops[i] = '+';
+		}
+	}
+
 	// resolve labels and combine with imms if possible
 	if (data_labels.find(tokens[tokens.size() - 1]) != data_labels.end()) {
 		tokens[tokens.size() - 1] = std::to_string(data_labels.at(tokens[tokens.size() - 1]));
@@ -119,9 +126,7 @@ std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 	if (tokens.size() > 1 && data_labels.find(tokens[tokens.size() - 2]) != data_labels.end()) {
 		uint32_t tmp = data_labels.at(tokens[tokens.size() - 2]);
 		if (ops[ops.size() - 1] == '+')
-			tokens[tokens.size() - 2] = std::to_string(tmp + std::stoi(tokens[tokens.size() - 1]));
-		else if (ops[ops.size() - 1] == '-')
-			tokens[tokens.size() - 2] = std::to_string(tmp - std::stoi(tokens[tokens.size() - 1]));
+			tokens[tokens.size() - 2] = std::to_string(tmp + std::stoi(tokens[tokens.size() - 1], 0, 0));
 		else
 			return {};
 		ops.pop_back();
@@ -130,9 +135,7 @@ std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 	} else if (tokens.size() > 1 && bss_labels.find(tokens[tokens.size() - 2]) != bss_labels.end()) {
 		uint32_t tmp = bss_labels.at(tokens[tokens.size() - 2]);
 		if (ops[ops.size() - 1] == '+')
-			tokens[tokens.size() - 2] = std::to_string(tmp + std::stoi(tokens[tokens.size() - 1]));
-		else if (ops[ops.size() - 1] == '-')
-			tokens[tokens.size() - 2] = std::to_string(tmp - std::stoi(tokens[tokens.size() - 1]));
+			tokens[tokens.size() - 2] = std::to_string(tmp + std::stoi(tokens[tokens.size() - 1], 0, 0));
 		else
 			return {};
 		ops.pop_back();
@@ -140,14 +143,10 @@ std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 		reloc = 1;
 	}
 
-	for (size_t i = 0; i < ops.size(); i++)
-		if (ops[i] == '-')
-			tokens[i + 1] = std::to_string(-std::stoi(tokens[i + 1]));
-
 	std::deque<uint8_t> out;
 
 	// check to see if we need to use SIB
-	if (tokens.size() == 1 || (reg_num(tokens[1]) == -1 && ops[0] == '+')) {
+	if (tokens.size() == 1 || (reg_size(tokens[1]) == -1 && ops[0] == '+')) {
 		// no sib
 		if (tokens.size() == 1) {
 			short a1 = reg_num(tokens[0]);
@@ -185,7 +184,7 @@ std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 				// modrm
 				out.push_back(0x04);
 				out.push_back(0b00100101);
-				int off = std::stoi(tokens[0]);
+				int off = std::stol(tokens[0], 0, 0);
 				if (reloc == 0)
 					reloc = out.size();
 				else if (reloc == 1)
@@ -198,7 +197,11 @@ std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 		} else {
 			// must be reg + offset
 			short a1 = reg_num(tokens[0]);
-			int off = std::stoi(tokens[1]);
+			if (a1 == -1) {
+				error = "symbol `" + tokens[0] + "' undefined";
+				return {};
+			}
+			int off = std::stol(tokens[1], 0, 0);
 			// size override
 			if (reg_size(tokens[0]) == 32)
 				out.push_back(0x67);
@@ -232,8 +235,8 @@ std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 			ops.erase(ops.begin());
 		} else
 			base = -1;
-		if (ops[ops.size() - 1] != '*' && reg_num(tokens[tokens.size() - 1]) == -1) {
-			offset = std::stoi(tokens[tokens.size() - 1]);
+		if (ops[ops.size() - 1] != '*' && reg_size(tokens[tokens.size() - 1]) == -1) {
+			offset = std::stoul(tokens[tokens.size() - 1], 0, 0);
 			tokens.pop_back();
 			ops.pop_back();
 		} else

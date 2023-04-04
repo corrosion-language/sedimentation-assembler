@@ -18,6 +18,6 @@ extern std::vector<size_t> bss_relocations;
 
 const static short _sizes[] = {8, 16, 32, 64, 128};
 
-bool handle(const std::string &, std::vector<std::string>, const size_t);
+bool handle(std::string, std::vector<std::string>, const size_t);
 
 #endif
