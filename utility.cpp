@@ -1,11 +1,11 @@
 #include "utility.hpp"
 
-int reg_num(std::string s) {
-	uint8_t best;
+short reg_num(std::string s) {
+	short best;
 	std::string best_match = "";
 	for (auto &i : _reg_num) {
 		if (strstr(s.c_str(), i.first.c_str()) != nullptr)
-			if (i.first.length() > best_match.length()) {
+			if (i.first.size() > best_match.size()) {
 				best = i.second;
 				best_match = i.first;
 			}
@@ -15,11 +15,23 @@ int reg_num(std::string s) {
 	return best;
 }
 
-int reg_size(std::string s) {
+short reg_size(std::string s) {
 	for (auto &i : _reg_size) {
 		if (std::regex_match(s, (std::regex)i.first))
 			return i.second;
 	}
+	return -1;
+}
+
+short mem_size(std::string s) {
+	if (s.starts_with("byte "))
+		return 8;
+	if (s.starts_with("word "))
+		return 16;
+	if (s.starts_with("dword "))
+		return 32;
+	if (s.starts_with("qword "))
+		return 64;
 	return -1;
 }
 
@@ -40,7 +52,18 @@ enum op_type op_type(std::string s) {
 }
 
 // this function will NOT handle invalid input properly
-std::vector<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
+std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
+	if (reg_size(in) != -1) {
+		std::deque<uint8_t> out;
+		short s1 = reg_size(in);
+		short a1 = reg_num(in);
+		if (s1 == 16)
+			out.push_back(0x66);
+		if (a1 >= 8 || s1 == 64)
+			out.push_back(0x40 | ((s1 == 64) << 3) | (a1 >= 8));
+		out.push_back(0xc0 | (a1 & 7));
+		return out;
+	}
 	// off can be: label + num, label, num
 	// [reg + reg * scale + off] SIB
 	// [reg + reg * scale] SIB
@@ -51,7 +74,7 @@ std::vector<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 	// [reg + off] NO SIB
 	// [reg] NO SIB
 	// [off] NO SIB
-	if (size == -1) {
+	if (size == -1 || in[0] != '[') {
 		short tmp;
 		if (in.starts_with("byte "))
 			tmp = 8;
@@ -61,6 +84,8 @@ std::vector<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 			tmp = 32;
 		else if (in.starts_with("qword "))
 			tmp = 64;
+		else if (in.starts_with("oword "))
+			tmp = 128;
 		else {
 			error = "operation size not specified";
 			return {};
@@ -68,7 +93,7 @@ std::vector<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 		size = tmp;
 		in = in.substr(5 + (tmp >= 32));
 	}
-	in = in.substr(0, in.length() - 1);
+	in = in.substr(0, in.size() - 1);
 	std::vector<std::string> tokens;
 	std::vector<char> ops;
 	size_t l = 0;
@@ -83,6 +108,13 @@ std::vector<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 	if (tokens.size() == 0)
 		return {};
 
+	for (size_t i = 0; i < ops.size(); i++) {
+		if (ops[i] == '-') {
+			tokens[i + 1] = std::to_string(-std::stoi(tokens[i + 1]));
+			ops[i] = '+';
+		}
+	}
+
 	// resolve labels and combine with imms if possible
 	if (data_labels.find(tokens[tokens.size() - 1]) != data_labels.end()) {
 		tokens[tokens.size() - 1] = std::to_string(data_labels.at(tokens[tokens.size() - 1]));
@@ -94,9 +126,7 @@ std::vector<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 	if (tokens.size() > 1 && data_labels.find(tokens[tokens.size() - 2]) != data_labels.end()) {
 		uint32_t tmp = data_labels.at(tokens[tokens.size() - 2]);
 		if (ops[ops.size() - 1] == '+')
-			tokens[tokens.size() - 2] = std::to_string(tmp + std::stoi(tokens[tokens.size() - 1]));
-		else if (ops[ops.size() - 1] == '-')
-			tokens[tokens.size() - 2] = std::to_string(tmp - std::stoi(tokens[tokens.size() - 1]));
+			tokens[tokens.size() - 2] = std::to_string(tmp + std::stoi(tokens[tokens.size() - 1], 0, 0));
 		else
 			return {};
 		ops.pop_back();
@@ -105,9 +135,7 @@ std::vector<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 	} else if (tokens.size() > 1 && bss_labels.find(tokens[tokens.size() - 2]) != bss_labels.end()) {
 		uint32_t tmp = bss_labels.at(tokens[tokens.size() - 2]);
 		if (ops[ops.size() - 1] == '+')
-			tokens[tokens.size() - 2] = std::to_string(tmp + std::stoi(tokens[tokens.size() - 1]));
-		else if (ops[ops.size() - 1] == '-')
-			tokens[tokens.size() - 2] = std::to_string(tmp - std::stoi(tokens[tokens.size() - 1]));
+			tokens[tokens.size() - 2] = std::to_string(tmp + std::stoi(tokens[tokens.size() - 1], 0, 0));
 		else
 			return {};
 		ops.pop_back();
@@ -115,21 +143,17 @@ std::vector<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 		reloc = 1;
 	}
 
-	for (size_t i = 0; i < ops.size(); i++)
-		if (ops[i] == '-')
-			tokens[i + 1] = std::to_string(-std::stoi(tokens[i + 1]));
-
-	std::vector<uint8_t> out;
+	std::deque<uint8_t> out;
 
 	// check to see if we need to use SIB
-	if (tokens.size() == 1 || (reg_num(tokens[1]) == -1 && ops[0] == '+')) {
+	if (tokens.size() == 1 || (reg_size(tokens[1]) == -1 && ops[0] == '+')) {
 		// no sib
 		if (tokens.size() == 1) {
 			short a1 = reg_num(tokens[0]);
 			if (a1 != -1) {
 				// register
 				// size override
-				if (reg_size(tokens[0]) == 16)
+				if (reg_size(tokens[0]) == 32)
 					out.push_back(0x67);
 				// rex prefix if necessary
 				if (a1 >= 8) {
@@ -160,7 +184,7 @@ std::vector<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 				// modrm
 				out.push_back(0x04);
 				out.push_back(0b00100101);
-				int off = std::stoi(tokens[0]);
+				int off = std::stol(tokens[0], 0, 0);
 				if (reloc == 0)
 					reloc = out.size();
 				else if (reloc == 1)
@@ -173,9 +197,13 @@ std::vector<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 		} else {
 			// must be reg + offset
 			short a1 = reg_num(tokens[0]);
-			int off = std::stoi(tokens[1]);
+			if (a1 == -1) {
+				error = "symbol `" + tokens[0] + "' undefined";
+				return {};
+			}
+			int off = std::stol(tokens[1], 0, 0);
 			// size override
-			if (reg_size(tokens[0]) == 16)
+			if (reg_size(tokens[0]) == 32)
 				out.push_back(0x67);
 			// rex prefix if necessary
 			if (a1 >= 8)
@@ -207,8 +235,8 @@ std::vector<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 			ops.erase(ops.begin());
 		} else
 			base = -1;
-		if (ops[ops.size() - 1] != '*' && reg_num(tokens[tokens.size() - 1]) == -1) {
-			offset = std::stoi(tokens[tokens.size() - 1]);
+		if (ops[ops.size() - 1] != '*' && reg_size(tokens[tokens.size() - 1]) == -1) {
+			offset = std::stoul(tokens[tokens.size() - 1], 0, 0);
 			tokens.pop_back();
 			ops.pop_back();
 		} else
@@ -235,7 +263,7 @@ std::vector<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 		else
 			return {};
 		// size override
-		if (reg_size(tokens[0]) == 16)
+		if (reg_size(tokens[0]) == 32)
 			out.push_back(0x67);
 		// rex prefix if necessary
 		if (base >= 8 || index >= 8)
@@ -274,10 +302,14 @@ std::vector<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 
 std::pair<unsigned long long, short> parse_imm(std::string s) {
 	// if label, return label
+	if (s[0] == '.')
+		s = prev_label + s;
 	if (data_labels.find(s) != data_labels.end()) {
-		return {data_labels.at(s), -3};
+		return {data_labels.at(s), -2};
 	} else if (bss_labels.find(s) != bss_labels.end()) {
-		return {bss_labels.at(s), -4};
+		return {bss_labels.at(s), -3};
+	} else if (text_labels_map.find(s) != text_labels_map.end()) {
+		return {text_labels_map.at(s), -4};
 	}
 	// detect base
 	int base = 0;
@@ -287,6 +319,8 @@ std::pair<unsigned long long, short> parse_imm(std::string s) {
 		base = 2;
 	else
 		base = 10;
+	if (base != 10)
+		s = s.substr(2);
 	// parse
 	bool neg = s[0] == '-';
 	try {
@@ -312,8 +346,10 @@ std::pair<unsigned long long, short> parse_imm(std::string s) {
 			return {val, size};
 		}
 	} catch (std::invalid_argument) {
+		error = "symbol `" + s + "' undefined";
 		return {0, -1};
 	} catch (std::out_of_range) {
-		return {0, -2};
+		error = "overflow in immediate value";
+		return {0, -1};
 	}
 }

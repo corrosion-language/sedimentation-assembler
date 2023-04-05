@@ -24,4 +24,7 @@
 		num++;                                                                                                                                                 \
 	}
 
+enum sect { UNDEF, TEXT, DATA, BSS };
+
 #endif
+

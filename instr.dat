@@ -1,0 +1,891 @@
+aaa 37
+aad d50a
+aad I8 d5
+aam d40a
+aas 3f
+
+adc 0A IA 14
+adc 0B IB 15
+adc 0C IC 15
+adc 0D IC w15
+adc MA IA 80/2
+adc MB IB 81/2
+adc MC IC 81/2
+adc MD IC w81/2
+adc MB IA 83/2
+adc MC IA 83/2
+adc MD IA w83/2
+adc MA RA 10
+adc MB RB 11
+adc MC RC 11
+adc MD RD w11
+adc RA MA 12
+adc RB MB 13
+adc RC MC 13
+adc RD MD w13
+
+add 0A IA 04
+add 0B IB 05
+add 0C IC 05
+add 0D IC w05
+add MA IA 80/0
+add MB IB 81/0
+add MC IC 81/0
+add MD IC w81/0
+add MB IA 83/0
+add MC IA 83/0
+add MD IA w83/0
+add MA RA 00
+add MB RB 01
+add MC RC 01
+add MD RD w01
+add RA MA 02
+add RB MB 03
+add RC MC 03
+add RD MD w03
+
+and 0A IA 24
+and 0B IB 25
+and 0C IC 25
+and 0D IC w25
+and MA IA 80/4
+and MB IB 81/4
+and MC IC 81/4
+and MD IC w81/4
+and MB IA 83/4
+and MC IA 83/4
+and MD IA w83/4
+and MA RA 20
+and MB RB 21
+and MC RC 21
+and MD RD w21
+and RA MA 22
+and RB MB 23
+and RC MC 23
+and RD MD w23
+
+bsf RA MA 0fbc
+bsf RB MB 0fbc
+bsf RC MC 0fbc
+
+bsr RA MA 0fbd
+bsr RB MB 0fbd
+bsr RC MC 0fbd
+
+bswap RC 0fc8
+bswap RD B w0fc8
+
+bt MB RB 0fa3
+bt MC RC 0fa3
+bt MD RD w0fa3
+bt MB IA 0fba/4
+bt MC IA 0fba/4
+bt MD IA w0fba/4
+
+btc MB RB 0fbb
+btc MC RC 0fbb
+btc MD RD w0fbb
+btc MB IA 0fba/7
+btc MC IA 0fba/7
+btc MD IA w0fba/7
+
+btr MB RB 0fb3
+btr MC RC 0fb3
+btr MD RD w0fb3
+btr RB IA 0fba/6
+btr RC IA 0fba/6
+btr RD IA w0fba/6
+
+bts MB RB 0fab
+bts MC RC 0fab
+bts MD RD w0fab
+bts RB IA 0fba/5
+bts RC IA 0fba/5
+bts RD IA w0fba/5
+
+call IC e8
+
+cbw 98
+cwde 98
+cdqe w98
+
+clc f8
+cld fd
+
+cldemote MA 0f1c/0
+clflush MA 0fae/7
+clflushopt MA 660fae/7
+
+cli fa
+
+clwb MA 660fae/6
+
+cmc f5
+
+cmova RB MB 0f47
+cmova RC MC 0f47
+cmova RD MD w0f47
+cmovae RB MB 0f43
+cmovae RC MC 0f43
+cmovae RD MD w0f43
+cmovb RB MB 0f42
+cmovb RC MC 0f42
+cmovb RD MD w0f42
+cmovbe RB MB 0f46
+cmovbe RC MC 0f46
+cmovbe RD MD w0f46
+cmovc RB MB 0f42
+cmovc RC MC 0f42
+cmovc RD MD w0f42
+cmove RB MB 0f44
+cmove RC MC 0f44
+cmove RD MD w0f44
+cmovg RB MB 0f4f
+cmovg RC MC 0f4f
+cmovg RD MDw0f4f
+cmovge RB MB 0f4d
+cmovge RC MC 0f4d
+cmovge RD MD w0f4d
+cmovl RB MB 0f4c
+cmovl RC MC 0f4c
+cmovl RD MD w0f4c
+cmovle RB MB 0f4e
+cmovle RC MC 0f4e
+cmovle RD MD w0f4e
+cmovna RB MB 0f46
+cmovna RC MC 0f46
+cmovna RD MD w0f46
+cmovnae RB MB 0f42
+cmovnae RC MC 0f42
+cmovnae RD MD w0f42
+cmovnb RB MB 0f43
+cmovnb RC MC 0f43
+cmovnb RD MD w0f43
+cmovnbe RB MB 0f47
+cmovnbe RC MC 0f47
+cmovnbe RD MD w0f47
+cmovnc RB MB 0f43
+cmovnc RC MC 0f43
+cmovnc RD MD w0f43
+cmovne RB MB 0f45
+cmovne RC MC 0f45
+cmovne RD MD w0f45
+cmovng RB MB 0f4e
+cmovng RC MC 0f4e
+cmovng RD MD w0f4e
+cmovnge RB MB 0f4c
+cmovnge RC MC 0f4c
+cmovnge RD MD w0f4c
+cmovnl RB MB 0f4d
+cmovnl RC MC 0f4d
+cmovnl RD MD w0f4d
+cmovnle RB MB 0f4f
+cmovnle RC MC 0f4f
+cmovnle RD MD w0f4f
+cmovno RB MB 0f41
+cmovno RC MC 0f41
+cmovno RD MD w0f41
+cmovnp RB MB 0f4b
+cmovnp RC MC 0f4b
+cmovnp RD MD w0f4b
+cmovns RB MB 0f49
+cmovns RC MC 0f49
+cmovns RD MD w0f49
+cmovnz RB MB 0f45
+cmovnz RC MC 0f45
+cmovnz RD MD w0f45
+cmovo RB MB 0f40
+cmovo RC MC 0f40
+cmovo RD MD w0f40
+cmovp RB MB 0f4a
+cmovp RC MC 0f4a
+cmovp RD MD w0f4a
+cmovpe RB MB 0f4a
+cmovpe RC MC 0f4a
+cmovpe RD MD w0f4a
+cmovpo RB MB 0f4b
+cmovpo RC MC 0f4b
+cmovpo RD MD w0f4b
+cmovs RB MB 0f48
+cmovs RC MC 0f48
+cmovs RD MD w0f48
+cmovz RB MB 0f44
+cmovz RC MC 0f44
+cmovz RD MD w0f44
+
+cmp 0A IA 3c
+cmp 0B IB 3d
+cmp 0C IC 3d
+cmp 0D IC w3d
+cmp MA IA 80/7
+cmp MB IB 81/7
+cmp MC IC 81/7
+cmp MD IC w81/7
+cmp MB IA 83/7
+cmp MC IA 83/7
+cmp MD IA w83/7
+cmp MA RA 38
+cmp MB RB 39
+cmp MC RC 39
+cmp MD RD w39
+cmp RA MA 3a
+cmp RB MB 3b
+cmp RC MC 3b
+cmp RD MD w3b
+
+cmpxchg MA RA 0fb0
+cmpxchg MB RB 0fb1
+cmpxchg MC RC 0fb1
+cmpxchg MD RD w0fb1
+cmpxchg8b MD 0fc7/1
+cmpxchg16b ME w0fc7/1
+
+cpuid 0fa2
+
+daa 27
+das 2f
+
+dec MA fe/1
+dec MB ff/1
+dec MC ff/1
+dec MD wff/1
+
+div MA f6/6
+div MB f7/6
+div MC f7/6
+div MD wf7/6
+
+f2xm1 d9f0
+fabs d9e1
+fadd MC d8/0
+fadd MD dc/0
+faddp dec1
+fiadd MC da/0
+fiadd MD de/0
+fbld df/4
+fchs d9e0
+fclex 9bdbe2
+fnclex dbe2
+fcom MC d8/2
+fcom MD dc/2
+fcom d8d1
+fcomp MC d8/3
+fcomp MD dc/3
+fcomp d8d9
+fcompp ded9
+fcos d9ff
+fdecstp d9f6
+fdiv MC d8/6
+fdiv MD dc/6
+fdivp def9
+fidiv MC da/6
+fidiv MD de/6
+fdivr MC d8/7
+fdivr MD dc/7
+fdivrp def1
+fidivr MC da/7
+fidivr MD de/7
+ficom MB de/2
+ficom MC da/2
+ficomp MB de/3
+ficmp MC da/3
+fild MB df/0
+fild MC db/0
+fild MD df/5
+fincstp d9f7
+finit 9bdbe3
+fninit dbe3
+fist MB df/2
+fist MC db/2
+fistp MB df/3
+fistp MC db/3
+fistp MD df/7
+fisttp MB df/1
+fisttp MC db/1
+fisttp MD dd/1
+fld MC d9/0
+fld MD dd/0
+fld1 d9e8
+fldl2t d9e9
+fldl2e d9ea
+fldpi d9eb
+fldlg2 d9ec
+fldln2 d9ed
+fldz d9ee
+fmul MC d8/1
+fmul MD dc/1
+fmulp dec9
+fimul MC da/1
+fimul MD de/1
+fnop d9d0
+fpatan d9f3
+fprem d9f8
+fprem1 d9f5
+fptan d9f2
+frndint d9fc
+fscale d9fd
+fsin d9fe
+fsincos d9fb
+fsqrt d9fa
+fst MC d9/2
+fst MD dd/2
+fstp MC d9/3
+fstp MD dd/3
+fsub MC d8/4
+fsub MD dc/4
+fsubp dee9
+fisub MC da/4
+fisub MD de/4
+fsubr MC d8/5
+fsubr MD dc/5
+fsubrp dee1
+fisubr MC da/5
+fisubr MD de/5
+ftst d9e4
+fucom dde1
+fucomp dde9
+fucompp dae9
+fxam d9e5
+fxch d9c9
+fxtract d9f4
+fyl2x d9f1
+fyl2xp1 d9f9
+
+hlt f4
+
+idiv MA f6/7
+idiv MB f7/7
+idiv MC f7/7
+idiv MD wf7/7
+
+imul MA f6/5
+imul MB f7/5
+imul MC f7/5
+imul MD wf7/5
+imul RB MB 0faf
+imul RC MC 0faf
+imul RD MD w0faf
+imul RB MB IA 6b
+imul RC MC IA 6b
+imul RD MD IA w6b
+imul RB MB IB 69
+imul RC MC IC 69
+imul RD MD IC w69
+
+inc MA fe/0
+inc MB ff/0
+inc MC ff/0
+inc MD wff/0
+
+int3 cc
+int IA cd
+into ce
+int1 f1
+
+ja IC 0f87
+ja IC 0f87
+ja IC w0f87
+jae IC 0f83
+jae IC 0f83
+jae IC w0f83
+jb IC 0f82
+jb IC 0f82
+jb IC w0f82
+jbe IC 0f86
+jbe IC 0f86
+jbe IC w0f86
+jc IC 0f82
+jc IC 0f82
+jc IC w0f82
+je IC 0f84
+je IC 0f84
+je IC w0f84
+jg IC 0f8f
+jg IC 0f8f
+jg ICw0f8f
+jge IC 0f8d
+jge IC 0f8d
+jge IC w0f8d
+jl IC 0f8c
+jl IC 0f8c
+jl IC w0f8c
+jle IC 0f8e
+jle IC 0f8e
+jle IC w0f8e
+jna IC 0f86
+jna IC 0f86
+jna IC w0f86
+jnae IC 0f82
+jnae IC 0f82
+jnae IC w0f82
+jnb IC 0f83
+jnb IC 0f83
+jnb IC w0f83
+jnbe IC 0f87
+jnbe IC 0f87
+jnbe IC w0f87
+jnc IC 0f83
+jnc IC 0f83
+jnc IC w0f83
+jne IC 0f85
+jne IC 0f85
+jne IC w0f85
+jng IC 0f8e
+jng IC 0f8e
+jng IC w0f8e
+jnge IC 0f8c
+jnge IC 0f8c
+jnge IC w0f8c
+jnl IC 0f8d
+jnl IC 0f8d
+jnl IC w0f8d
+jnle IC 0f8f
+jnle IC 0f8f
+jnle IC w0f8f
+jno IC 0f81
+jno IC 0f81
+jno IC w0f81
+jnp IC 0f8b
+jnp IC 0f8b
+jnp IC w0f8b
+jns IC 0f89
+jns IC 0f89
+jns IC w0f89
+jnz IC 0f85
+jnz IC 0f85
+jnz IC w0f85
+jo IC 0f80
+jo IC 0f80
+jo IC w0f80
+jp IC 0f8a
+jp IC 0f8a
+jp IC w0f8a
+jpe IC 0f8a
+jpe IC 0f8a
+jpe IC w0f8a
+jpo IC 0f8b
+jpo IC 0f8b
+jpo IC w0f8b
+js IC 0f88
+js IC 0f88
+js IC w0f88
+jz IC 0f84
+jz IC 0f84
+jz IC w0f84
+
+jmp IC e9
+
+lea RB M* 8d
+lea RC M* 8d
+lea RD M* w8d
+
+lock f0
+
+mov MA RA 88
+mov MB RB 89
+mov MC RC 89
+mov MD RD w89
+mov RA MA 8a
+mov RB MB 8b
+mov RC MC 8b
+mov RD MD w8b
+mov RA IA b0
+mov RB IB b8
+mov RC IC b8
+mov RD ID wb8
+mov MA IA c6/0
+mov MB IB c7/0
+mov MC IC c7/0
+mov MD ID wc7/0
+
+movbe RB MB 0f38f0
+movbe RC MC 0f38f0
+movbe RD MD w0f38f0
+movbe MB RB 0f38f1
+movbe MC RC 0f38f1
+movbe MD RD w0f38f1
+
+movzx RB MA 0fb6
+movzx RC MA 0fb6
+movzx RD MA w0fb6
+movzx RC MB 0fb7
+movzx RD MB w0fb7
+
+mul MA f6/4
+mul MB f7/4
+mul MC f7/4
+mul MD wf7/4
+
+neg MA f6/3
+neg MB f7/3
+neg MC f7/3
+neg MD wf7/3
+
+nop 90
+nop MB 0f1f/0
+nop MC 0f1f/0
+
+not MA f6/2
+not MB f7/2
+not MC f7/2
+not MD wf7/2
+
+or 0A IA 0c
+or 0B IB 0d
+or 0C IC 0d
+or 0D IC w0d
+or MA IA 80/1
+or MB IB 81/1
+or MC IC 81/1
+or MD IC w81/1
+or MB IA 83/1
+or MC IA 83/1
+or MD IA w83/1
+or MA RA 08
+or MB RB 09
+or MC RC 09
+or MD RD w09
+or RA MA 0a
+or RB MB 0b
+or RC MC 0b
+or RD MD w0b
+
+pop MB 8f/0
+pop MD 8f/0
+pop RB 58
+pop RD 58
+
+popf 669d
+popfq 9d
+
+push MB ff/6
+push MD ff/6
+push RB 50
+push RD 50
+push IA 6a
+push IB 68
+push IC 68
+
+pushf 9c
+pushfq 669c
+
+rcl MA L1 d0/2
+rcl MA 1A d2/2
+rcl MA IA c0/2
+rcl MB L1 d1/2
+rcl MB 1A d3/2
+rcl MB IA c1/2
+rcl MC L1 d1/2
+rcl MD L1 wd1/2
+rcl MC 1A d3/2
+rcl MD 1A wd3/2
+rcl MC IA c1/2
+rcl MD IA wc1/2
+rcr MA L1 d0/3
+rcr MA 1A d2/3
+rcr MA IA c0/3
+rcr MB L1 d1/3
+rcr MB 1A d3/3
+rcr MB IA c1/3
+rcr MC L1 d1/3
+rcr MD L1 wd1/3
+rcr MC 1A d3/3
+rcr MD 1A wd3/3
+rcr MC IA c1/3
+rcr MD IA wc1/3
+roL MA L1 d0/0
+roL MA 1A d2/0
+roL MA IA c0/0
+rol MB L1 d1/0
+rol MB 1A d3/0
+rol MB IA c1/0
+rol MC L1 d1/0
+rol MD L1 wd1/0
+rol MC 1A d3/0
+rol MD 1A wd3/0
+rol MC IA c1/0
+rol MD IA wc1/0
+ror MA L1 d0/1
+ror MA 1A d2/1
+ror MA IA c0/1
+ror MB L1 d1/1
+ror MB 1A d3/1
+ror MB IA c1/1
+ror MC L1 d1/1
+ror MD L1 wd1/1
+ror MC 1A d3/1
+ror MD 1A wd3/1
+ror MC IA c1/1
+ror MD IA wc1/1
+
+rdpid MD f30fc7/7
+
+rrand RB 0fc7/6
+rrand RC 0fc7/6
+rrand RD w0fc7/6
+rdseed RB 0fc7/7
+rdseed RC 0fc7/7
+rdseed RD w0fc7/7
+
+sal MA L1 d0/4
+sal MA 1A d2/4
+sal MA IA c0/4
+sal MB L1 d1/4
+sal MB 1A d3/4
+sal MB IA c1/4
+sal MC L1 d1/4
+sal MD L1 wd1/4
+sal MC 1A d3/4
+sal MD 1A wd3/4
+sal MC IA c1/4
+sal MD IA wc1/4
+sar MA L1 d0/7
+sar MA 1A d2/7
+sar MA IA c0/7
+sar MB L1 d1/7
+sar MB 1A d3/7
+sar MB IA c1/7
+sar MC L1 d1/7
+sar MD L1 wd1/7
+sar MC 1A d3/7
+sar MD 1A wd3/7
+sar MC IA c1/7
+sar MD IA wc1/7
+shl MA L1 d0/4
+shl MA 1A d2/4
+shl MA IA c0/4
+shl MB L1 d1/4
+shl MB 1A d3/4
+shl MB IA c1/4
+shl MC L1 d1/4
+shl MD L1 wd1/4
+shl MC 1A d3/4
+shl MD 1A wd3/4
+shl MC IA c1/4
+shl MD IA wc1/4
+shr MA L1 d0/5
+shr MA 1A d2/5
+shr MA IA c0/5
+shr MB L1 d1/5
+shr MB 1A d3/5
+shr MB IA c1/5
+shr MC L1 d1/5
+shr MD L1 wd1/5
+shr MC 1A d3/5
+shr MD 1A wd3/5
+shr MC IA c1/5
+shr MD IA wc1/5
+
+sbb 0A IA 1c
+sbb 0B IB 1d
+sbb 0C IC 1d
+sbb 0D IC w1d
+sbb MA IA 80/3
+sbb MB IB 81/3
+sbb MC IC 81/3
+sbb MD IC w81/3
+sbb MB IA 83/3
+sbb MC IA 83/3
+sbb MD IA w83/3
+sbb MA RA 18
+sbb MB RB 19
+sbb MC RC 19
+sbb MD RD w19
+sbb RA MA 1a
+sbb RB MB 1b
+sbb RC MC 1b
+sbb RD MD w1b
+
+scasb ae
+scasw 66af
+scasd af
+scasq 48af
+
+seta IC 0f97
+seta IC 0f97
+seta IC w0f97
+setae IC 0f93
+setae IC 0f93
+setae IC w0f93
+setb IC 0f92
+setb IC 0f92
+setb IC w0f92
+setbe IC 0f96
+setbe IC 0f96
+setbe IC w0f96
+setc IC 0f92
+setc IC 0f92
+setc IC w0f92
+sete IC 0f94
+sete IC 0f94
+sete IC w0f94
+setg IC 0f9f
+setg IC 0f9f
+setg ICw0f9f
+setge IC 0f9d
+setge IC 0f9d
+setge IC w0f9d
+setl IC 0f9c
+setl IC 0f9c
+setl IC w0f9c
+setle IC 0f9e
+setle IC 0f9e
+setle IC w0f9e
+setna IC 0f96
+setna IC 0f96
+setna IC w0f96
+setnae IC 0f92
+setnae IC 0f92
+setnae IC w0f92
+setnb IC 0f93
+setnb IC 0f93
+setnb IC w0f93
+setnbe IC 0f97
+setnbe IC 0f97
+setnbe IC w0f97
+setnc IC 0f93
+setnc IC 0f93
+setnc IC w0f93
+setne IC 0f95
+setne IC 0f95
+setne IC w0f95
+setng IC 0f9e
+setng IC 0f9e
+setng IC w0f9e
+setnge IC 0f9c
+setnge IC 0f9c
+setnge IC w0f9c
+setnl IC 0f9d
+setnl IC 0f9d
+setnl IC w0f9d
+setnle IC 0f9f
+setnle IC 0f9f
+setnle IC w0f9f
+setno IC 0f91
+setno IC 0f91
+setno IC w0f91
+setnp IC 0f9b
+setnp IC 0f9b
+setnp IC w0f9b
+setns IC 0f99
+setns IC 0f99
+setns IC w0f99
+setnz IC 0f95
+setnz IC 0f95
+setnz IC w0f95
+seto IC 0f90
+seto IC 0f90
+seto IC w0f90
+setp IC 0f9a
+setp IC 0f9a
+setp IC w0f9a
+setpe IC 0f9a
+setpe IC 0f9a
+setpe IC w0f9a
+setpo IC 0f9b
+setpo IC 0f9b
+setpo IC w0f9b
+sets IC 0f98
+sets IC 0f98
+sets IC w0f98
+setz IC 0f94
+setz IC 0f94
+setz IC w0f94
+
+shld MB RB IA 0fa4
+shld MC RC IA 0fa4
+shld MD RD IA w0fa4
+shld MB RB 1A 0fa5
+shld MC RC 1A 0fa5
+shld MD RD 1A w0fa5
+
+shrd MB RB IA 0fac
+shrd MC RC IA 0fac
+shrd MD RD IA w0fac
+shrd MB RB 1A 0fad
+shrd MC RC 1A 0fad
+shrd MD RD 1A w0fad
+
+stac 0f01cb
+stc f9
+std fd
+sti fb
+
+sub 0A IA 2c
+sub 0B IB 2d
+sub 0C IC 2d
+sub 0D IC w2d
+sub MA IA 80/5
+sub MB IB 81/5
+sub MC IC 81/5
+sub MD IC w81/5
+sub MB IA 83/5
+sub MC IA 83/5
+sub MD IA w83/5
+sub MA RA 28
+sub MB RB 29
+sub MC RC 29
+sub MD RD w29
+sub RA MA 2a
+sub RB MB 2b
+sub RC MC 2b
+sub RD MD w2b
+
+syscall 0f05
+
+test 0A IA a8
+test 0B IB a9
+test 0C IC a9
+test 0D IC wa9
+test MA IA f6/0
+test MB IB f7/0
+test MC IC f7/0
+test MD IC wf7/0
+test MA RA 84
+test MB RB 85
+test MC RC 85 
+test MD RD w85
+
+ud0 RC MC 0fff
+ud1 RC MC 0fb9
+ud2 0f0b
+
+xadd MA RA 0fc0
+xadd MB RB 0fc1
+xadd MC RC 0fc1
+xadd MD RD w0fc1
+
+xchg 0B RB 90
+xchg 0C RC 90
+xchg 0D RD w90
+xchg RB 0B 90
+xchg RC 0C 90
+xchg RD 0D w90
+xchg RA MA 86
+xchg MA RA 86
+xchg RB MB 87
+xchg MB RB 87
+xchg RC MC 87
+xchg MC RC 87
+xchg RD MD w87
+xchg MD RD w87
+
+xor 0A IA 34
+xor 0B IB 35
+xor 0C IC 35
+xor 0D IC w35
+xor MA IA 80/6
+xor MB IB 81/6
+xor MC IC 81/6
+xor MD IC w81/6
+xor MB IA 83/6
+xor MC IA 83/6
+xor MD IA w83/6
+xor MA RA 30
+xor MB RB 31
+xor MC RC 31
+xor MD RD w31
+xor RA MA 32
+xor RB MB 33
+xor RC MC 33
+xor RD MD w33

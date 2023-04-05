@@ -15,10 +15,9 @@ extern std::vector<uint8_t> output_buffer;
 extern std::vector<uint32_t> text_relocations;
 extern std::vector<size_t> data_relocations;
 extern std::vector<size_t> bss_relocations;
-extern std::string prev_label;
 
-typedef bool (*handler)(std::vector<std::string> &);
+const static short _sizes[] = {8, 16, 32, 64, 128};
 
-bool handle(std::string &, std::vector<std::string> &, size_t);
+bool handle(std::string, std::vector<std::string>, const size_t);
 
 #endif

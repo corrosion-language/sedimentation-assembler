@@ -160,8 +160,8 @@ int main(int argc, char *argv[]) {
 		if (line.starts_with("section ")) {
 			if (line == "section .text") {
 				curr_sect = TEXT;
-			} else if (line == "section .rodata") {
-				curr_sect = RODATA;
+			} else if (line == "section .data") {
+				curr_sect = DATA;
 			} else if (line == "section .bss") {
 				curr_sect = BSS;
 			} else {
@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
 					std::cerr << input_name << ':' << i + 1 << ": error: unknown directive " << instr << std::endl;
 					return 1;
 				}
-			} else if (curr_sect == RODATA) {
+			} else if (curr_sect == DATA) {
 				std::string label = line.substr(0, line.find(':'));
 				std::string instr = line.substr(line.find(':') + 1, line.find(' ') - line.find(':') - 1);
 				std::vector<std::string> args;
@@ -310,8 +310,8 @@ int main(int argc, char *argv[]) {
 		if (line.starts_with("section ")) {
 			if (line == "section .text") {
 				curr_sect = TEXT;
-			} else if (line == "section .rodata") {
-				curr_sect = RODATA;
+			} else if (line == "section .data") {
+				curr_sect = DATA;
 			} else if (line == "section .bss") {
 				curr_sect = BSS;
 			}

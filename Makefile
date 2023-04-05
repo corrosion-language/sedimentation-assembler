@@ -1,6 +1,7 @@
 CC=g++
 CFLAGS=-Wall -Wextra -std=c++20 -g
 SRCS=$(wildcard *.cpp)
+HDRS=$(wildcard *.hpp)
 OBJS=$(SRCS:.cpp=.o)
 
 debug: sedimentation
@@ -13,7 +14,7 @@ release: sedimentation
 sedimentation: $(OBJS)
 	$(CC) $(CFLAGS) -o sedimentation $(OBJS)
 
-%.o: %.cpp
+%.o: %.cpp $(HDRS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
