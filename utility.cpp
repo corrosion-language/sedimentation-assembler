@@ -184,7 +184,7 @@ std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 				// modrm
 				out.push_back(0x04);
 				out.push_back(0b00100101);
-				int off = std::stol(tokens[0], 0, 0);
+				int off = std::stoi(tokens[0], 0, 0);
 				if (reloc == 0)
 					reloc = out.size();
 				else if (reloc == 1)
@@ -201,7 +201,7 @@ std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 				error = "symbol `" + tokens[0] + "' undefined";
 				return {};
 			}
-			int off = std::stol(tokens[1], 0, 0);
+			int off = std::stoi(tokens[1], 0, 0);
 			// size override
 			if (reg_size(tokens[0]) == 32)
 				out.push_back(0x67);
@@ -236,7 +236,7 @@ std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 		} else
 			base = -1;
 		if (ops[ops.size() - 1] != '*' && reg_size(tokens[tokens.size() - 1]) == -1) {
-			offset = std::stoul(tokens[tokens.size() - 1], 0, 0);
+			offset = std::stoi(tokens[tokens.size() - 1], 0, 0);
 			tokens.pop_back();
 			ops.pop_back();
 		} else
