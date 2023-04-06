@@ -20,19 +20,42 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 	error = "";
 	if (!inited)
 		init();
-	std::vector<std::string> matches;
 	char *l = map;
-	char *r = std::find(l, map + map_size, '\n');
-	s += ' ';
-	do {
-		if (std::string(l, l + s.size()) == s)
-			matches.push_back(std::string(l, r));
+	char *r = map + map_size - 1;
+	// go to the start of the section
+	while (r[-1] != '\n' || r[-2] != '\n')
+		r--;
+	// binary search for the section that matches
+	while (l < r) {
+		char *m = l + (r - l) / 2;
+		while (m[-1] != '\n' || m[-2] != '\n')
+			m--;
+		if (strncmp(m, s.c_str(), s.size()) == 0 && m[s.size()] == ' ') {
+			l = m;
+			break;
+		} else if (strncmp(m, s.c_str(), s.size()) < 0) {
+			l = m + 6;
+			while (l[-1] != '\n' || l[-2] != '\n')
+				l++;
+		} else {
+			r = m - 6;
+			while (r[-1] != '\n' || r[-2] != '\n')
+				r--;
+		}
+	}
+	// store all lines that match
+	while ((strncmp(l, s.c_str(), s.size()) != 0 || l[s.size()] != ' ') && l < map + map_size)
+		l++;
+	if (l >= map + map_size - 1) {
+		std::cerr << input_name << ":" << linenum << ": error: unrecognized instruction `" << s << "'" << std::endl;
+		return false;
+	}
+	r = std::find(l + 1, map + map_size, '\n');
+	std::vector<std::string> matches;
+	while (*l != '\n' && r != map + map_size) {
+		matches.push_back(std::string(l, r));
 		l = r + 1;
 		r = std::find(l, map + map_size, '\n');
-	} while (r < map + map_size);
-	if (matches.empty()) {
-		std::cerr << input_name << ":" << linenum << ": error: unknown instruction " << s << std::endl;
-		return false;
 	}
 	std::vector<std::pair<enum op_type, short>> types;
 	for (const std::string &arg : args) {

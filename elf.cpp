@@ -37,8 +37,10 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	ehdr.entry = vaddr + 0x1000 - data_size;
 	if (reloc_table.find("_start") != reloc_table.end())
 		ehdr.entry += reloc_table["_start"];
-	else
+	else {
 		std::cerr << "warning: no _start symbol found, using default entry point" << std::endl;
+		ehdr.entry += data_size;
+	}
 	ehdr.phoff = sizeof(elf_header);
 	ehdr.shoff = (2 + !!data_size + !!bss_size) * sizeof(program_header) + sizeof(elf_header);
 	ehdr.flags = 0;
