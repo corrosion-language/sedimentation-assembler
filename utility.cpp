@@ -229,6 +229,7 @@ std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 		short index;
 		short scale;
 		int offset;
+		bool force = false;
 		if (ops[0] != '*') {
 			base = reg_num(tokens[0]);
 			tokens.erase(tokens.begin());
@@ -237,6 +238,8 @@ std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 			base = -1;
 		if (ops[ops.size() - 1] != '*' && reg_size(tokens[tokens.size() - 1]) == -1) {
 			offset = std::stoi(tokens[tokens.size() - 1], 0, 0);
+			if (reloc != 0x7fff)
+				force = true;
 			tokens.pop_back();
 			ops.pop_back();
 		} else
@@ -272,7 +275,6 @@ std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 			out[0] |= 1;
 		if (index >= 8)
 			out[0] |= 2;
-		bool force = false;
 		if ((base & 7) == 5)
 			force = true;
 		if (base == -1) {

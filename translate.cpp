@@ -80,8 +80,6 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 	}
 	std::vector<std::pair<std::vector<std::string>, short>> valid;
 	for (size_t i = 0; i < matches.size(); i++) {
-		if (args.size() > 2)
-			continue;
 		std::string &line = matches[i];
 		std::vector<std::string> tokens;
 		size_t l = 0;
@@ -234,28 +232,28 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					return false;
 				}
 				if (data[0] == 0x67) {
-					tmpreloc += 0x67;
+					tmp += data.front();
 					data.pop_front();
 					tmpreloc -= tmpreloc != 0x7fff;
 				}
 				if ((data[0] & 0xf0) == 0x40) {
-					tmpreloc += data[0] | (w << 3);
+					tmp += data.front();
 					data.pop_front();
 					tmpreloc -= tmpreloc != 0x7fff;
 				} else if (w)
-					tmpreloc += 0x48;
+					tmp += 0x48;
 				short reg = 0;
 				for (size_t i = w; i < p.first.back().size(); i += 2) {
 					if (p.first.back()[i] == '/') {
 						reg = std::stoi(p.first.back().substr(i + 1, 1), nullptr, 16);
 						break;
 					}
-					tmpreloc += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
+					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
 				}
 				if (tmpreloc != 0x7fff && !(tmpreloc & 0x8000))
-					reloc.push_back(0x4000 | tmpreloc);
+					reloc.push_back(0x8000 | (tmpreloc + tmp.size()));
 				else if (tmpreloc != 0x7fff)
-					reloc.push_back(0xa000 ^ tmpreloc);
+					reloc.push_back(0x4000 | ((0x8000 ^ tmpreloc) + tmp.size()));
 				tmp += data.front() | (reg << 3);
 				tmp.insert(tmp.end(), data.begin() + 1, data.end());
 			} else if (p.first[1][0] == 'I') {
@@ -313,6 +311,16 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				}
 				tmp.back() += a1 & 7;
 				auto a2 = parse_imm(args[imm.first - 1]);
+				if (a2.second == -1) {
+					std::cerr << input_name << ":" << linenum << ": error: " << error << std::endl;
+					return false;
+				} else if (a2.second == -2) {
+					reloc.push_back(0x8000 | tmp.size());
+				} else if (a2.second == -3) {
+					reloc.push_back(0x4000 | tmp.size());
+				} else if (a2.second == -4) {
+					reloc.push_back(0x2000 | tmp.size());
+				}
 				short s2 = _sizes[p.first[imm.first][1] - 'A'];
 				for (int i = 0; i < s2; i += 8)
 					tmp += (a2.first >> i) & 0xff;
@@ -321,9 +329,9 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				short rm = 0x7fff;
 				short sib = 0x7fff;
 				std::deque<uint8_t> other;
+				short tmpreloc = 0x7fff;
 				if (mem.first != -1) {
 					short s1 = mem.second;
-					short tmpreloc;
 					other = parse_mem(args[mem.first - 1], s1, tmpreloc);
 					if (other.empty()) {
 						if (error.empty())
@@ -334,10 +342,12 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					if (other.front() == 0x67) {
 						tmp += 0x67;
 						other.pop_front();
+						tmpreloc -= tmpreloc != 0x7fff;
 					}
 					if ((other.front() & 0xf0) == 0x40) {
 						rex = other.front();
 						other.pop_front();
+						tmpreloc -= tmpreloc != 0x7fff;
 					}
 					if (!other.empty()) {
 						rm = other.front();
@@ -368,6 +378,10 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					}
 					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
 				}
+				if (tmpreloc != 0x7fff && !(tmpreloc & 0x8000))
+					reloc.push_back(0x8000 | (tmpreloc + tmp.size()));
+				else if (tmpreloc != 0x7fff)
+					reloc.push_back(0x4000 | ((0x8000 ^ tmpreloc) + tmp.size()));
 				if (rm != 0x7fff)
 					tmp += rm;
 				if (sib != 0x7fff)
