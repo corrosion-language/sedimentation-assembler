@@ -116,17 +116,17 @@ mem_output *parse_mem(std::string in, short &size, short &reloc) {
 	}
 
 	// resolve labels and combine with imms if possible
-	if (data_labels.find(tokens[tokens.size() - 1]) != data_labels.end()) {
-		tokens[tokens.size() - 1] = std::to_string(data_labels.at(tokens[tokens.size() - 1]));
+	if (data_labels.find(tokens.back()) != data_labels.end()) {
+		tokens.back() = std::to_string(data_labels.at(tokens.back()));
 		reloc = 0;
-	} else if (bss_labels.find(tokens[tokens.size() - 1]) != bss_labels.end()) {
-		tokens[tokens.size() - 1] = std::to_string(bss_labels.at(tokens[tokens.size() - 1]));
+	} else if (bss_labels.find(tokens.back()) != bss_labels.end()) {
+		tokens.back() = std::to_string(bss_labels.at(tokens.back()));
 		reloc = 1;
 	}
 	if (tokens.size() > 1 && data_labels.find(tokens[tokens.size() - 2]) != data_labels.end()) {
 		uint32_t tmp = data_labels.at(tokens[tokens.size() - 2]);
-		if (ops[ops.size() - 1] == '+')
-			tokens[tokens.size() - 2] = std::to_string(tmp + std::stoi(tokens[tokens.size() - 1], 0, 0));
+		if (ops.back() == '+')
+			tokens[tokens.size() - 2] = std::to_string(tmp + std::stoi(tokens.back(), 0, 0));
 		else
 			return nullptr;
 		ops.pop_back();
@@ -134,8 +134,8 @@ mem_output *parse_mem(std::string in, short &size, short &reloc) {
 		reloc = 0;
 	} else if (tokens.size() > 1 && bss_labels.find(tokens[tokens.size() - 2]) != bss_labels.end()) {
 		uint32_t tmp = bss_labels.at(tokens[tokens.size() - 2]);
-		if (ops[ops.size() - 1] == '+')
-			tokens[tokens.size() - 2] = std::to_string(tmp + std::stoi(tokens[tokens.size() - 1], 0, 0));
+		if (ops.back() == '+')
+			tokens[tokens.size() - 2] = std::to_string(tmp + std::stoi(tokens.back(), 0, 0));
 		else
 			return nullptr;
 		ops.pop_back();
@@ -234,8 +234,8 @@ mem_output *parse_mem(std::string in, short &size, short &reloc) {
 			ops.erase(ops.begin());
 		} else
 			base = -1;
-		if (ops[ops.size() - 1] != '*' && reg_size(tokens[tokens.size() - 1]) == -1) {
-			offset = std::stoi(tokens[tokens.size() - 1], 0, 0);
+		if (ops.back() != '*' && reg_size(tokens.back()) == -1) {
+			offset = std::stoi(tokens.back(), 0, 0);
 			if (reloc != 0x7fff)
 				force = true;
 			tokens.pop_back();
