@@ -77,7 +77,7 @@ bsr RB MB 0fbd
 bsr RC MC 0fbd
 
 bswap RC 0fc8
-bswap RD B w0fc8
+bswap RD w0fc8
 
 bt MB RB 0fa3
 bt MC RC 0fa3
@@ -108,6 +108,7 @@ bts RC IA 0fba/5
 bts RD IA w0fba/5
 
 call IC e8
+call MD ff/2
 
 cbw 98
 
@@ -524,133 +525,113 @@ into ce
 
 int1 f1
 
+ja IA 77
 ja IC 0f87
-ja IC 0f87
-ja IC w0f87
 
+jae IA 73
 jae IC 0f83
-jae IC 0f83
-jae IC w0f83
 
+jb IA 72
 jb IC 0f82
-jb IC 0f82
-jb IC w0f82
 
+jbe IA 76
 jbe IC 0f86
-jbe IC 0f86
-jbe IC w0f86
 
+jc IA 72
 jc IC 0f82
-jc IC 0f82
-jc IC w0f82
 
+je IA 74
 je IC 0f84
-je IC 0f84
-je IC w0f84
 
+jecxz IA e3
+
+jg IA 7f
 jg IC 0f8f
-jg IC 0f8f
-jg ICw0f8f
 
+jge IA 7d
 jge IC 0f8d
-jge IC 0f8d
-jge IC w0f8d
 
+jl IA 7c
 jl IC 0f8c
-jl IC 0f8c
-jl IC w0f8c
 
+jle IA 7e
 jle IC 0f8e
-jle IC 0f8e
-jle IC w0f8e
 
+jna IA 76
 jna IC 0f86
-jna IC 0f86
-jna IC w0f86
 
+jnae IA 72
 jnae IC 0f82
-jnae IC 0f82
-jnae IC w0f82
 
+jnb IA 73
 jnb IC 0f83
-jnb IC 0f83
-jnb IC w0f83
 
+jnbe IA 77
 jnbe IC 0f87
-jnbe IC 0f87
-jnbe IC w0f87
 
+jnc IA 73
 jnc IC 0f83
-jnc IC 0f83
-jnc IC w0f83
 
+jne IA 75
 jne IC 0f85
-jne IC 0f85
-jne IC w0f85
 
+jng IA 7e
 jng IC 0f8e
-jng IC 0f8e
-jng IC w0f8e
 
+jnge IA 7c
 jnge IC 0f8c
-jnge IC 0f8c
-jnge IC w0f8c
 
+jnl IA 7d
 jnl IC 0f8d
-jnl IC 0f8d
-jnl IC w0f8d
 
+jnle IA 7f
 jnle IC 0f8f
-jnle IC 0f8f
-jnle IC w0f8f
 
+jno IA 71
 jno IC 0f81
-jno IC 0f81
-jno IC w0f81
 
+jnp IA 7b
 jnp IC 0f8b
-jnp IC 0f8b
-jnp IC w0f8b
 
+jns IA 79
 jns IC 0f89
-jns IC 0f89
-jns IC w0f89
 
+jnz IA 75
 jnz IC 0f85
-jnz IC 0f85
-jnz IC w0f85
 
+jo IA 70
 jo IC 0f80
-jo IC 0f80
-jo IC w0f80
 
+jp IA 7a
 jp IC 0f8a
-jp IC 0f8a
-jp IC w0f8a
 
+jpe IA 7a
 jpe IC 0f8a
-jpe IC 0f8a
-jpe IC w0f8a
 
+jpo IA 7b
 jpo IC 0f8b
-jpo IC 0f8b
-jpo IC w0f8b
 
+jrcxz IA e3
+
+js IA 78
 js IC 0f88
-js IC 0f88
-js IC w0f88
 
+jz IA 74
 jz IC 0f84
-jz IC 0f84
-jz IC w0f84
 
+jmp IA eb
 jmp IC e9
+jmp MD ff/4
 
 lea RB M* 8d
 lea RC M* 8d
 lea RD M* w8d
 
 lock f0
+
+loop IA e2
+loope IA e1
+loopne IA e0
 
 mov MA RA 88
 mov MB RB 89
@@ -856,125 +837,65 @@ scasd af
 
 scasq 48af
 
-seta IC 0f97
-seta IC 0f97
-seta IC w0f97
+seta IA 0f97
 
-setae IC 0f93
-setae IC 0f93
-setae IC w0f93
+setae IA 0f93
 
-setb IC 0f92
-setb IC 0f92
-setb IC w0f92
+setb IA 0f92
 
-setbe IC 0f96
-setbe IC 0f96
-setbe IC w0f96
+setbe IA 0f96
 
-setc IC 0f92
-setc IC 0f92
-setc IC w0f92
+setc IA 0f92
 
-sete IC 0f94
-sete IC 0f94
-sete IC w0f94
+sete IA 0f94
 
-setg IC 0f9f
-setg IC 0f9f
-setg IC w0f9f
+setg IA 0f9f
 
-setge IC 0f9d
-setge IC 0f9d
-setge IC w0f9d
+setge IA 0f9d
 
-setl IC 0f9c
-setl IC 0f9c
-setl IC w0f9c
+setl IA 0f9c
 
-setle IC 0f9e
-setle IC 0f9e
-setle IC w0f9e
+setle IA 0f9e
 
-setna IC 0f96
-setna IC 0f96
-setna IC w0f96
+setna IA 0f96
 
-setnae IC 0f92
-setnae IC 0f92
-setnae IC w0f92
+setnae IA 0f92
 
-setnb IC 0f93
-setnb IC 0f93
-setnb IC w0f93
+setnb IA 0f93
 
-setnbe IC 0f97
-setnbe IC 0f97
-setnbe IC w0f97
+setnbe IA 0f97
 
-setnc IC 0f93
-setnc IC 0f93
-setnc IC w0f93
+setnc IA 0f93
 
-setne IC 0f95
-setne IC 0f95
-setne IC w0f95
+setne IA 0f95
 
-setng IC 0f9e
-setng IC 0f9e
-setng IC w0f9e
+setng IA 0f9e
 
-setnge IC 0f9c
-setnge IC 0f9c
-setnge IC w0f9c
+setnge IA 0f9c
 
-setnl IC 0f9d
-setnl IC 0f9d
-setnl IC w0f9d
+setnl IA 0f9d
 
-setnle IC 0f9f
-setnle IC 0f9f
-setnle IC w0f9f
+setnle IA 0f9f
 
-setno IC 0f91
-setno IC 0f91
-setno IC w0f91
+setno IA 0f91
 
-setnp IC 0f9b
-setnp IC 0f9b
-setnp IC w0f9b
+setnp IA 0f9b
 
-setns IC 0f99
-setns IC 0f99
-setns IC w0f99
+setns IA 0f99
 
-setnz IC 0f95
-setnz IC 0f95
-setnz IC w0f95
+setnz IA 0f95
 
-seto IC 0f90
-seto IC 0f90
-seto IC w0f90
+seto IA 0f90
 
-setp IC 0f9a
-setp IC 0f9a
-setp IC w0f9a
+setp IA 0f9a
 
-setpe IC 0f9a
-setpe IC 0f9a
-setpe IC w0f9a
+setpe IA 0f9a
 
-setpo IC 0f9b
-setpo IC 0f9b
-setpo IC w0f9b
+setpo IA 0f9b
 
-sets IC 0f98
-sets IC 0f98
-sets IC w0f98
+sets IA 0f98
 
-setz IC 0f94
-setz IC 0f94
-setz IC w0f94
+setz IA 0f94
 
 shl MA L1 d0/4
 shl MA 1A d2/4
