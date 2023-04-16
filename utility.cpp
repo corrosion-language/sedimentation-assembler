@@ -97,7 +97,7 @@ mem_output *parse_mem(std::string in, short &size, short &reloc) {
 	std::vector<std::string> tokens;
 	std::vector<char> ops;
 	size_t l = 0;
-	size_t r = std::min(in.find('*'), in.find("+"));
+	size_t r = std::min(in.find('*'), std::min(in.find("+"), in.find("-")));
 	while (l++ != std::string::npos) {
 		tokens.push_back(in.substr(l, r - l));
 		if (l != 1)
@@ -188,7 +188,7 @@ mem_output *parse_mem(std::string in, short &size, short &reloc) {
 				out->sib = 0b00100101;
 				out->offset = std::stoi(tokens[0], 0, 0);
 				out->offsize = 2;
-				if (reloc == 0x7fff && (out->offset & 0xff) == out->offset) {
+				if (reloc == 0x7fff && (int8_t)(out->offset & 0xff) == out->offset) {
 					out->offsize = 1;
 					if (out->rm & 0x80)
 						out->rm ^= 0xc0;
@@ -215,7 +215,7 @@ mem_output *parse_mem(std::string in, short &size, short &reloc) {
 			// offset
 			out->offset = std::stoi(tokens[1], 0, 0);
 			out->offsize = 2;
-			if (reloc == 0x7fff && (out->offset & 0xff) == out->offset) {
+			if (reloc == 0x7fff && (int8_t)(out->offset & 0xff) == out->offset) {
 				out->offsize = 1;
 				if (out->rm & 0x80)
 					out->rm ^= 0xc0;
@@ -289,7 +289,7 @@ mem_output *parse_mem(std::string in, short &size, short &reloc) {
 		if (offset || force) {
 			out->offset = offset;
 			out->offsize = 2;
-			if (reloc == 0x7fff && (offset & 0xff) == offset) {
+			if (reloc == 0x7fff && (int8_t)(offset & 0xff) == offset) {
 				out->offsize = 1;
 				if (out->rm & 0x80)
 					out->rm ^= 0xc0;
