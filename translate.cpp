@@ -70,7 +70,16 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				std::cerr << input_name << ":" << linenum << ": error: " << error << std::endl;
 				return false;
 			} else if (tmp.second <= -2) {
-				types.push_back({IMM, 32});
+				if (reloc_table.find(text_labels[tmp.first]) != reloc_table.end()) {
+					int32_t off = reloc_table.at(text_labels.at(tmp.first)) - output_buffer.size() - 3;
+					if ((int8_t)off == off) {
+						types.push_back({IMM, 8});
+					} else {
+						types.push_back({IMM, 32});
+					}
+				} else {
+					types.push_back({IMM, 32});
+				}
 			} else {
 				types.push_back({IMM, tmp.second});
 			}
@@ -281,7 +290,16 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				} else if (a1.second == -3) {
 					reloc.push_back(0x4000 | tmp.size());
 				} else if (a1.second == -4) {
-					reloc.push_back(0x2000 | tmp.size());
+					if (s1 == 8 && reloc_table.find(text_labels[a1.first]) != reloc_table.end()) {
+						int32_t off = reloc_table.at(text_labels.at(a1.first)) - output_buffer.size() - tmp.size() - 1;
+						if ((int8_t)off == off) {
+							a1.first = off;
+						} else {
+							reloc.push_back(0x2000 | tmp.size());
+						}
+					} else {
+						reloc.push_back(0x2000 | tmp.size());
+					}
 				}
 				for (int i = 0; i < s1; i += 8)
 					tmp += (a1.first >> i) & 0xff;
@@ -315,6 +333,7 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				}
 				tmp.back() += a1 & 7;
 				auto a2 = parse_imm(args[imm.first - 1]);
+				short s2 = _sizes[p.first[imm.first][1] - 'A'];
 				if (a2.second == -1) {
 					std::cerr << input_name << ":" << linenum << ": error: " << error << std::endl;
 					return false;
@@ -323,9 +342,17 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				} else if (a2.second == -3) {
 					reloc.push_back(0x4000 | tmp.size());
 				} else if (a2.second == -4) {
-					reloc.push_back(0x2000 | tmp.size());
+					if (s2 == 8 && reloc_table.find(text_labels[a2.first]) != reloc_table.end()) {
+						int32_t off = reloc_table.at(text_labels.at(a2.first)) - output_buffer.size() - tmp.size() - 1;
+						if ((int8_t)off == off) {
+							a2.first = off;
+						} else {
+							reloc.push_back(0x2000 | tmp.size());
+						}
+					} else {
+						reloc.push_back(0x2000 | tmp.size());
+					}
 				}
-				short s2 = _sizes[p.first[imm.first][1] - 'A'];
 				for (int i = 0; i < s2; i += 8)
 					tmp += (a2.first >> i) & 0xff;
 			} else {
@@ -391,8 +418,21 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					if (a1.second == -1) {
 						std::cerr << input_name << ":" << linenum << ": error: " << error << std::endl;
 						return false;
-					} else if (a1.second < -1) {
-						reloc.push_back((1 << (17 + a1.second)) | tmp.size());
+					} else if (a1.second == -2) {
+						reloc.push_back(0x8000 | tmp.size());
+					} else if (a1.second == -3) {
+						reloc.push_back(0x4000 | tmp.size());
+					} else if (a1.second == -4) {
+						if (s1 == 8 && reloc_table.find(text_labels[a1.first]) != reloc_table.end()) {
+							int32_t off = reloc_table.at(text_labels.at(a1.first)) - output_buffer.size() - tmp.size() - 1;
+							if ((int8_t)off == off) {
+								a1.first = off;
+							} else {
+								reloc.push_back(0x2000 | tmp.size());
+							}
+						} else {
+							reloc.push_back(0x2000 | tmp.size());
+						}
 					}
 					for (int i = 0; i < s1; i += 8)
 						tmp += (a1.first >> i) & 0xff;
