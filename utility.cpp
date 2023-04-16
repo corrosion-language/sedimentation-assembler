@@ -52,16 +52,16 @@ enum op_type op_type(std::string s) {
 }
 
 // this function will NOT handle invalid input properly
-std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
+mem_output *parse_mem(std::string in, short &size, short &reloc) {
 	if (reg_size(in) != -1) {
-		std::deque<uint8_t> out;
+		mem_output *out = new mem_output;
 		short s1 = reg_size(in);
 		short a1 = reg_num(in);
 		if (s1 == 16)
-			out.push_back(0x66);
+			out->prefix = 0x66;
 		if (a1 >= 8 || s1 == 64)
-			out.push_back(0x40 | ((s1 == 64) << 3) | (a1 >= 8));
-		out.push_back(0xc0 | (a1 & 7));
+			out->rex = 0x40 | ((s1 == 64) << 3) | (a1 >= 8);
+		out->rm = 0xc0 | (a1 & 7);
 		return out;
 	}
 	// off can be: label + num, label, num
@@ -88,7 +88,7 @@ std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 			tmp = 128;
 		else {
 			error = "operation size not specified";
-			return {};
+			return nullptr;
 		}
 		size = tmp;
 		in = in.substr(5 + (tmp >= 32));
@@ -106,7 +106,7 @@ std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 		r = std::min(in.find('*', l + 1), std::min(in.find('+', l + 1), in.find('-', l + 1)));
 	}
 	if (tokens.size() == 0)
-		return {};
+		return nullptr;
 
 	for (size_t i = 0; i < ops.size(); i++) {
 		if (ops[i] == '-') {
@@ -128,7 +128,7 @@ std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 		if (ops[ops.size() - 1] == '+')
 			tokens[tokens.size() - 2] = std::to_string(tmp + std::stoi(tokens[tokens.size() - 1], 0, 0));
 		else
-			return {};
+			return nullptr;
 		ops.pop_back();
 		tokens.pop_back();
 		reloc = 0;
@@ -137,13 +137,13 @@ std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 		if (ops[ops.size() - 1] == '+')
 			tokens[tokens.size() - 2] = std::to_string(tmp + std::stoi(tokens[tokens.size() - 1], 0, 0));
 		else
-			return {};
+			return nullptr;
 		ops.pop_back();
 		tokens.pop_back();
 		reloc = 1;
 	}
 
-	std::deque<uint8_t> out;
+	mem_output *out = new mem_output;
 
 	// check to see if we need to use SIB
 	if (tokens.size() == 1 || (reg_size(tokens[1]) == -1 && ops[0] == '+')) {
@@ -154,74 +154,72 @@ std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 				// register
 				// size override
 				if (reg_size(tokens[0]) == 32)
-					out.push_back(0x67);
+					out->prefix = 0x67;
 				// rex prefix if necessary
 				if (a1 >= 8) {
-					out.push_back(0x41);
+					out->rex = 0x41;
 					// check for collisions with rip relative addressing
 					if (a1 == 13) {
-						out.push_back(0x45);
-						out.push_back(0x00);
+						out->rm = 0x45;
+						out->offsize = 1;
+						out->offset = 0x00;
 						return out;
 					}
 					// collisions with SIB addressing
 					if ((a1 & 7) == 0b100) {
-						out.push_back(0x04);
-						out.push_back(0b00100000 | (a1 & 7));
+						out->rm = 0x04;
+						out->sib = 0b00100000 | (a1 & 7);
 						return out;
 					}
 				}
 				// modrm
-				out.push_back(((a1 == 5) << 6) | (a1 & 7));
+				out->rm = ((a1 == 5) << 6) | (a1 & 7);
 				// cannot directly address bp, so we do it with an offset of 0
-				if (a1 == 5)
-					out.push_back(0x00);
-				else if (a1 == 4)
+				if (a1 == 5) {
+					out->offsize = 1;
+					out->offset = 0;
+				} else if (a1 == 4) {
 					// we also cannot directly address sp, so we add a sib byte with no index
-					out.push_back(0x24);
+					out->sib = 0x24;
+				}
 			} else {
-				// offset
-				// modrm
-				out.push_back(0x04);
-				out.push_back(0b00100101);
-				int off = std::stoi(tokens[0], 0, 0);
-				if (reloc == 0)
-					reloc = out.size();
-				else if (reloc == 1)
-					reloc = out.size() | 0x8000;
-				out.push_back(off & 0xff);
-				out.push_back((off >> 8) & 0xff);
-				out.push_back((off >> 16) & 0xff);
-				out.push_back((off >> 24) & 0xff);
+				// only offset
+				out->rm = 0x04;
+				out->sib = 0b00100101;
+				out->offset = std::stoi(tokens[0], 0, 0);
+				out->offsize = 2;
+				if (reloc == 0x7fff && (out->offset & 0xff) == out->offset) {
+					out->offsize = 1;
+					if (out->rm & 0x80)
+						out->rm ^= 0xc0;
+				}
 			}
 		} else {
 			// must be reg + offset
 			short a1 = reg_num(tokens[0]);
 			if (a1 == -1) {
 				error = "symbol `" + tokens[0] + "' undefined";
-				return {};
+				return nullptr;
 			}
-			int off = std::stoi(tokens[1], 0, 0);
 			// size override
 			if (reg_size(tokens[0]) == 32)
-				out.push_back(0x67);
+				out->prefix = 0x67;
 			// rex prefix if necessary
 			if (a1 >= 8)
-				out.push_back(0x41);
+				out->rex = 0x41;
 			// modrm
-			out.push_back(0x80 | (a1 & 7));
+			out->rm = 0x80 | (a1 & 7);
 			if ((a1 & 7) == 4)
 				// we cannot directly address sp, so we add a sib byte with no index
-				out.push_back(0x24);
+				out->sib = 0x24;
 			// offset
-			if (reloc == 0)
-				reloc = out.size();
-			else if (reloc == 1)
-				reloc = out.size() | 0x8000;
-			out.push_back(off & 0xff);
-			out.push_back((off >> 8) & 0xff);
-			out.push_back((off >> 16) & 0xff);
-			out.push_back((off >> 24) & 0xff);
+			out->offset = std::stoi(tokens[1], 0, 0);
+			out->offsize = 2;
+			if (reloc == 0x7fff && (out->offset & 0xff) == out->offset) {
+				out->offsize = 1;
+				if (out->rm & 0x80)
+					out->rm ^= 0xc0;
+			}
 		}
 	} else {
 		// sib
@@ -254,7 +252,7 @@ std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 			index = reg_num(tokens[0]);
 			scale = std::stoi(tokens[1]);
 		} else
-			return {};
+			return nullptr;
 		if (scale == 1)
 			scale = 0;
 		else if (scale == 2)
@@ -264,39 +262,38 @@ std::deque<uint8_t> parse_mem(std::string in, short &size, short &reloc) {
 		else if (scale == 8)
 			scale = 3;
 		else
-			return {};
+			return nullptr;
 		// size override
 		if (reg_size(tokens[0]) == 32)
-			out.push_back(0x67);
+			out->prefix = 0x67;
 		// rex prefix if necessary
 		if (base >= 8 || index >= 8)
-			out.push_back(0x40 | ((index >= 8) << 1) | (base >= 8));
-		if (base >= 8)
-			out[0] |= 1;
-		if (index >= 8)
-			out[0] |= 2;
+			out->rex = 0x40 | ((index >= 8) << 1) | (base >= 8);
 		if ((base & 7) == 5)
 			force = true;
+		// modrm
+		out->rm = 0x04 | ((offset || force) << 7);
+		// 5 means no base
 		if (base == -1) {
 			base = 5;
-			out[out.size() - 1] &= ~0x80;
+			out->rm &= ~0xc0;
 		}
-		if (index == -1)
+		// 4 means no index
+		if (index == -1) {
 			index = 4;
-		// modrm
-		out.push_back(0x04 | ((offset || force) << 7));
+			out->rm &= ~0xc0;
+		}
 		// sib
-		out.push_back((scale << 6) | ((index & 7) << 3) | (base & 7));
+		out->sib = (scale << 6) | ((index & 7) << 3) | (base & 7);
 		// offset
-		if (reloc == 0)
-			reloc = out.size();
-		else if (reloc == 1)
-			reloc = out.size() | 0x8000;
 		if (offset || force) {
-			out.push_back(offset & 0xff);
-			out.push_back((offset >> 8) & 0xff);
-			out.push_back((offset >> 16) & 0xff);
-			out.push_back((offset >> 24) & 0xff);
+			out->offset = offset;
+			out->offsize = 2;
+			if (reloc == 0x7fff && (offset & 0xff) == offset) {
+				out->offsize = 1;
+				if (out->rm & 0x80)
+					out->rm ^= 0xc0;
+			}
 		}
 	}
 	return out;

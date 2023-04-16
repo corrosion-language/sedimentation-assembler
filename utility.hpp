@@ -30,9 +30,18 @@ static const std::unordered_map<std::string, short> _reg_num{
 	{"r8", 8}, {"r9", 9}, {"r10", 10}, {"r11", 11}, {"r12", 12}, {"r13", 13}, {"r14", 14}, {"r15", 15},
 };
 
+struct mem_output {
+	uint8_t prefix = 0;
+	uint8_t rex = 0;
+	uint16_t rm = 0x7fff;
+	uint16_t sib = 0x7fff;
+	uint8_t offsize = 0;
+	int32_t offset;
+};
+
 short reg_num(std::string);
 short reg_size(std::string);
 short mem_size(std::string);
 enum op_type op_type(std::string);
-std::deque<uint8_t> parse_mem(std::string, short &, short &);
+mem_output *parse_mem(std::string, short &, short &);
 std::pair<unsigned long long, short> parse_imm(std::string);

@@ -224,23 +224,18 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				short s1 = _sizes[p.first[1][1] - 'A'];
 				size_t w = p.first.back()[0] == 'w';
 				short tmpreloc;
-				std::deque<uint8_t> data = parse_mem(args[0], s1, tmpreloc);
-				if (data.empty()) {
+				mem_output *data = parse_mem(args[0], s1, tmpreloc);
+				if (data == nullptr) {
 					if (error.empty())
 						error = "invalid addressing mode";
 					std::cerr << input_name << ":" << linenum << ": error: " << error << std::endl;
 					return false;
 				}
-				if (data[0] == 0x67) {
-					tmp += data.front();
-					data.pop_front();
-					tmpreloc -= tmpreloc != 0x7fff;
-				}
-				if ((data[0] & 0xf0) == 0x40) {
-					tmp += data.front();
-					data.pop_front();
-					tmpreloc -= tmpreloc != 0x7fff;
-				} else if (w)
+				if (data->prefix)
+					tmp += data->prefix;
+				if (data->rex)
+					tmp += data->rex;
+				else if (w)
 					tmp += 0x48;
 				short reg = 0;
 				for (size_t i = w; i < p.first.back().size(); i += 2) {
@@ -250,12 +245,21 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					}
 					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
 				}
-				if (tmpreloc != 0x7fff && !(tmpreloc & 0x8000))
-					reloc.push_back(0x8000 | (tmpreloc + tmp.size()));
-				else if (tmpreloc != 0x7fff)
-					reloc.push_back(0x4000 | ((0x8000 ^ tmpreloc) + tmp.size()));
-				tmp += data.front() | (reg << 3);
-				tmp.insert(tmp.end(), data.begin() + 1, data.end());
+				tmp += (uint8_t)data->rm | (reg << 3);
+				if (data->sib != 0x7fff)
+					tmp += data->sib;
+				if (tmpreloc == 0)
+					reloc.push_back(0x8000 | tmp.size());
+				else if (tmpreloc == 1)
+					reloc.push_back(0x4000 | tmp.size());
+				if (data->offsize == 1)
+					tmp += data->offset;
+				else if (data->offsize == 2) {
+					tmp += data->offset;
+					tmp += data->offset >> 8;
+					tmp += data->offset >> 16;
+					tmp += data->offset >> 24;
+				}
 			} else if (p.first[1][0] == 'I') {
 				auto a1 = parse_imm(args[0]);
 				short s1 = _sizes[p.first[1][1] - 'A'];
@@ -328,35 +332,22 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				short rex = 0;
 				short rm = 0x7fff;
 				short sib = 0x7fff;
-				std::deque<uint8_t> other;
+				mem_output *other;
 				short tmpreloc = 0x7fff;
 				if (mem.first != -1) {
 					short s1 = mem.second;
 					other = parse_mem(args[mem.first - 1], s1, tmpreloc);
-					if (other.empty()) {
+					if (other == nullptr) {
 						if (error.empty())
 							error = "invalid addressing mode";
 						std::cerr << input_name << ":" << linenum << ": error: " << error << std::endl;
 						return false;
 					}
-					if (other.front() == 0x67) {
-						tmp += 0x67;
-						other.pop_front();
-						tmpreloc -= tmpreloc != 0x7fff;
-					}
-					if ((other.front() & 0xf0) == 0x40) {
-						rex = other.front();
-						other.pop_front();
-						tmpreloc -= tmpreloc != 0x7fff;
-					}
-					if (!other.empty()) {
-						rm = other.front();
-						other.pop_front();
-					}
-					if (!other.empty()) {
-						sib = other.front();
-						other.pop_front();
-					}
+					if (other->prefix)
+						tmp += other->prefix;
+					rex = other->rex;
+					rm = other->rm;
+					sib = other->sib;
 				}
 				if (p.first.back()[0] == 'w')
 					rex |= 0x48;
@@ -378,15 +369,22 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					}
 					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
 				}
-				if (tmpreloc != 0x7fff && !(tmpreloc & 0x8000))
-					reloc.push_back(0x8000 | (tmpreloc + tmp.size()));
-				else if (tmpreloc != 0x7fff)
-					reloc.push_back(0x4000 | ((0x8000 ^ tmpreloc) + tmp.size()));
 				if (rm != 0x7fff)
 					tmp += rm;
 				if (sib != 0x7fff)
 					tmp += sib;
-				tmp.insert(tmp.end(), other.begin(), other.end());
+				if (tmpreloc == 0)
+					reloc.push_back(0x8000 | tmp.size());
+				else if (tmpreloc == 1)
+					reloc.push_back(0x4000 | tmp.size());
+				if (other->offsize == 1)
+					tmp += other->offset;
+				else if (other->offsize == 2) {
+					tmp += other->offset;
+					tmp += other->offset >> 8;
+					tmp += other->offset >> 16;
+					tmp += other->offset >> 24;
+				}
 				if (imm.first != -1) {
 					auto a1 = parse_imm(args[imm.first - 1]);
 					short s1 = _sizes[p.first[imm.first][1] - 'A'];
