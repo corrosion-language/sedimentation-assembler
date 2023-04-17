@@ -4,16 +4,20 @@
 
 #include <fstream>
 #include <iostream>
-#include <set>
 #include <stdint.h>
 #include <string.h>
 #include <unistd.h>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 extern std::vector<size_t> data_relocations;
 extern std::vector<size_t> bss_relocations;
+extern std::vector<std::pair<size_t, std::string>> rel_relocations;
 extern std::unordered_map<std::string, uint64_t> reloc_table;
+extern std::unordered_map<std::string, uint64_t> data_labels;
+extern std::unordered_map<std::string, uint64_t> bss_labels;
+extern std::unordered_set<std::string> global;
 
 struct elf_header {
 	uint8_t ident[16];

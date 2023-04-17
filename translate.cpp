@@ -232,8 +232,7 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 			} else if (p.first[1][0] == 'M') {
 				short s1 = _sizes[p.first[1][1] - 'A'];
 				size_t w = p.first.back()[0] == 'w';
-				short tmpreloc;
-				mem_output *data = parse_mem(args[0], s1, tmpreloc);
+				mem_output *data = parse_mem(args[0], s1);
 				if (data == nullptr) {
 					if (error.empty())
 						error = "invalid addressing mode";
@@ -257,10 +256,14 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				tmp += (uint8_t)data->rm | (reg << 3);
 				if (data->sib != 0x7fff)
 					tmp += data->sib;
-				if (tmpreloc == 0)
+
+				if (data->reloc == 0)
 					reloc.push_back(0x8000 | tmp.size());
-				else if (tmpreloc == 1)
+				else if (data->reloc == 1)
 					reloc.push_back(0x4000 | tmp.size());
+				else if (data->reloc == 2)
+					reloc.push_back(0x1000 | tmp.size());
+
 				if (data->offsize == 1)
 					tmp += data->offset;
 				else if (data->offsize == 2) {
@@ -359,22 +362,21 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				short rex = 0;
 				short rm = 0x7fff;
 				short sib = 0x7fff;
-				mem_output *other;
-				short tmpreloc = 0x7fff;
+				mem_output *data;
 				if (mem.first != -1) {
 					short s1 = mem.second;
-					other = parse_mem(args[mem.first - 1], s1, tmpreloc);
-					if (other == nullptr) {
+					data = parse_mem(args[mem.first - 1], s1);
+					if (data == nullptr) {
 						if (error.empty())
 							error = "invalid addressing mode";
 						std::cerr << input_name << ":" << linenum << ": error: " << error << std::endl;
 						return false;
 					}
-					if (other->prefix)
-						tmp += other->prefix;
-					rex = other->rex;
-					rm = other->rm;
-					sib = other->sib;
+					if (data->prefix)
+						tmp += data->prefix;
+					rex = data->rex;
+					rm = data->rm;
+					sib = data->sib;
 				}
 				if (p.first.back()[0] == 'w')
 					rex |= 0x48;
@@ -400,17 +402,21 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					tmp += rm;
 				if (sib != 0x7fff)
 					tmp += sib;
-				if (tmpreloc == 0)
+
+				if (data->reloc == 0)
 					reloc.push_back(0x8000 | tmp.size());
-				else if (tmpreloc == 1)
+				else if (data->reloc == 1)
 					reloc.push_back(0x4000 | tmp.size());
-				if (other->offsize == 1)
-					tmp += other->offset;
-				else if (other->offsize == 2) {
-					tmp += other->offset;
-					tmp += other->offset >> 8;
-					tmp += other->offset >> 16;
-					tmp += other->offset >> 24;
+				else if (data->reloc == 2)
+					reloc.push_back(0x1000 | tmp.size());
+
+				if (data->offsize == 1)
+					tmp += data->offset;
+				else if (data->offsize == 2) {
+					tmp += data->offset;
+					tmp += data->offset >> 8;
+					tmp += data->offset >> 16;
+					tmp += data->offset >> 24;
 				}
 				if (imm.first != -1) {
 					auto a1 = parse_imm(args[imm.first - 1]);
@@ -454,6 +460,18 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 			bss_relocations.push_back(output_buffer.size() + (reloc & 0xff));
 		else if (reloc & 0x2000)
 			text_relocations.push_back(output_buffer.size() + (reloc & 0xff));
+		else if (reloc & 0x1000) {
+			std::string label;
+			for (size_t i = 0; i < types.size(); i++) {
+				if (types[i].first == MEM) {
+					label = args[i];
+					label = label.substr(label.find_last_of(' ') + 1);
+					label = label.substr(0, label.size() - 1);
+					break;
+				}
+			}
+			rel_relocations.push_back({output_buffer.size() + (reloc & 0xff), label});
+		}
 	}
 	for (size_t i = 0; i < best.size(); i++)
 		output_buffer.push_back(best[i]);

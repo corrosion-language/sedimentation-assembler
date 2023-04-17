@@ -27,6 +27,12 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	for (auto &s : reloc_table) {
 		strtab_size += s.first.size() + 1;
 	}
+	for (auto &s : data_labels) {
+		strtab_size += s.first.size() + 1;
+	}
+	for (auto &s : bss_labels) {
+		strtab_size += s.first.size() + 1;
+	}
 
 	// ELF header
 	elf_header ehdr;
@@ -35,7 +41,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	ehdr.machine = 0x3e; // x86-64
 	ehdr.version = 1; // current
 	ehdr.entry = vaddr + 0x1000 - data_size;
-	if (reloc_table.find("_start") != reloc_table.end())
+	if (reloc_table.find("_start") != reloc_table.end() && global.find("_start") != global.end())
 		ehdr.entry += reloc_table["_start"];
 	else {
 		std::cerr << "warning: no _start symbol found, using default entry point" << std::endl;
@@ -169,9 +175,9 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	shdr.flags = 0;
 	shdr.addr = 0;
 	shdr.offset = ehdr.shoff + ehdr.shentsize * ehdr.shnum;
-	shdr.size = (reloc_table.size() + 1) * sizeof(symbol);
+	shdr.size = (reloc_table.size() + data_labels.size() + bss_labels.size() + 1) * sizeof(symbol);
 	shdr.link = ehdr.shnum - 2; // strtab
-	shdr.info = reloc_table.size() + 1; // index of last non-local symbol + 1
+	shdr.info = shdr.size / sizeof(symbol); // index of last non-local symbol + 1 (honestly nobody cares so just any symbol)
 	shdr.addralign = 8;
 	shdr.entsize = sizeof(symbol);
 	f.write((const char *)&shdr, sizeof(section_header));
@@ -208,21 +214,57 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	bzero(&sym, sizeof(symbol));
 	f.write((const char *)&sym, sizeof(symbol));
 	// write symtab
+	std::unordered_map<std::string, size_t> symtab;
 	for (auto s : reloc_table) {
 		sym.name = i;
 		i += s.first.size() + 1;
-		sym.info = 0x10; // global
+		sym.info = 0x10 * (global.find(s.first) != global.end()); // global
 		sym.other = 0;
 		sym.shndx = 1; // text
 		sym.value = vaddr + 0x1000 + s.second - data_size;
 		sym.size = 0;
+		symtab[s.first] = sym.value;
 		f.write((const char *)&sym, sizeof(symbol));
+	}
+	for (auto s : data_labels) {
+		sym.name = i;
+		i += s.first.size() + 1;
+		sym.info = 0x02 | (0x10 * (global.find(s.first) != global.end())); // global, data
+		sym.other = 0;
+		sym.shndx = 2; // data
+		sym.value = vaddr + 0x1000 + ((output_buffer.size() - data_size + 0xfff) & ~0xfff) + s.second;
+		sym.size = 0;
+		symtab[s.first] = sym.value;
+		f.write((const char *)&sym, sizeof(symbol));
+	}
+	for (auto s : bss_labels) {
+		sym.name = i;
+		i += s.first.size() + 1;
+		sym.info = 0x02 | (0x10 * (global.find(s.first) != global.end())); // global, data
+		sym.other = 0;
+		sym.shndx = 3; // bss
+		sym.value = vaddr + 0x1000 + ((output_buffer.size() - data_size + 0xfff) & ~0xfff) + ((data_size + 0xfff) & ~0xfff) + s.second;
+		sym.size = 0;
+		symtab[s.first] = sym.value;
+		f.write((const char *)&sym, sizeof(symbol));
+	}
+	// perform relative relocations
+	for (auto &r : rel_relocations) {
+		int32_t *p = (int32_t *)(output_buffer.data() + r.first);
+		*p = symtab[r.second] - (vaddr + 0x1000 + r.first + 3);
 	}
 
 	// write strtab
 	f.seekp(f.tellp() + (std::streamoff)1);
-	for (auto &s : reloc_table)
+	for (auto &s : reloc_table) {
 		f.write(s.first.c_str(), s.first.size() + 1);
+	}
+	for (auto &s : data_labels) {
+		f.write(s.first.c_str(), s.first.size() + 1);
+	}
+	for (auto &s : bss_labels) {
+		f.write(s.first.c_str(), s.first.size() + 1);
+	}
 
 	// write shstrtab
 	f.write("\0.text\0.data\0.bss\0.symtab\0.strtab\0.shstrtab", 44);

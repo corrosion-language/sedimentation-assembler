@@ -31,6 +31,7 @@ static const std::unordered_map<std::string, short> _reg_num{
 };
 
 struct mem_output {
+	short reloc = 0x7fff;
 	uint8_t prefix = 0;
 	uint8_t rex = 0;
 	uint16_t rm = 0x7fff;
@@ -43,5 +44,5 @@ short reg_num(std::string);
 short reg_size(std::string);
 short mem_size(std::string);
 enum op_type op_type(std::string);
-mem_output *parse_mem(std::string, short &, short &);
+mem_output *parse_mem(std::string, short &);
 std::pair<unsigned long long, short> parse_imm(std::string);

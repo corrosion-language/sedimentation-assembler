@@ -19,6 +19,7 @@ std::unordered_map<std::string, size_t> text_labels_map;
 std::vector<uint32_t> text_relocations;
 std::vector<size_t> data_relocations;
 std::vector<size_t> bss_relocations;
+std::vector<std::pair<size_t, std::string>> rel_relocations;
 // symbol table (name, offset)
 std::unordered_map<std::string, uint64_t> reloc_table;
 // output buffer
@@ -29,6 +30,8 @@ uint64_t cum = 0;
 uint64_t num = 0;
 // last label that was not a dot
 std::string prev_label;
+// global symbols
+std::unordered_set<std::string> global;
 
 void print_help(const char *name) {
 	std::cout << "Usage: " << name << " [options] input\n";
@@ -192,6 +195,15 @@ int main(int argc, char *argv[]) {
 				std::cerr << input_name << ':' << i + 1 << ": error: label outside of section" << std::endl;
 				return 1;
 			} else if (curr_sect == BSS) {
+				if (line.starts_with("global ")) {
+					std::string label = line.substr(7);
+					if (label[0] == '.') {
+						std::cerr << "error: " << input_name << ':' << i + 1 << ": dot label in global directive" << std::endl;
+						return 1;
+					}
+					global.insert(label);
+					continue;
+				}
 				std::string label = line.substr(0, line.find(':'));
 				std::string instr = line.substr(line.find(':') + 1, line.find(' ') - line.find(':') - 1);
 				size_t size = std::strtoull(line.substr(line.find(' ') + 1).c_str(), nullptr, 10);
@@ -209,6 +221,15 @@ int main(int argc, char *argv[]) {
 					return 1;
 				}
 			} else if (curr_sect == DATA) {
+				if (line.starts_with("global ")) {
+					std::string label = line.substr(7);
+					if (label[0] == '.') {
+						std::cerr << "error: " << input_name << ':' << i + 1 << ": dot label in global directive" << std::endl;
+						return 1;
+					}
+					global.insert(label);
+					continue;
+				}
 				std::string label = line.substr(0, line.find(':'));
 				std::string instr = line.substr(line.find(':') + 1, line.find(' ') - line.find(':') - 1);
 				std::vector<std::string> args;
@@ -332,6 +353,10 @@ int main(int argc, char *argv[]) {
 						instr[i] = tolower(instr[i]);
 				}
 				if (instr == "global") {
+					std::string label = line.substr(7);
+					if (label[0] == '.')
+						std::cerr << "warning: " << input_name << ':' << i + 1 << ": dot label in global directive" << std::endl;
+					global.insert(label);
 					continue;
 				}
 				std::vector<std::string> args;

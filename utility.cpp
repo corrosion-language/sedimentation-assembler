@@ -52,7 +52,7 @@ enum op_type op_type(std::string s) {
 }
 
 // this function will NOT handle invalid input properly
-mem_output *parse_mem(std::string in, short &size, short &reloc) {
+mem_output *parse_mem(std::string in, short &size) {
 	if (reg_size(in) != -1) {
 		mem_output *out = new mem_output;
 		short s1 = reg_size(in);
@@ -62,6 +62,13 @@ mem_output *parse_mem(std::string in, short &size, short &reloc) {
 		if (a1 >= 8 || s1 == 64)
 			out->rex = 0x40 | ((s1 == 64) << 3) | (a1 >= 8);
 		out->rm = 0xc0 | (a1 & 7);
+		return out;
+	}
+	if (in.starts_with("[rel ")) {
+		mem_output *out = new mem_output;
+		out->rm = 0x05;
+		out->offsize = 2;
+		out->reloc = 2;
 		return out;
 	}
 	// off can be: label + num, label, num
@@ -115,13 +122,15 @@ mem_output *parse_mem(std::string in, short &size, short &reloc) {
 		}
 	}
 
+	mem_output *out = new mem_output;
+
 	// resolve labels and combine with imms if possible
 	if (data_labels.find(tokens.back()) != data_labels.end()) {
 		tokens.back() = std::to_string(data_labels.at(tokens.back()));
-		reloc = 0;
+		out->reloc = 0;
 	} else if (bss_labels.find(tokens.back()) != bss_labels.end()) {
 		tokens.back() = std::to_string(bss_labels.at(tokens.back()));
-		reloc = 1;
+		out->reloc = 1;
 	}
 	if (tokens.size() > 1 && data_labels.find(tokens[tokens.size() - 2]) != data_labels.end()) {
 		uint32_t tmp = data_labels.at(tokens[tokens.size() - 2]);
@@ -131,7 +140,7 @@ mem_output *parse_mem(std::string in, short &size, short &reloc) {
 			return nullptr;
 		ops.pop_back();
 		tokens.pop_back();
-		reloc = 0;
+		out->reloc = 0;
 	} else if (tokens.size() > 1 && bss_labels.find(tokens[tokens.size() - 2]) != bss_labels.end()) {
 		uint32_t tmp = bss_labels.at(tokens[tokens.size() - 2]);
 		if (ops.back() == '+')
@@ -140,10 +149,8 @@ mem_output *parse_mem(std::string in, short &size, short &reloc) {
 			return nullptr;
 		ops.pop_back();
 		tokens.pop_back();
-		reloc = 1;
+		out->reloc = 1;
 	}
-
-	mem_output *out = new mem_output;
 
 	// check to see if we need to use SIB
 	if (tokens.size() == 1 || (reg_size(tokens[1]) == -1 && ops[0] == '+')) {
@@ -188,7 +195,7 @@ mem_output *parse_mem(std::string in, short &size, short &reloc) {
 				out->sib = 0b00100101;
 				out->offset = std::stoi(tokens[0], 0, 0);
 				out->offsize = 2;
-				if (reloc == 0x7fff && (int8_t)out->offset == out->offset) {
+				if (out->reloc == 0x7fff && (int8_t)out->offset == out->offset) {
 					out->offsize = 1;
 					if (out->rm & 0x80)
 						out->rm ^= 0xc0;
@@ -215,7 +222,7 @@ mem_output *parse_mem(std::string in, short &size, short &reloc) {
 			// offset
 			out->offset = std::stoi(tokens[1], 0, 0);
 			out->offsize = 2;
-			if (reloc == 0x7fff && (int8_t)out->offset == out->offset) {
+			if (out->reloc == 0x7fff && (int8_t)out->offset == out->offset) {
 				out->offsize = 1;
 				if (out->rm & 0x80)
 					out->rm ^= 0xc0;
@@ -236,7 +243,7 @@ mem_output *parse_mem(std::string in, short &size, short &reloc) {
 			base = -1;
 		if (ops.back() != '*' && reg_size(tokens.back()) == -1) {
 			offset = std::stoi(tokens.back(), 0, 0);
-			if (reloc != 0x7fff)
+			if (out->reloc != 0x7fff)
 				force = true;
 			tokens.pop_back();
 			ops.pop_back();
@@ -289,7 +296,7 @@ mem_output *parse_mem(std::string in, short &size, short &reloc) {
 		if (offset || force) {
 			out->offset = offset;
 			out->offsize = 2;
-			if (reloc == 0x7fff && (int8_t)offset == offset) {
+			if (out->reloc == 0x7fff && (int8_t)offset == offset) {
 				out->offsize = 1;
 				if (out->rm & 0x80)
 					out->rm ^= 0xc0;
