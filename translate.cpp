@@ -196,9 +196,13 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 	std::string best = "";
 	size_t bestlen = -1;
 	std::vector<short> bestreloc;
-	for (const auto &p : valid) {
+	for (auto &p : valid) {
 		std::vector<short> reloc;
 		std::string tmp = "";
+		if (p.first.back()[0] == 'p') {
+			tmp += std::stoi(p.first.back().substr(1, 2), nullptr, 16);
+			p.first.back() = p.first.back().substr(3);
+		}
 		if (types.size() == 0) {
 			for (size_t i = 0; i < p.first.back().size(); i += 2)
 				tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);

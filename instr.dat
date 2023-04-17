@@ -28,6 +28,9 @@ adc RB MB 13
 adc RC MC 13
 adc RD MD w13
 
+adcx RC MC p660f38f6
+adcx RD MD p66w0f38f6
+
 add 0A IA 04
 add 0B IB 05
 add 0C IC 05
@@ -47,6 +50,9 @@ add RA MA 02
 add RB MB 03
 add RC MC 03
 add RD MD w03
+
+adox RC MC pf30f38f6
+adox RD MD pf3w0f38f6
 
 and 0A IA 24
 and 0B IB 25
@@ -115,6 +121,8 @@ cbw 98
 cwde 98
 
 cdqe w98
+
+clac 0f01ca
 
 clc f8
 
@@ -282,6 +290,12 @@ cmpxchg8b MD 0fc7/1
 cmpxchg16b ME w0fc7/1
 
 cpuid 0fa2
+
+crc32 RC MA pf20f38f0
+crc32 RC MB pf20f38f1
+crc32 RC MC pf20f38f1
+crc32 RD MA pf2w0f38f0
+crc32 RD MD pf2w0f38f1
 
 daa 27
 
@@ -633,6 +647,10 @@ loop IA e2
 loope IA e1
 loopne IA e0
 
+lzcnt RB MB pf30fbd
+lzcnt RC MC pf30fbd
+lzcnt RD MD pf3w0fbd
+
 mov MA RA 88
 mov MB RB 89
 mov MC RC 89
@@ -707,6 +725,10 @@ pop MD 8f/0
 pop RB 58
 pop RD 58
 
+popcnt RB MB pf30fb8
+popcnt RC MC pf30fb8
+popcnt RD MD pf3w0fb8
+
 popf 669d
 popfq 9d
 
@@ -752,6 +774,9 @@ rdpid MD f30fc7/7
 rdseed RB 0fc7/7
 rdseed RC 0fc7/7
 rdseed RD w0fc7/7
+
+ret c3
+ret IB c2
 
 rol MA L1 d0/0
 rol MA 1A d2/0
@@ -979,6 +1004,10 @@ test MA RA 84
 test MB RB 85
 test MC RC 85 
 test MD RD w85
+
+tzcnt RB MB pf30fbc
+tzcnt RC MC pf30fbc
+tzcnt RD MD pf3w0fbc
 
 ud0 RC MC 0fff
 
