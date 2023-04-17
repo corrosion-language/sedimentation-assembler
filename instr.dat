@@ -329,6 +329,8 @@ fiadd MD de/0
 
 fbld df/4
 
+fbstp df/6
+
 fchs d9e0
 
 fclex 9bdbe2
@@ -379,7 +381,7 @@ ficom MC da/2
 
 ficomp MB de/3
 
-ficmp MC da/3
+ficomp MC da/3
 
 fild MB df/0
 
@@ -771,6 +773,10 @@ rcr MD IA wc1/3
 
 rdpid MD f30fc7/7
 
+rdrand RB 0fc7/6
+rdrand RC 0fc7/6
+rdrand RD w0fc7/6
+
 rdseed RB 0fc7/7
 rdseed RC 0fc7/7
 rdseed RD w0fc7/7
@@ -803,10 +809,6 @@ ror MC 1A d3/1
 ror MD 1A wd3/1
 ror MC IA c1/1
 ror MD IA wc1/1
-
-rrand RB 0fc7/6
-rrand RC 0fc7/6
-rrand RD w0fc7/6
 
 sal MA L1 d0/4
 sal MA 1A d2/4
