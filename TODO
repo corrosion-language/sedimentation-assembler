@@ -1,0 +1,10 @@
+Things to do (in order):
+- Refactor the code to make it more reusable for other architectures
+	- Break up main function into smaller functions (parse args, preprocess, etc)
+	- Add comments to the code
+	- Optimize the code
+		- Use different regex library
+		- General cleanup
+- Add support for other architectures (aarch64)
+- Add VEX/EVEX support
+- Start working on a standard library implementation (for the upstream corrosion project (will be a huge pain to implement in corrosion so implementing in asm for now))

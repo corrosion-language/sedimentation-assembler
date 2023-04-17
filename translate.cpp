@@ -17,6 +17,20 @@ void init() {
 }
 
 bool handle(std::string s, std::vector<std::string> args, const size_t linenum) {
+	// handle prefixes (lock, repne, repe)
+	if (s == "lock") {
+		output_buffer.push_back(0xf0);
+		s = args[0];
+		args.erase(args.begin());
+	} else if (s == "repne" || s == "repnz" || s == "bnd") {
+		output_buffer.push_back(0xf2);
+		s = args[0];
+		args.erase(args.begin());
+	} else if (s == "rep" || s == "repe" || s == "repz") {
+		output_buffer.push_back(0xf3);
+		s = args[0];
+		args.erase(args.begin());
+	}
 	error = "";
 	if (!inited)
 		init();
