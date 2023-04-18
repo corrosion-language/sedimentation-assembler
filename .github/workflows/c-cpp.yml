@@ -15,6 +15,6 @@ jobs:
             - name: compile test binary
               run: make release -j4
             - name: test
-              run: cd test && ./sedimentation testfile.asm -o test
+              run: cd test && ../sedimentation testfile.asm -o test
             - name: check output of test file
               run: diff ./test output.txt
