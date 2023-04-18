@@ -1,20 +1,20 @@
 name: C/C++ CI
 
 on:
-	push:
-		branches: ["main"]
-	pull_request:
-		branches: ["main"]
+    push:
+        branches: ["main"]
+    pull_request:
+        branches: ["main"]
 
 jobs:
-	build:
-		runs-on: ubuntu-latest
+    build:
+        runs-on: ubuntu-latest
 
-		steps:
-			- uses: actions/checkout@v3
-			- name: compile test binary
-			  run: make -j4
-			- name: test
-			  run: ./sedimentation testfile.asm -o test
-			- name: check output of test file
-			  run: diff ./test output.txt
+        steps:
+            - uses: actions/checkout@v3
+            - name: compile test binary
+              run: make -j4
+            - name: test
+              run: ./sedimentation testfile.asm -o test
+            - name: check output of test file
+              run: diff ./test output.txt
