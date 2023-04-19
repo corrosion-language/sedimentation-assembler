@@ -1,7 +1,7 @@
 #include "utility.hpp"
 
 short reg_num(std::string s) {
-	short best;
+	short best = -1;
 	std::string best_match = "";
 	for (auto &i : _reg_num) {
 		if (strstr(s.c_str(), i.first.c_str()) != nullptr)
@@ -10,8 +10,6 @@ short reg_num(std::string s) {
 				best_match = i.first;
 			}
 	}
-	if (best_match == "")
-		return -1;
 	return best;
 }
 

@@ -11,6 +11,12 @@ release: CFLAGS += -O2
 release: sedimentation
 	strip -s sedimentation
 
+.ONESHELL:
+test: release
+	cd test
+	../sedimentation testfile.asm -o test
+	./test | diff - output.txt
+
 sedimentation: $(OBJS)
 	$(CC) $(CFLAGS) -o sedimentation $(OBJS)
 
@@ -18,4 +24,4 @@ sedimentation: $(OBJS)
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJS) sedimentation
+	rm -f $(OBJS) sedimentation test/test
