@@ -203,7 +203,7 @@ mem_output *parse_mem(std::string in, short &size) {
 			// must be reg + offset
 			short a1 = reg_num(tokens[0]);
 			if (a1 == -1) {
-				error = "symbol `" + tokens[0] + "' undefined";
+				error = "symbol `" + tokens[0] + "' not defined";
 				return nullptr;
 			}
 			// size override
@@ -358,7 +358,7 @@ std::pair<unsigned long long, short> parse_imm(std::string s) {
 			return {val, size};
 		}
 	} catch (std::invalid_argument) {
-		error = "symbol `" + s + "' undefined";
+		error = "symbol `" + s + "' not defined";
 		return {0, -1};
 	} catch (std::out_of_range) {
 		error = "overflow in immediate value";

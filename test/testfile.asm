@@ -3,6 +3,8 @@ out: resb 10
 section .text
 global _start
 _start:
+	adc rdi, 0
+	xor rdi, [out]
 	mov cl, '0'
 	lea rdi, [out]
 	.L1:

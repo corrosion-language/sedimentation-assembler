@@ -26,20 +26,20 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 	while (r[-1] != '\n' || r[-2] != '\n')
 		r--;
 	// binary search for the section that matches
-	while (l < r) {
+	while (l < r && l < map + map_size - 2 && r > map + 2) {
 		char *m = l + (r - l) / 2;
-		while (m[-1] != '\n' || m[-2] != '\n')
+		while (m >= map + 2 && (m[-1] != '\n' || m[-2] != '\n'))
 			m--;
 		if (strncmp(m, s.c_str(), s.size()) == 0 && m[s.size()] == ' ') {
 			l = m;
 			break;
 		} else if (strncmp(m, s.c_str(), s.size()) < 0) {
 			l = m + 6;
-			while (l[-1] != '\n' || l[-2] != '\n')
+			while (l <= map + map_size - 2 && (l[-1] != '\n' || l[-2] != '\n'))
 				l++;
 		} else {
 			r = m - 6;
-			while (r[-1] != '\n' || r[-2] != '\n')
+			while (r >= map + 2 && (r[-1] != '\n' || r[-2] != '\n'))
 				r--;
 		}
 	}

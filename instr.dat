@@ -1,13 +1,4 @@
 char map[] = R"(
-aaa 37
-
-aad d50a
-
-aad I8 d5
-
-aam d40a
-
-aas 3f
 
 adc 0A IA 14
 adc 0B IB 15
@@ -297,10 +288,6 @@ crc32 RC MB pf20f38f1
 crc32 RC MC pf20f38f1
 crc32 RD MA pf2w0f38f0
 crc32 RD MD pf2w0f38f1
-
-daa 27
-
-das 2f
 
 dec MA fe/1
 dec MB ff/1
@@ -643,8 +630,6 @@ jmp MD ff/4
 lea RB M* 8d
 lea RC M* 8d
 lea RD M* w8d
-
-lock f0
 
 loop IA e2
 loope IA e1
@@ -1057,6 +1042,7 @@ xor RA MA 32
 xor RB MB 33
 xor RC MC 33
 xor RD MD w33
+
 )";
 
 unsigned int map_size = sizeof(map) - 1;
