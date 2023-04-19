@@ -41,7 +41,7 @@ void print_help(const char *name) {
 	std::cout << "-o, --output\t\tSpecify output file" << std::endl;
 }
 
-int main(int argc, char *argv[]) {
+int parse_args(int argc, char *argv[]) {
 	if (argc < 2) {
 		print_help(argv[0]);
 		return 1;
@@ -81,25 +81,9 @@ int main(int argc, char *argv[]) {
 			}
 		}
 	}
-	if (!input.is_open()) {
-		std::cerr << "Error: No input file specified" << std::endl;
-		return 1;
-	}
-	if (!output.is_open()) {
-		output.open("a.out");
-		output_name = "a.out";
-		if (!output.is_open()) {
-			std::cerr << "Error: Could not open output file a.out" << std::endl;
-			return 1;
-		}
-	}
-	// load lines into vector
-	std::string line;
-	while (std::getline(input, line)) {
-		lines.push_back(line);
-	}
+}
 
-	// perform preprocessing
+int preprocess() {
 	for (size_t i = 0; i < lines.size(); i++) {
 		std::string &line = lines[i];
 		// remove comments
@@ -112,10 +96,12 @@ int main(int argc, char *argv[]) {
 				break;
 			}
 		}
-		if (in_string)
+		if (in_string) {
 			std::cerr << input_name << ":" << i + 1 << ": error: unterminated string constant" << std::endl;
+			return 1;
+		}
 		// remove leading and trailing whitespace
-		profile(line = std::regex_replace(line, std::regex("^\\s*(.*?)\\s*$"), "$1"));
+		line = std::regex_replace(line, std::regex("^\\s*(.*?)\\s*$"), "$1");
 		// remove whitespace between tokens
 		size_t l = 0;
 		size_t r = line.find('"', l);
@@ -151,8 +137,9 @@ int main(int argc, char *argv[]) {
 			line = line.substr(0, l) + std::regex_replace(line.substr(l, line.size() - l), p, "$1");
 		}
 	}
-	std::cout << "done preprocessing" << std::endl;
-	// go line by line and parse labels
+}
+
+int parse_labels() {
 	sect curr_sect = UNDEF;
 	for (size_t i = 0; i < lines.size(); i++) {
 		std::string line = lines[i];
@@ -317,11 +304,10 @@ int main(int argc, char *argv[]) {
 			}
 		}
 	}
+}
 
-	std::cout << "Average time: " << ((double)cum / (double)num * 2 / 1000) << "us" << std::endl;
-
-	curr_sect = UNDEF;
-	// go line by line and parse instructions
+int process_instructions() {
+	sect curr_sect = UNDEF;
 	for (size_t i = 0; i < lines.size(); i++) {
 		std::string line = lines[i];
 		while (line.size() == 0 && ++i < lines.size())
@@ -376,6 +362,39 @@ int main(int argc, char *argv[]) {
 			}
 		}
 	}
+}
+
+int main(int argc, char *argv[]) {
+	if (parse_args(argc, argv))
+		return 1;
+
+	// if the file could not be opened it would have been caught earlier
+	// so that means there was no attempt to open a file at all
+	if (!input.is_open()) {
+		std::cerr << "Error: No input file specified" << std::endl;
+		return 1;
+	}
+	if (!output.is_open()) {
+		output.open("a.out");
+		output_name = "a.out";
+		if (!output.is_open()) {
+			std::cerr << "Error: Could not open output file a.out" << std::endl;
+			return 1;
+		}
+	}
+	// load lines into vector
+	std::string line;
+	while (std::getline(input, line))
+		lines.push_back(line);
+
+	if (preprocess())
+		return 1;
+
+	if (parse_labels())
+		return 1;
+
+	if (process_instructions())
+		return 1;
 
 	// text relocations
 	for (uint64_t reloc : text_relocations) {
