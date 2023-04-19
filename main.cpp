@@ -81,6 +81,7 @@ int parse_args(int argc, char *argv[]) {
 			}
 		}
 	}
+	return 0;
 }
 
 int preprocess() {
@@ -137,6 +138,7 @@ int preprocess() {
 			line = line.substr(0, l) + std::regex_replace(line.substr(l, line.size() - l), p, "$1");
 		}
 	}
+	return 0;
 }
 
 int parse_labels() {
@@ -304,6 +306,7 @@ int parse_labels() {
 			}
 		}
 	}
+	return 0;
 }
 
 int process_instructions() {
@@ -362,6 +365,7 @@ int process_instructions() {
 			}
 		}
 	}
+	return 0;
 }
 
 int main(int argc, char *argv[]) {

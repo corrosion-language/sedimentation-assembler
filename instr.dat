@@ -561,6 +561,10 @@ jl IC 0f8c
 jle IA 7e
 jle IC 0f8e
 
+jmp IA eb
+jmp IC e9
+jmp MD ff/4
+
 jna IA 76
 jna IC 0f86
 
@@ -623,16 +627,14 @@ js IC 0f88
 jz IA 74
 jz IC 0f84
 
-jmp IA eb
-jmp IC e9
-jmp MD ff/4
-
 lea RB M* 8d
 lea RC M* 8d
 lea RD M* w8d
 
 loop IA e2
+
 loope IA e1
+
 loopne IA e0
 
 lzcnt RB MB pf30fbd
