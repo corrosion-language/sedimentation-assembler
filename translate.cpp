@@ -449,7 +449,7 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				}
 			}
 		}
-		if (tmp.size() < bestlen) {
+		if (tmp.size() <= bestlen) {
 			best = tmp;
 			bestlen = tmp.size();
 			bestreloc = reloc;

@@ -84,6 +84,8 @@ int parse_args(int argc, char *argv[]) {
 	return 0;
 }
 
+const std::regex lead_trail("^\\s*(.*?)\\s*$"), between("\\s*([,+\\-*\\/:\\\"])\\s*");
+
 int preprocess() {
 	for (size_t i = 0; i < lines.size(); i++) {
 		std::string &line = lines[i];
@@ -102,7 +104,7 @@ int preprocess() {
 			return 1;
 		}
 		// remove leading and trailing whitespace
-		line = std::regex_replace(line, std::regex("^\\s*(.*?)\\s*$"), "$1");
+		line = std::regex_replace(line, lead_trail, "$1");
 		// remove whitespace between tokens
 		size_t l = 0;
 		size_t r = line.find('"', l);
@@ -111,15 +113,14 @@ int preprocess() {
 				break;
 			r = line.find('"', r + 1);
 		}
-		std::regex p("\\s*([,+\\-*\\/:\\\"])\\s*");
 		if (r == std::string::npos) {
-			profile(line = std::regex_replace(line, p, "$1"))
+			line = std::regex_replace(line, between, "$1");
 		} else {
 			while (r != std::string::npos) {
 				if (l == 0)
-					line = std::regex_replace(line.substr(l, r - l), p, "$1") + line.substr(r);
+					line = std::regex_replace(line.substr(l, r - l), between, "$1") + line.substr(r);
 				else
-					line = line.substr(0, l) + std::regex_replace(line.substr(l, r - l - 1), p, "$1") + line.substr(r);
+					line = line.substr(0, l) + std::regex_replace(line.substr(l, r - l - 1), between, "$1") + line.substr(r);
 				l = r + 1;
 				r = line.find('"', l);
 				while (r != 0 && r != std::string::npos) {
@@ -135,7 +136,7 @@ int preprocess() {
 					r = line.find('"', r + 1);
 				}
 			}
-			line = line.substr(0, l) + std::regex_replace(line.substr(l, line.size() - l), p, "$1");
+			line = line.substr(0, l) + std::regex_replace(line.substr(l, line.size() - l), between, "$1");
 		}
 	}
 	return 0;
