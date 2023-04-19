@@ -317,6 +317,14 @@ std::pair<unsigned long long, short> parse_imm(std::string s) {
 	} else if (text_labels_map.find(s) != text_labels_map.end()) {
 		return {text_labels_map.at(s), -4};
 	}
+	// if character, return character
+	if (s[0] == '\'') {
+		if (s[2] != '\'') {
+			error = "invalid character constant";
+			return {0, -1};
+		}
+		return {(unsigned char)s[1], 8};
+	}
 	// detect base
 	int base = 0;
 	if (s.starts_with("0x"))
