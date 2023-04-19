@@ -229,7 +229,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	for (auto s : data_labels) {
 		sym.name = i;
 		i += s.first.size() + 1;
-		sym.info = 0x02 | (0x10 * (global.find(s.first) != global.end())); // global, data
+		sym.info = 0x10 * (global.find(s.first) != global.end()); // global, data
 		sym.other = 0;
 		sym.shndx = 2; // data
 		sym.value = vaddr + 0x1000 + ((output_buffer.size() - data_size + 0xfff) & ~0xfff) + s.second;
@@ -240,9 +240,9 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	for (auto s : bss_labels) {
 		sym.name = i;
 		i += s.first.size() + 1;
-		sym.info = 0x02 | (0x10 * (global.find(s.first) != global.end())); // global, data
+		sym.info = 0x10 * (global.find(s.first) != global.end()); // global, data
 		sym.other = 0;
-		sym.shndx = 3; // bss
+		sym.shndx = 2 + !!data_size; // bss
 		sym.value = vaddr + 0x1000 + ((output_buffer.size() - data_size + 0xfff) & ~0xfff) + ((data_size + 0xfff) & ~0xfff) + s.second;
 		sym.size = 0;
 		symtab[s.first] = sym.value;
@@ -250,8 +250,15 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	}
 	// perform relative relocations
 	for (auto &r : rel_relocations) {
+		auto i = r.second.find_first_of("+-");
+		int offset = 0;
+		if (i != std::string::npos) {
+			offset = std::stoi(r.second.substr(i + 1), 0, 0);
+			if (r.second[i] == '-')
+				offset = -offset;
+		}
 		int32_t *p = (int32_t *)(output_buffer.data() + r.first);
-		*p = symtab[r.second] - (vaddr + 0x1000 + r.first + 3);
+		*p = symtab[r.second.substr(0, i)] - (vaddr + 0x1000 + r.first - data_size + 4) + offset;
 	}
 
 	// write strtab

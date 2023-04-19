@@ -1,24 +1,19 @@
 #include "utility.hpp"
 
 short reg_num(std::string s) {
-	short best = -1;
-	std::string best_match = "";
-	for (auto &i : _reg_num) {
-		if (strstr(s.c_str(), i.first.c_str()) != nullptr)
-			if (i.first.size() > best_match.size()) {
-				best = i.second;
-				best_match = i.first;
-			}
-	}
-	return best;
+	auto ptr = _reg_num.find(s);
+	if (ptr == _reg_num.end())
+		return -1;
+	else
+		return ptr->second;
 }
 
 short reg_size(std::string s) {
-	for (auto &i : _reg_size) {
-		if (std::regex_match(s, (std::regex)i.first))
-			return i.second;
-	}
-	return -1;
+	auto ptr = _reg_size.find(s);
+	if (ptr == _reg_size.end())
+		return -1;
+	else
+		return ptr->second;
 }
 
 short mem_size(std::string s) {
