@@ -1,22 +1,11 @@
 #include "translate.hpp"
+#include "instr.dat"
 #include <sys/mman.h>
 
 std::string error = "";
 
-bool inited = false;
-size_t map_size;
-char *map;
-
-void init() {
-	inited = true;
-	FILE *tmp = fopen("instr.dat", "r");
-	fseek(tmp, 0, SEEK_END);
-	map_size = ftell(tmp);
-	map = (char *)mmap(NULL, map_size, PROT_READ, MAP_PRIVATE, fileno(tmp), 0);
-	fclose(tmp);
-}
-
 bool handle(std::string s, std::vector<std::string> args, const size_t linenum) {
+	error = "";
 	// handle prefixes (lock, repne, repe)
 	if (s == "lock") {
 		output_buffer.push_back(0xf0);
@@ -31,9 +20,6 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 		s = args[0];
 		args.erase(args.begin());
 	}
-	error = "";
-	if (!inited)
-		init();
 	char *l = map;
 	char *r = map + map_size - 1;
 	// go to the start of the section
@@ -83,7 +69,7 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 			if (tmp.second == -1) {
 				std::cerr << input_name << ":" << linenum << ": error: " << error << std::endl;
 				return false;
-			} else if (tmp.second <= -2) {
+			} else if (tmp.second <= -4) {
 				if (reloc_table.find(text_labels[tmp.first]) != reloc_table.end()) {
 					int32_t off = reloc_table.at(text_labels.at(tmp.first)) - output_buffer.size() - 3;
 					if ((int8_t)off == off) {
