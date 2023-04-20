@@ -32,16 +32,25 @@ uint64_t num = 0;
 std::string prev_label;
 // global symbols
 std::unordered_set<std::string> global;
+// whether we are compiling to an object file
+bool object = false;
 
 void print_help(const char *name) {
-	std::cout << "Usage : " << name << " [options] entrée\n";
+	std::cout << "Usage : " << name << " [options] fichier\n";
 	std::cout << "Options :\n";
 	std::cout << "-h, --help\t\tAfficher cette aide\n";
 	std::cout << "-v, --version\t\tAfficher la version\n";
-	std::cout << "-o, --output\t\tFichier de sortie" << std::endl;
+	std::cout << "-o, --output\t\tFichier de sortie\n";
+	std::cout << "-c, --object\t\tCréer un fichier objet au lieu d'un exécutable" << std::endl;
 }
 
-void cerr(const int i, const std::string &msg) { std::cerr << input_name << ":" << i << ": erreur : " << msg << std::endl; }
+void cerr(const int i, const std::string &msg) {
+	std::cerr << input_name << ":" << i << ": erreur : " << msg << std::endl;
+	if (output.is_open())
+		output.close();
+	unlink(output_name);
+	exit(1);
+}
 
 int parse_args(int argc, char *argv[]) {
 	if (argc < 2) {
@@ -60,10 +69,10 @@ int parse_args(int argc, char *argv[]) {
 		} else {
 			if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
 				print_help(argv[0]);
-				return 0;
+				exit(0);
 			} else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--version") == 0) {
 				printf("Version 0.0.1\n");
-				return 0;
+				exit(0);
 			} else if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--output") == 0) {
 				if (i + 1 < argc) {
 					output.open(argv[i + 1]);
@@ -77,6 +86,8 @@ int parse_args(int argc, char *argv[]) {
 					std::cerr << "Erreur : Aucun fichier de sortie spécifié" << std::endl;
 					return 1;
 				}
+			} else if (strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--object") == 0) {
+				object = true;
 			} else {
 				fprintf(stderr, "Erreur : Option inconnue %s\n", argv[i]);
 				return 1;
@@ -88,7 +99,7 @@ int parse_args(int argc, char *argv[]) {
 
 const std::regex lead_trail("^\\s*(.*?)\\s*$"), between("\\s*([,+\\-*\\/:\\\"])\\s*");
 
-int preprocess() {
+void preprocess() {
 	for (size_t i = 0; i < lines.size(); i++) {
 		std::string &line = lines[i];
 		// remove comments
@@ -101,10 +112,8 @@ int preprocess() {
 				break;
 			}
 		}
-		if (in_string) {
+		if (in_string)
 			cerr(i + 1, "chaîne de caractères non terminée");
-			return 1;
-		}
 		// remove leading and trailing whitespace
 		line = std::regex_replace(line, lead_trail, "$1");
 		// remove whitespace between tokens
@@ -141,10 +150,9 @@ int preprocess() {
 			line = line.substr(0, l) + std::regex_replace(line.substr(l, line.size() - l), between, "$1");
 		}
 	}
-	return 0;
 }
 
-int parse_labels() {
+void parse_labels() {
 	sect curr_sect = UNDEF;
 	for (size_t i = 0; i < lines.size(); i++) {
 		std::string line = lines[i];
@@ -161,21 +169,16 @@ int parse_labels() {
 				curr_sect = BSS;
 			} else {
 				cerr(i + 1, "section inconnue « " + line.substr(8) + " »");
-				return 1;
 			}
 			prev_label = "";
 		} else if (line.find(':') != std::string::npos && line.find_first_of(" \t\"'") > line.find(':')) {
-			if (line.size() == 1) {
+			if (line.size() == 1)
 				cerr(i + 1, "étiquette vide");
-				return 1;
-			}
 			if (curr_sect == TEXT) {
 				std::string label = line.substr(0, line.size() - 1);
 				if (line[0] == '.') {
-					if (prev_label == "") {
+					if (prev_label == "")
 						cerr(i + 1, "étiquette sans étiquette parente");
-						return 1;
-					}
 					label = prev_label + label;
 				} else {
 					prev_label = label;
@@ -185,14 +188,11 @@ int parse_labels() {
 				text_labels.push_back(label);
 			} else if (curr_sect == UNDEF) {
 				cerr(i + 1, "étiquette hors d'une section");
-				return 1;
 			} else if (curr_sect == BSS) {
 				if (line.starts_with("global ")) {
 					std::string label = line.substr(7);
-					if (label[0] == '.') {
-						cerr(i + 1, "étiquette subordonnée dans une directive globale");
-						return 1;
-					}
+					if (label[0] == '.')
+						cerr(i + 1, "étiquette locale dans une directive global");
 					global.insert(label);
 					continue;
 				}
@@ -210,15 +210,12 @@ int parse_labels() {
 					bss_size += size * 8;
 				} else {
 					cerr(i + 1, "directive inconnue « " + instr + " »");
-					return 1;
 				}
 			} else if (curr_sect == DATA) {
 				if (line.starts_with("global ")) {
 					std::string label = line.substr(7);
-					if (label[0] == '.') {
+					if (label[0] == '.')
 						cerr(i + 1, "étiquette locale dans une directive global");
-						return 1;
-					}
 					global.insert(label);
 					continue;
 				}
@@ -301,7 +298,6 @@ int parse_labels() {
 						output_buffer.push_back((val >> 56) & 0xff);
 					} else {
 						cerr(i + 1, "directive inconnue « " + instr + " »");
-						return 1;
 					}
 				}
 				data_size += output_buffer.size() - tmp;
@@ -309,10 +305,9 @@ int parse_labels() {
 			}
 		}
 	}
-	return 0;
 }
 
-int process_instructions() {
+void process_instructions() {
 	sect curr_sect = UNDEF;
 	for (size_t i = 0; i < lines.size(); i++) {
 		std::string line = lines[i];
@@ -363,12 +358,10 @@ int process_instructions() {
 					args.push_back(line.substr(pos + 1, next - pos - 1));
 					pos = next;
 				}
-				if (!handle(instr, args, i + 1))
-					return 1;
+				handle(instr, args, i + 1);
 			}
 		}
 	}
-	return 0;
 }
 
 int main(int argc, char *argv[]) {
@@ -382,8 +375,13 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 	if (!output.is_open()) {
-		output.open("a.out");
-		output_name = "a.out";
+		if (object) {
+			std::string tmp = std::string(input_name);
+			tmp = tmp.substr(0, tmp.find_last_of('.')) + ".o";
+			output_name = tmp.c_str();
+		} else
+			output_name = "a.out";
+		output.open(output_name);
 		if (!output.is_open()) {
 			std::cerr << "Erreur : impossible d'ouvrir le fichier de sortie « a.out »" << std::endl;
 			return 1;
@@ -394,14 +392,11 @@ int main(int argc, char *argv[]) {
 	while (std::getline(input, line))
 		lines.push_back(line);
 
-	if (preprocess())
-		return 1;
+	preprocess();
 
-	if (parse_labels())
-		return 1;
+	parse_labels();
 
-	if (process_instructions())
-		return 1;
+	process_instructions();
 
 	// text relocations
 	for (uint64_t reloc : text_relocations) {
@@ -410,7 +405,10 @@ int main(int argc, char *argv[]) {
 		*(uint32_t *)(output_buffer.data() + reloc) = pos;
 	}
 
-	generate_elf(output, output_buffer, data_size, bss_size);
+	if (!object)
+		generate_elf(output, output_buffer, data_size, bss_size);
+	// else
+	// 	generate_object(output, output_buffer, data_size, bss_size);
 
 	// make file executable
 	chmod(output_name, S_IRWXU | S_IRWXG | S_IXOTH | S_IROTH);

@@ -2,9 +2,9 @@
 #include "instr.dat"
 #include <sys/mman.h>
 
-std::string error = "";
+std::string error;
 
-bool handle(std::string s, std::vector<std::string> args, const size_t linenum) {
+void handle(std::string s, std::vector<std::string> args, const size_t linenum) {
 	error = "";
 	// handle prefixes (lock, repne, repe)
 	if (s == "lock") {
@@ -46,10 +46,8 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 	// store all lines that match
 	while ((strncmp(l, s.c_str(), s.size()) != 0 || l[s.size()] != ' ') && l < map + map_size)
 		l++;
-	if (l >= map + map_size - 1) {
+	if (l >= map + map_size - 1)
 		cerr(linenum, "instruction inconnue « " + s + " »");
-		return false;
-	}
 	r = std::find(l + 1, map + map_size, '\n');
 	std::vector<std::string> matches;
 	while (*l != '\n' && r != map + map_size) {
@@ -68,8 +66,7 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 			auto tmp = parse_imm(arg);
 			if (tmp.second == -1) {
 				cerr(linenum, error);
-				return false;
-			} else if (tmp.second <= -4) {
+			} else if (tmp.second == -4) {
 				if (reloc_table.find(text_labels[tmp.first]) != reloc_table.end()) {
 					int32_t off = reloc_table.at(text_labels.at(tmp.first)) - output_buffer.size() - 3;
 					if ((int8_t)off == off) {
@@ -85,7 +82,6 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 			}
 		} else {
 			cerr(linenum, "opérande invalide « " + arg + " »");
-			return false;
 		}
 	}
 	std::vector<std::pair<std::vector<std::string>, short>> valid;
@@ -160,7 +156,6 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				size += _sizes[token[1] - 'A'];
 			} else {
 				std::cerr << "Erreur : ensemble d'instructions mal configurée" << std::endl;
-				return false;
 			}
 		}
 		if (matched) {
@@ -184,15 +179,11 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 			valid.push_back({tokens, size});
 		}
 	}
-	if (valid.empty()) {
+	if (valid.empty())
 		cerr(linenum, "combination de opcode et des opérandes invalide");
-		return false;
-	}
 	for (size_t i = 1; i < valid.size(); i++) {
-		if (valid[i].second != valid[i - 1].second) {
+		if (valid[i].second != valid[i - 1].second)
 			cerr(linenum, "taille d'opération non spécifiée");
-			return false;
-		}
 	}
 	std::string best = "";
 	size_t bestlen = -1;
@@ -214,10 +205,8 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				short a1 = reg_num(args[0]);
 				a1 += (args[0][1] == 'h') * 4;
 				size_t i = p.first.back()[0] == 'w';
-				if (args[0][1] == 'h' && i) {
+				if (args[0][1] == 'h' && i)
 					cerr(linenum, "combination de opcode et des opérandes invalide");
-					return false;
-				}
 				if (i || (types[0].second == 8 && args[0][1] != 'h' && a1 >= 4) || a1 >= 8)
 					tmp += 0x40 | (i << 3) | (a1 & 8);
 				short reg = 0;
@@ -242,7 +231,6 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					if (error.empty())
 						error = "mode d'adressage invalide";
 					cerr(linenum, error);
-					return false;
 				}
 				if (data->prefix)
 					tmp += data->prefix;
@@ -292,7 +280,6 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				}
 				if (a1.second == -1) {
 					cerr(linenum, error);
-					return false;
 				} else if (a1.second == -2) {
 					reloc.push_back(0x8000 | tmp.size());
 				} else if (a1.second == -3) {
@@ -344,7 +331,6 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				short s2 = _sizes[p.first[imm.first][1] - 'A'];
 				if (a2.second == -1) {
 					cerr(linenum, error);
-					return false;
 				} else if (a2.second == -2) {
 					reloc.push_back(0x8000 | tmp.size());
 				} else if (a2.second == -3) {
@@ -375,7 +361,6 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 						if (error.empty())
 							error = "mode d'adressage invalide";
 						cerr(linenum, error);
-						return false;
 					}
 					if (data->prefix)
 						tmp += data->prefix;
@@ -428,7 +413,6 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					short s1 = _sizes[p.first[imm.first][1] - 'A'];
 					if (a1.second == -1) {
 						cerr(linenum, error);
-						return false;
 					} else if (a1.second == -2) {
 						reloc.push_back(0x8000 | tmp.size());
 					} else if (a1.second == -3) {
@@ -480,5 +464,4 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 	}
 	for (size_t i = 0; i < best.size(); i++)
 		output_buffer.push_back(best[i]);
-	return true;
 }
