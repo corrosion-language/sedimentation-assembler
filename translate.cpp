@@ -47,7 +47,7 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 	while ((strncmp(l, s.c_str(), s.size()) != 0 || l[s.size()] != ' ') && l < map + map_size)
 		l++;
 	if (l >= map + map_size - 1) {
-		std::cerr << input_name << ":" << linenum << ": error: unrecognized instruction `" << s << "'" << std::endl;
+		cerr(linenum, "instruction inconnue `" + s + "'");
 		return false;
 	}
 	r = std::find(l + 1, map + map_size, '\n');
@@ -67,7 +67,7 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 		} else if (type == IMM) {
 			auto tmp = parse_imm(arg);
 			if (tmp.second == -1) {
-				std::cerr << input_name << ":" << linenum << ": error: " << error << std::endl;
+				cerr(linenum, error);
 				return false;
 			} else if (tmp.second <= -4) {
 				if (reloc_table.find(text_labels[tmp.first]) != reloc_table.end()) {
@@ -158,7 +158,7 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				}
 				size += _sizes[token[1] - 'A'];
 			} else {
-				std::cerr << "Error: misconfigured instruction set" << std::endl;
+				std::cerr << "Erreur : ensemble d'instructions mal configurée" << std::endl;
 				return false;
 			}
 		}
@@ -184,12 +184,12 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 		}
 	}
 	if (valid.empty()) {
-		std::cerr << input_name << ":" << linenum << ": error: invalid combination of opcode and operands" << std::endl;
+		cerr(linenum, "combination de opcode et des opérandes invalide");
 		return false;
 	}
 	for (size_t i = 1; i < valid.size(); i++) {
 		if (valid[i].second != valid[i - 1].second) {
-			std::cerr << input_name << ":" << linenum << ": error: operation size not specified" << std::endl;
+			cerr(linenum, "taille d'opération non spécifiée");
 			return false;
 		}
 	}
@@ -214,7 +214,7 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				a1 += (args[0][1] == 'h') * 4;
 				size_t i = p.first.back()[0] == 'w';
 				if (args[0][1] == 'h' && i) {
-					std::cerr << input_name << ":" << linenum << ": error: invalid combination of opcode and operands" << std::endl;
+					cerr(linenum, "combination de opcode et des opérandes invalide");
 					return false;
 				}
 				if (i || (types[0].second == 8 && args[0][1] != 'h' && a1 >= 4) || a1 >= 8)
@@ -239,8 +239,8 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				mem_output *data = parse_mem(args[0], s1);
 				if (data == nullptr) {
 					if (error.empty())
-						error = "invalid addressing mode";
-					std::cerr << input_name << ":" << linenum << ": error: " << error << std::endl;
+						error = "mode d'adressage invalide";
+					cerr(linenum, error);
 					return false;
 				}
 				if (data->prefix)
@@ -290,7 +290,7 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
 				}
 				if (a1.second == -1) {
-					std::cerr << input_name << ":" << linenum << ": error: " << error << std::endl;
+					cerr(linenum, error);
 					return false;
 				} else if (a1.second == -2) {
 					reloc.push_back(0x8000 | tmp.size());
@@ -342,7 +342,7 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				auto a2 = parse_imm(args[imm.first - 1]);
 				short s2 = _sizes[p.first[imm.first][1] - 'A'];
 				if (a2.second == -1) {
-					std::cerr << input_name << ":" << linenum << ": error: " << error << std::endl;
+					cerr(linenum, error);
 					return false;
 				} else if (a2.second == -2) {
 					reloc.push_back(0x8000 | tmp.size());
@@ -372,8 +372,8 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					data = parse_mem(args[mem.first - 1], s1);
 					if (data == nullptr) {
 						if (error.empty())
-							error = "invalid addressing mode";
-						std::cerr << input_name << ":" << linenum << ": error: " << error << std::endl;
+							error = "mode d'adressage invalide";
+						cerr(linenum, error);
 						return false;
 					}
 					if (data->prefix)
@@ -426,7 +426,7 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					auto a1 = parse_imm(args[imm.first - 1]);
 					short s1 = _sizes[p.first[imm.first][1] - 'A'];
 					if (a1.second == -1) {
-						std::cerr << input_name << ":" << linenum << ": error: " << error << std::endl;
+						cerr(linenum, error);
 						return false;
 					} else if (a1.second == -2) {
 						reloc.push_back(0x8000 | tmp.size());

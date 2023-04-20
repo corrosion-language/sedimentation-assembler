@@ -87,7 +87,7 @@ mem_output *parse_mem(std::string in, short &size) {
 		else if (in.starts_with("oword "))
 			tmp = 128;
 		else {
-			error = "operation size not specified";
+			error = "taille d'operation non spécifiée";
 			return nullptr;
 		}
 		size = tmp;
@@ -198,7 +198,7 @@ mem_output *parse_mem(std::string in, short &size) {
 			// must be reg + offset
 			short a1 = reg_num(tokens[0]);
 			if (a1 == -1) {
-				error = "symbol `" + tokens[0] + "' not defined";
+				error = "symbole `" + tokens[0] + "' non défini";
 				return nullptr;
 			}
 			// size override
@@ -313,7 +313,7 @@ std::pair<unsigned long long, short> parse_imm(std::string s) {
 	// if character, return character
 	if (s[0] == '\'') {
 		if (s[2] != '\'') {
-			error = "invalid character constant";
+			error = "charactère invalide";
 			return {0, -1};
 		}
 		return {(unsigned char)s[1], 8};
@@ -353,10 +353,10 @@ std::pair<unsigned long long, short> parse_imm(std::string s) {
 			return {val, size};
 		}
 	} catch (std::invalid_argument) {
-		error = "symbol `" + s + "' not defined";
+		error = "symbole `" + s + "' non défini";
 		return {0, -1};
 	} catch (std::out_of_range) {
-		error = "overflow in immediate value";
+		error = "valeur d'immédiate trop grande";
 		return {0, -1};
 	}
 }

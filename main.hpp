@@ -26,5 +26,6 @@
 
 enum sect { UNDEF, TEXT, DATA, BSS };
 
-#endif
+void cerr(const int i, const std::string &s);
 
+#endif

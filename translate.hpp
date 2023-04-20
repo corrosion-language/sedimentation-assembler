@@ -8,7 +8,6 @@
 #include <string>
 #include <vector>
 
-extern const char *input_name;
 extern std::vector<std::string> text_labels;
 extern std::unordered_map<std::string, size_t> text_labels_map;
 extern std::vector<uint8_t> output_buffer;
