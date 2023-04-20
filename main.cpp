@@ -160,7 +160,7 @@ int parse_labels() {
 			} else if (line == "section .bss") {
 				curr_sect = BSS;
 			} else {
-				cerr(i + 1, "section inconnue " + line.substr(8));
+				cerr(i + 1, "section inconnue « " + line.substr(8) + " »");
 				return 1;
 			}
 			prev_label = "";
@@ -209,14 +209,14 @@ int parse_labels() {
 				} else if (instr == "resq") {
 					bss_size += size * 8;
 				} else {
-					cerr(i + 1, "directive inconnue " + instr);
+					cerr(i + 1, "directive inconnue « " + instr + " »");
 					return 1;
 				}
 			} else if (curr_sect == DATA) {
 				if (line.starts_with("global ")) {
 					std::string label = line.substr(7);
 					if (label[0] == '.') {
-						cerr(i + 1, "étiquette subordonnée dans une directive globale");
+						cerr(i + 1, "étiquette locale dans une directive global");
 						return 1;
 					}
 					global.insert(label);
@@ -300,7 +300,7 @@ int parse_labels() {
 						output_buffer.push_back((val >> 48) & 0xff);
 						output_buffer.push_back((val >> 56) & 0xff);
 					} else {
-						cerr(i + 1, "directive inconnue " + instr);
+						cerr(i + 1, "directive inconnue « " + instr + " »");
 						return 1;
 					}
 				}
@@ -347,7 +347,7 @@ int process_instructions() {
 				if (instr == "global") {
 					std::string label = line.substr(7);
 					if (label[0] == '.')
-						std::cerr << "avertissement : " << input_name << ':' << i + 1 << ": étiquette globale locale" << std::endl;
+						std::cerr << "avertissement : " << input_name << ':' << i + 1 << ": étiquette locale dans une directive global" << std::endl;
 					global.insert(label);
 					continue;
 				}
@@ -385,7 +385,7 @@ int main(int argc, char *argv[]) {
 		output.open("a.out");
 		output_name = "a.out";
 		if (!output.is_open()) {
-			std::cerr << "Erreur : impossible d'ouvrir le fichier de sortie a.out" << std::endl;
+			std::cerr << "Erreur : impossible d'ouvrir le fichier de sortie « a.out »" << std::endl;
 			return 1;
 		}
 	}

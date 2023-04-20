@@ -198,7 +198,7 @@ mem_output *parse_mem(std::string in, short &size) {
 			// must be reg + offset
 			short a1 = reg_num(tokens[0]);
 			if (a1 == -1) {
-				error = "symbole `" + tokens[0] + "' non défini";
+				error = "symbole « " + tokens[0] + " » non défini";
 				return nullptr;
 			}
 			// size override
@@ -353,7 +353,7 @@ std::pair<unsigned long long, short> parse_imm(std::string s) {
 			return {val, size};
 		}
 	} catch (std::invalid_argument) {
-		error = "symbole `" + s + "' non défini";
+		error = "symbole « " + s + " » non défini";
 		return {0, -1};
 	} catch (std::out_of_range) {
 		error = "valeur d'immédiate trop grande";

@@ -47,7 +47,7 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 	while ((strncmp(l, s.c_str(), s.size()) != 0 || l[s.size()] != ' ') && l < map + map_size)
 		l++;
 	if (l >= map + map_size - 1) {
-		cerr(linenum, "instruction inconnue `" + s + "'");
+		cerr(linenum, "instruction inconnue « " + s + " »");
 		return false;
 	}
 	r = std::find(l + 1, map + map_size, '\n');
@@ -84,6 +84,7 @@ bool handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				types.push_back({IMM, tmp.second});
 			}
 		} else {
+			cerr(linenum, "opérande invalide « " + arg + " »");
 			return false;
 		}
 	}
