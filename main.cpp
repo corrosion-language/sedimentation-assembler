@@ -34,12 +34,14 @@ std::string prev_label;
 std::unordered_set<std::string> global;
 
 void print_help(const char *name) {
-	std::cout << "Usage: " << name << " [options] input\n";
-	std::cout << "Options:\n";
-	std::cout << "-h, --help\t\tPrint this help message\n";
-	std::cout << "-v, --version\t\tPrint version information\n";
-	std::cout << "-o, --output\t\tSpecify output file" << std::endl;
+	std::cout << "Usage : " << name << " [options] entrée\n";
+	std::cout << "Options :\n";
+	std::cout << "-h, --help\t\tAfficher cette aide\n";
+	std::cout << "-v, --version\t\tAfficher la version\n";
+	std::cout << "-o, --output\t\tFichier de sortie" << std::endl;
 }
+
+void cerr(const int i, const std::string &msg) { std::cerr << input_name << ":" << i << ": erreur : " << msg << std::endl; }
 
 int parse_args(int argc, char *argv[]) {
 	if (argc < 2) {
@@ -51,7 +53,7 @@ int parse_args(int argc, char *argv[]) {
 			input_name = argv[i];
 			input.open(input_name);
 			if (!input.is_open()) {
-				std::cerr << "Error: Could not open input file " << input_name << std::endl;
+				std::cerr << "Erreur : Impossible d'ouvrir le fichier d'entrée " << input_name << std::endl;
 				return 1;
 			}
 			continue;
@@ -67,16 +69,16 @@ int parse_args(int argc, char *argv[]) {
 					output.open(argv[i + 1]);
 					output_name = argv[i + 1];
 					if (!output.is_open()) {
-						std::cerr << "Error: Could not open output file " << argv[i + 1] << std::endl;
+						std::cerr << "Erreur : Impossible d'ouvrir le fichier de sortie " << argv[i + 1] << std::endl;
 						return 1;
 					}
 					i++;
 				} else {
-					std::cerr << "Error: No output file specified" << std::endl;
+					std::cerr << "Erreur : Aucun fichier de sortie spécifié" << std::endl;
 					return 1;
 				}
 			} else {
-				fprintf(stderr, "Error: Unknown option %s\n", argv[i]);
+				fprintf(stderr, "Erreur : Option inconnue %s\n", argv[i]);
 				return 1;
 			}
 		}
@@ -100,7 +102,7 @@ int preprocess() {
 			}
 		}
 		if (in_string) {
-			std::cerr << input_name << ":" << i + 1 << ": error: unterminated string constant" << std::endl;
+			cerr(i + 1, "chaîne de caractères non terminée");
 			return 1;
 		}
 		// remove leading and trailing whitespace
@@ -158,20 +160,20 @@ int parse_labels() {
 			} else if (line == "section .bss") {
 				curr_sect = BSS;
 			} else {
-				std::cerr << input_name << ':' << i + 1 << ": error: unknown section " << line.substr(8) << std::endl;
+				cerr(i + 1, "section inconnue " + line.substr(8));
 				return 1;
 			}
 			prev_label = "";
 		} else if (line.find(':') != std::string::npos && line.find_first_of(" \t\"'") > line.find(':')) {
 			if (line.size() == 1) {
-				std::cerr << input_name << ':' << i + 1 << ": error: empty label" << std::endl;
+				cerr(i + 1, "étiquette vide");
 				return 1;
 			}
 			if (curr_sect == TEXT) {
 				std::string label = line.substr(0, line.size() - 1);
 				if (line[0] == '.') {
 					if (prev_label == "") {
-						std::cerr << input_name << ':' << i + 1 << ": error: dot label without parent label" << std::endl;
+						cerr(i + 1, "étiquette sans étiquette parente");
 						return 1;
 					}
 					label = prev_label + label;
@@ -182,13 +184,13 @@ int parse_labels() {
 				text_labels_map[label] = text_labels.size();
 				text_labels.push_back(label);
 			} else if (curr_sect == UNDEF) {
-				std::cerr << input_name << ':' << i + 1 << ": error: label outside of section" << std::endl;
+				cerr(i + 1, "étiquette hors d'une section");
 				return 1;
 			} else if (curr_sect == BSS) {
 				if (line.starts_with("global ")) {
 					std::string label = line.substr(7);
 					if (label[0] == '.') {
-						std::cerr << "error: " << input_name << ':' << i + 1 << ": dot label in global directive" << std::endl;
+						cerr(i + 1, "étiquette subordonnée dans une directive globale");
 						return 1;
 					}
 					global.insert(label);
@@ -207,14 +209,14 @@ int parse_labels() {
 				} else if (instr == "resq") {
 					bss_size += size * 8;
 				} else {
-					std::cerr << input_name << ':' << i + 1 << ": error: unknown directive " << instr << std::endl;
+					cerr(i + 1, "directive inconnue " + instr);
 					return 1;
 				}
 			} else if (curr_sect == DATA) {
 				if (line.starts_with("global ")) {
 					std::string label = line.substr(7);
 					if (label[0] == '.') {
-						std::cerr << "error: " << input_name << ':' << i + 1 << ": dot label in global directive" << std::endl;
+						cerr(i + 1, "étiquette subordonnée dans une directive globale");
 						return 1;
 					}
 					global.insert(label);
@@ -298,7 +300,7 @@ int parse_labels() {
 						output_buffer.push_back((val >> 48) & 0xff);
 						output_buffer.push_back((val >> 56) & 0xff);
 					} else {
-						std::cerr << input_name << ':' << i + 1 << ": error: unknown directive " << args[1] << std::endl;
+						cerr(i + 1, "directive inconnue " + instr);
 						return 1;
 					}
 				}
@@ -345,7 +347,7 @@ int process_instructions() {
 				if (instr == "global") {
 					std::string label = line.substr(7);
 					if (label[0] == '.')
-						std::cerr << "warning: " << input_name << ':' << i + 1 << ": dot label in global directive" << std::endl;
+						std::cerr << "avertissement : " << input_name << ':' << i + 1 << ": étiquette globale locale" << std::endl;
 					global.insert(label);
 					continue;
 				}
@@ -376,14 +378,14 @@ int main(int argc, char *argv[]) {
 	// if the file could not be opened it would have been caught earlier
 	// so that means there was no attempt to open a file at all
 	if (!input.is_open()) {
-		std::cerr << "Error: No input file specified" << std::endl;
+		std::cerr << "Erreur : aucun fichier d'entrée specifié" << std::endl;
 		return 1;
 	}
 	if (!output.is_open()) {
 		output.open("a.out");
 		output_name = "a.out";
 		if (!output.is_open()) {
-			std::cerr << "Error: Could not open output file a.out" << std::endl;
+			std::cerr << "Erreur : impossible d'ouvrir le fichier de sortie a.out" << std::endl;
 			return 1;
 		}
 	}
