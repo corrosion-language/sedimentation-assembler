@@ -306,13 +306,11 @@ f2xm1 d9f0
 fabs d9e1
 
 fadd MC d8/0
-
 fadd MD dc/0
 
 faddp dec1
 
 fiadd MC da/0
-
 fiadd MD de/0
 
 fbld df/4
@@ -326,15 +324,11 @@ fclex 9bdbe2
 fnclex dbe2
 
 fcom MC d8/2
-
 fcom MD dc/2
-
 fcom d8d1
 
 fcomp MC d8/3
-
 fcomp MD dc/3
-
 fcomp d8d9
 
 fcompp ded9
@@ -344,37 +338,29 @@ fcos d9ff
 fdecstp d9f6
 
 fdiv MC d8/6
-
 fdiv MD dc/6
 
 fdivp def9
 
 fidiv MC da/6
-
 fidiv MD de/6
 
 fdivr MC d8/7
-
 fdivr MD dc/7
 
 fdivrp def1
 
 fidivr MC da/7
-
 fidivr MD de/7
 
 ficom MB de/2
-
 ficom MC da/2
 
 ficomp MB de/3
-
 ficomp MC da/3
 
 fild MB df/0
-
 fild MC db/0
-
 fild MD df/5
 
 fincstp d9f7
@@ -384,23 +370,17 @@ finit 9bdbe3
 fninit dbe3
 
 fist MB df/2
-
 fist MC db/2
 
 fistp MB df/3
-
 fistp MC db/3
-
 fistp MD df/7
 
 fisttp MB df/1
-
 fisttp MC db/1
-
 fisttp MD dd/1
 
 fld MC d9/0
-
 fld MD dd/0
 
 fld1 d9e8
@@ -409,22 +389,20 @@ fldl2t d9e9
 
 fldl2e d9ea
 
-fldpi d9eb
-
 fldlg2 d9ec
 
 fldln2 d9ed
 
+fldpi d9eb
+
 fldz d9ee
 
 fmul MC d8/1
-
 fmul MD dc/1
 
 fmulp dec9
 
 fimul MC da/1
-
 fimul MD de/1
 
 fnop d9d0
@@ -448,31 +426,25 @@ fsincos d9fb
 fsqrt d9fa
 
 fst MC d9/2
-
 fst MD dd/2
 
 fstp MC d9/3
-
 fstp MD dd/3
 
 fsub MC d8/4
-
 fsub MD dc/4
 
 fsubp dee9
 
 fisub MC da/4
-
 fisub MD de/4
 
 fsubr MC d8/5
-
 fsubr MD dc/5
 
 fsubrp dee1
 
 fisubr MC da/5
-
 fisubr MD de/5
 
 ftst d9e4

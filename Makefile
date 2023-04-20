@@ -4,8 +4,10 @@ SRCS=$(wildcard *.cpp)
 HDRS=$(wildcard *.hpp)
 OBJS=$(SRCS:.cpp=.o)
 
+.PHONY: debug release test clean
+
 debug: sedimentation
-	./sedimentation test.asm
+	./sedimentation test.asm -c
 
 release: CFLAGS += -O2
 release: sedimentation
@@ -16,11 +18,13 @@ test: release
 	cd test
 	../sedimentation testfile.asm -o test
 	./test | diff - output.txt
+	rm test
+	../sedimentation testc.asm -o test.o -c
+	gcc -nostartfiles test.o -o test
+	./test | diff - outputc.txt
 
 sedimentation: $(OBJS)
 	$(CC) $(CFLAGS) -o sedimentation $(OBJS)
-
-utility.cpp: instr.dat
 
 %.o: %.cpp $(HDRS)
 	$(CC) $(CFLAGS) -c $< -o $@

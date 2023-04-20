@@ -14,9 +14,11 @@
 extern std::vector<size_t> data_relocations;
 extern std::vector<size_t> bss_relocations;
 extern std::vector<std::pair<size_t, std::string>> rel_relocations;
+extern std::vector<size_t> rela_relocations;
 extern std::unordered_map<std::string, uint64_t> reloc_table;
 extern std::unordered_map<std::string, uint64_t> data_labels;
 extern std::unordered_map<std::string, uint64_t> bss_labels;
+extern std::vector<std::string> extern_labels;
 extern std::unordered_set<std::string> global;
 
 struct elf_header {
@@ -47,6 +49,12 @@ struct symbol {
 	uint64_t value, size;
 };
 
+struct relocation {
+	uint64_t offset, info;
+	int64_t addend;
+};
+
 void generate_elf(std::ofstream &, std::vector<uint8_t> &, uint64_t, uint64_t);
+void generate_object(std::ofstream &, std::vector<uint8_t> &, uint64_t, uint64_t);
 
 #endif

@@ -77,6 +77,8 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				} else {
 					types.push_back({IMM, 32});
 				}
+			} else if (tmp.second <= 2) {
+				types.push_back({IMM, 32});
 			} else {
 				types.push_back({IMM, tmp.second});
 			}
@@ -295,6 +297,8 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					} else {
 						reloc.push_back(0x2000 | tmp.size());
 					}
+				} else if (a1.second == -5) {
+					reloc.push_back(tmp.size());
 				}
 				for (int i = 0; i < s1; i += 8)
 					tmp += (a1.first >> i) & 0xff;
@@ -460,6 +464,8 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				}
 			}
 			rel_relocations.push_back({output_buffer.size() + (reloc & 0xff), label});
+		} else {
+			rela_relocations.push_back(output_buffer.size() + reloc);
 		}
 	}
 	for (size_t i = 0; i < best.size(); i++)

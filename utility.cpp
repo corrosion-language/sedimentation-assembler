@@ -33,7 +33,9 @@ enum op_type op_type(std::string s) {
 	if (reg_size(s) != -1)
 		return REG;
 	// in format "SIZE [...]" or "[]" return MEM or OFFSET
-	if (s.find(' ') != std::string::npos || s[0] == '[') {
+	auto tmp = s.find(" ");
+	tmp = (tmp != std::string::npos) ? tmp : -1;
+	if (s[tmp + 1] == '[' || s[0] == '[') {
 		size_t l = s.find('[');
 		size_t r = s.find(']');
 		if (l == std::string::npos || r == std::string::npos)
@@ -55,13 +57,6 @@ mem_output *parse_mem(std::string in, short &size) {
 		if (a1 >= 8 || s1 == 64)
 			out->rex = 0x40 | ((s1 == 64) << 3) | (a1 >= 8);
 		out->rm = 0xc0 | (a1 & 7);
-		return out;
-	}
-	if (in.starts_with("[rel ")) {
-		mem_output *out = new mem_output;
-		out->rm = 0x05;
-		out->offsize = 2;
-		out->reloc = 2;
 		return out;
 	}
 	// off can be: label + num, label, num
@@ -92,6 +87,13 @@ mem_output *parse_mem(std::string in, short &size) {
 		}
 		size = tmp;
 		in = in.substr(5 + (tmp >= 32));
+	}
+	if (in.starts_with("[rel ")) {
+		mem_output *out = new mem_output;
+		out->rm = 0x05;
+		out->offsize = 2;
+		out->reloc = 2;
+		return out;
 	}
 	in = in.substr(0, in.size() - 1);
 	std::vector<std::string> tokens;
@@ -309,6 +311,8 @@ std::pair<unsigned long long, short> parse_imm(std::string s) {
 		return {bss_labels.at(s), -3};
 	} else if (text_labels_map.find(s) != text_labels_map.end()) {
 		return {text_labels_map.at(s), -4};
+	} else if (s.ends_with("wrt ..plt")) {
+		return {0, -5};
 	}
 	// if character, return character
 	if (s[0] == '\'') {

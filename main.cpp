@@ -14,12 +14,15 @@ std::vector<std::string> lines;
 std::unordered_map<std::string, uint64_t> data_labels;
 std::unordered_map<std::string, uint64_t> bss_labels;
 std::vector<std::string> text_labels;
+std::vector<std::string> extern_labels;
 std::unordered_map<std::string, size_t> text_labels_map;
+std::unordered_map<std::string, size_t> extern_labels_map;
 // symbols (positions)
 std::vector<uint32_t> text_relocations;
 std::vector<size_t> data_relocations;
 std::vector<size_t> bss_relocations;
 std::vector<std::pair<size_t, std::string>> rel_relocations;
+std::vector<size_t> rela_relocations;
 // symbol table (name, offset)
 std::unordered_map<std::string, uint64_t> reloc_table;
 // output buffer
@@ -77,6 +80,9 @@ int parse_args(int argc, char *argv[]) {
 				if (i + 1 < argc) {
 					output.open(argv[i + 1]);
 					output_name = argv[i + 1];
+					auto tmp = strlen(output_name);
+					if (output_name[tmp - 2] == '.' && output_name[tmp - 1] == 'o')
+						object = true;
 					if (!output.is_open()) {
 						std::cerr << "Erreur : Impossible d'ouvrir le fichier de sortie " << argv[i + 1] << std::endl;
 						return 1;
@@ -341,9 +347,17 @@ void process_instructions() {
 				}
 				if (instr == "global") {
 					std::string label = line.substr(7);
-					if (label[0] == '.')
+					if (label[0] == '.') {
 						std::cerr << "avertissement : " << input_name << ':' << i + 1 << ": étiquette locale dans une directive global" << std::endl;
+						label = prev_label + label;
+					}
 					global.insert(label);
+					continue;
+				} else if (instr == "extern") {
+					std::string label = line.substr(7);
+					if (label[0] == '.')
+						cerr(i + 1, "étiquette locale dans une directive extern");
+					extern_labels.push_back(label);
 					continue;
 				}
 				std::vector<std::string> args;
@@ -405,13 +419,18 @@ int main(int argc, char *argv[]) {
 		*(uint32_t *)(output_buffer.data() + reloc) = pos;
 	}
 
-	if (!object)
+	if (!object) {
+		if (!rela_relocations.empty()) {
+			std::cerr << "Erreur : assemblage à l'exécutable avec des fonctions externes non supporté" << std::endl;
+			return 1;
+		}
 		generate_elf(output, output_buffer, data_size, bss_size);
-	// else
-	// 	generate_object(output, output_buffer, data_size, bss_size);
+	} else
+		generate_object(output, output_buffer, data_size, bss_size);
 
 	// make file executable
-	chmod(output_name, S_IRWXU | S_IRWXG | S_IXOTH | S_IROTH);
+	if (!object)
+		chmod(output_name, S_IRWXU | S_IRWXG | S_IXOTH | S_IROTH);
 
 	return 0;
 }

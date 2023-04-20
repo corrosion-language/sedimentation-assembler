@@ -14,6 +14,8 @@ extern std::vector<uint8_t> output_buffer;
 extern std::vector<uint32_t> text_relocations;
 extern std::vector<size_t> data_relocations;
 extern std::vector<size_t> bss_relocations;
+extern std::unordered_map<std::string, size_t> extern_labels_map;
+extern std::vector<size_t> rela_relocations;
 
 const static short _sizes[] = {8, 16, 32, 64, 128};
 
