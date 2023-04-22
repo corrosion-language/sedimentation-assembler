@@ -18,25 +18,18 @@ std::vector<std::string> extern_labels;
 std::unordered_map<std::string, size_t> text_labels_map;
 std::unordered_map<std::string, size_t> extern_labels_map;
 // symbols (positions)
-std::vector<uint32_t> text_relocations;
-std::vector<size_t> data_relocations;
-std::vector<size_t> bss_relocations;
-std::vector<std::pair<size_t, std::string>> rel_relocations;
-std::vector<size_t> rela_relocations;
+std::vector<reloc_entry> relocations;
+std::unordered_map<std::string, std::pair<sect, size_t>> labels;
 // symbol table (name, offset)
 std::unordered_map<std::string, uint64_t> reloc_table;
 // output buffer
 std::vector<uint8_t> output_buffer;
 uint64_t data_size = 0;
 uint64_t bss_size = 0;
-uint64_t cum = 0;
-uint64_t num = 0;
 // last label that was not a dot
 std::string prev_label;
 // global symbols
 std::unordered_set<std::string> global;
-// whether we are compiling to an object file
-bool object = false;
 
 void print_help(const char *name) {
 	std::cout << "Usage : " << name << " [options] fichier\n";
@@ -44,7 +37,6 @@ void print_help(const char *name) {
 	std::cout << "-h, --help\t\tAfficher cette aide\n";
 	std::cout << "-v, --version\t\tAfficher la version\n";
 	std::cout << "-o, --output\t\tFichier de sortie\n";
-	std::cout << "-c, --object\t\tCréer un fichier objet au lieu d'un exécutable" << std::endl;
 }
 
 void cerr(const int i, const std::string &msg) {
@@ -80,9 +72,6 @@ int parse_args(int argc, char *argv[]) {
 				if (i + 1 < argc) {
 					output.open(argv[i + 1]);
 					output_name = argv[i + 1];
-					auto tmp = strlen(output_name);
-					if (output_name[tmp - 2] == '.' && output_name[tmp - 1] == 'o')
-						object = true;
 					if (!output.is_open()) {
 						std::cerr << "Erreur : Impossible d'ouvrir le fichier de sortie " << argv[i + 1] << std::endl;
 						return 1;
@@ -92,8 +81,6 @@ int parse_args(int argc, char *argv[]) {
 					std::cerr << "Erreur : Aucun fichier de sortie spécifié" << std::endl;
 					return 1;
 				}
-			} else if (strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "--object") == 0) {
-				object = true;
 			} else {
 				fprintf(stderr, "Erreur : Option inconnue %s\n", argv[i]);
 				return 1;
@@ -389,12 +376,9 @@ int main(int argc, char *argv[]) {
 		return 1;
 	}
 	if (!output.is_open()) {
-		if (object) {
-			std::string tmp = std::string(input_name);
-			tmp = tmp.substr(0, tmp.find_last_of('.')) + ".o";
-			output_name = tmp.c_str();
-		} else
-			output_name = "a.out";
+		std::string tmp = std::string(input_name);
+		tmp = tmp.substr(0, tmp.find_last_of('.')) + ".o";
+		output_name = tmp.c_str();
 		output.open(output_name);
 		if (!output.is_open()) {
 			std::cerr << "Erreur : impossible d'ouvrir le fichier de sortie « a.out »" << std::endl;
@@ -410,27 +394,24 @@ int main(int argc, char *argv[]) {
 
 	parse_labels();
 
-	process_instructions();
-
-	// text relocations
-	for (uint64_t reloc : text_relocations) {
-		uint32_t symid = *(uint32_t *)(output_buffer.data() + reloc);
-		int32_t pos = reloc_table.at(text_labels[symid]) - reloc - 4;
-		*(uint32_t *)(output_buffer.data() + reloc) = pos;
+	// put all labels into a map
+	for (auto l : data_labels) {
+		labels[l.first] = {DATA, l.second};
+	}
+	for (auto l : bss_labels) {
+		labels[l.first] = {BSS, l.second};
+	}
+	for (auto l : text_labels) {
+		labels[l] = {TEXT, 0};
 	}
 
-	if (!object) {
-		if (!rela_relocations.empty()) {
-			std::cerr << "Erreur : assemblage à l'exécutable avec des fonctions externes non supporté" << std::endl;
-			return 1;
-		}
-		generate_elf(output, output_buffer, data_size, bss_size);
-	} else
-		generate_object(output, output_buffer, data_size, bss_size);
+	process_instructions();
 
-	// make file executable
-	if (!object)
-		chmod(output_name, S_IRWXU | S_IRWXG | S_IXOTH | S_IROTH);
+	for (auto l : reloc_table) {
+		labels[l.first] = {TEXT, l.second - data_size};
+	}
+
+	generate_elf(output, output_buffer, data_size, bss_size);
 
 	return 0;
 }

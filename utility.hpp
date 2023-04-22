@@ -1,3 +1,4 @@
+#include "defines.hpp"
 #include <regex>
 #include <string>
 #include <unordered_map>
@@ -6,9 +7,8 @@ extern std::string prev_label;
 extern std::unordered_map<std::string, uint64_t> data_labels;
 extern std::unordered_map<std::string, uint64_t> bss_labels;
 extern std::unordered_map<std::string, size_t> text_labels_map;
+extern std::unordered_map<std::string, std::pair<sect, size_t>> labels;
 extern std::string error;
-
-enum op_type { INVALID, REG, MEM, IMM };
 
 static const std::unordered_map<std::string, short> _reg_size{
 	{"rax", 64},  {"rbx", 64},	{"rcx", 64}, {"rdx", 64}, {"eax", 32},	{"ebx", 32},  {"ecx", 32},	{"edx", 32},  {"ax", 16},	{"bx", 16},
@@ -30,19 +30,9 @@ static const std::unordered_map<std::string, short> _reg_num{
 	{"r8b", 8},	  {"r9b", 9},	{"r10b", 10}, {"r11b", 11}, {"r12b", 12}, {"r13b", 13}, {"r14b", 14}, {"r15b", 15},
 };
 
-struct mem_output {
-	short reloc = 0x7fff;
-	uint8_t prefix = 0;
-	uint8_t rex = 0;
-	uint16_t rm = 0x7fff;
-	uint16_t sib = 0x7fff;
-	uint8_t offsize = 0;
-	int32_t offset;
-};
-
 short reg_num(std::string);
 short reg_size(std::string);
 short mem_size(std::string);
-enum op_type op_type(std::string);
+op_type get_optype(std::string);
 mem_output *parse_mem(std::string, short &);
 std::pair<unsigned long long, short> parse_imm(std::string);

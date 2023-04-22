@@ -7,7 +7,7 @@ OBJS=$(SRCS:.cpp=.o)
 .PHONY: debug release test clean
 
 debug: sedimentation
-	./sedimentation test.asm -c
+	./sedimentation test.asm
 
 release: CFLAGS += -O2
 release: sedimentation

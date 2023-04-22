@@ -2,6 +2,8 @@
 #ifndef ELF_HPP
 #define ELF_HPP
 
+#include "defines.hpp"
+#include "main.hpp"
 #include <fstream>
 #include <iostream>
 #include <stdint.h>
@@ -11,15 +13,10 @@
 #include <unordered_set>
 #include <vector>
 
-extern std::vector<size_t> data_relocations;
-extern std::vector<size_t> bss_relocations;
-extern std::vector<std::pair<size_t, std::string>> rel_relocations;
-extern std::vector<size_t> rela_relocations;
-extern std::unordered_map<std::string, uint64_t> reloc_table;
-extern std::unordered_map<std::string, uint64_t> data_labels;
-extern std::unordered_map<std::string, uint64_t> bss_labels;
 extern std::vector<std::string> extern_labels;
 extern std::unordered_set<std::string> global;
+extern std::vector<struct reloc_entry> relocations;
+extern std::unordered_map<std::string, std::pair<sect, size_t>> labels;
 
 struct elf_header {
 	uint8_t ident[16];
@@ -55,6 +52,5 @@ struct relocation {
 };
 
 void generate_elf(std::ofstream &, std::vector<uint8_t> &, uint64_t, uint64_t);
-void generate_object(std::ofstream &, std::vector<uint8_t> &, uint64_t, uint64_t);
 
 #endif
