@@ -13,16 +13,16 @@ jobs:
         steps:
             - uses: actions/checkout@v3
             - name: compile test binary
-            run: make release -j4
+              run: make release -j4
             - name: test normal assembling
-            run: |
-                cd test
-                ../sedimentation testfile.asm -o test.o
-                ld test.o -o test
-                ./test | diff - testfile.out
+              run: |
+                  cd test
+                  ../sedimentation testfile.asm -o test.o
+                  ld test.o -o test
+                  ./test | diff - testfile.out
             - name: test assembling with external symbols
-            run: |
-                cd test
-                ../sedimentation testc.asm -o test2.o
-                gcc -nostartfiles test2.o -o test2
-                ./test2 | diff - testc.out
+              run: |
+                  cd test
+                  ../sedimentation testc.asm -o test2.o
+                  gcc -nostartfiles test2.o -o test2
+                  ./test2 | diff - testc.out
