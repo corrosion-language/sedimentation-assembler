@@ -19,7 +19,7 @@ jobs:
                   cd test
                   ../sedimentation testfile.asm -o test.o
                   ld test.o -o test
-                  readelf -r test.o
+                  ./test | diff - testfile.out
             - name: test assembling with external symbols
               run: |
                   cd test

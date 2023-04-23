@@ -257,8 +257,10 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				if (data->sib != 0x7fff)
 					tmp += data->sib;
 
-				if (data->reloc.second != NONE)
+				if (data->reloc.second != NONE) {
 					reloc.push_back({output_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32});
+					data->offset = 0;
+				}
 
 				for (int i = 0; i < data->offsize; i += 8)
 					tmp += (data->offset >> i) & 0xff;
@@ -396,8 +398,10 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				if (sib != 0x7fff)
 					tmp += sib;
 
-				if (data->reloc.second != NONE)
+				if (data->reloc.second != NONE) {
 					reloc.push_back({output_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32});
+					data->offset = 0;
+				}
 
 				for (int i = 0; i < data->offsize; i += 8)
 					tmp += (data->offset >> i) & 0xff;

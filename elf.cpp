@@ -239,13 +239,6 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 		uint64_t index = std::find(ordered_labels.begin(), ordered_labels.end(), r.symbol) - ordered_labels.begin();
 		reloc.info = (index + 1) << 32;
 		if (r.type == ABS) {
-			auto tmp = labels.at(r.symbol);
-			if (tmp.first == DATA)
-				reloc.info = 1;
-			else if (tmp.first == BSS)
-				reloc.info = 1 + !!data_size;
-			r.addend = tmp.second;
-			reloc.info = reloc.info << 32;
 			if (r.size == 64)
 				reloc.info |= 1;
 			else if (r.size == 32)
