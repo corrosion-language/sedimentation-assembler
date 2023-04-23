@@ -9,10 +9,15 @@ void rand_bytes(char *buf, size_t len) {
 void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_t data_size, uint64_t bss_size) {
 	// structure:
 	//  ELF header
-	//  program headers
 	//  section headers
+	//   text
+	//   data
+	//   bss
+	//   shstrtab
+	//   symtab
+	//   strtab
+	//   rela.text
 	//  section data
-	//  section names
 
 	// list of symbols to include
 	uint64_t strtab_size = 1;
@@ -112,7 +117,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	shdr.addr = 0;
 	shdr.offset = shdr.offset + shdr.size;
 	shdr.size = (labels.size() + extern_labels.size() + !!data_size + !!bss_size + 1) * sizeof(symbol);
-	shdr.link = ehdr.shnum - 2; // strtab
+	shdr.link = ehdr.shnum - 1 - relocations.size(); // strtab
 	shdr.info = shdr.size / sizeof(symbol) - global.size() - extern_labels.size(); // index of last local symbol + 1
 	shdr.addralign = 8;
 	shdr.entsize = sizeof(symbol);
@@ -132,17 +137,19 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	f.write((const char *)&shdr, sizeof(section_header));
 
 	// relocation table
-	shdr.name = 44;
-	shdr.type = 4; // rela
-	shdr.flags = 0;
-	shdr.addr = 0;
-	shdr.offset = shdr.offset + shdr.size;
-	shdr.size = relocations.size() * sizeof(relocation);
-	shdr.link = ehdr.shnum - 3; // symtab
-	shdr.info = 1; // text section
-	shdr.addralign = 8;
-	shdr.entsize = sizeof(relocation);
-	f.write((const char *)&shdr, sizeof(section_header));
+	if (relocations.size()) {
+		shdr.name = 44;
+		shdr.type = 4; // rela
+		shdr.flags = 0;
+		shdr.addr = 0;
+		shdr.offset = shdr.offset + shdr.size;
+		shdr.size = relocations.size() * sizeof(relocation);
+		shdr.link = ehdr.shnum - 3; // symtab
+		shdr.info = 1; // text section
+		shdr.addralign = 8;
+		shdr.entsize = sizeof(relocation);
+		f.write((const char *)&shdr, sizeof(section_header));
+	}
 
 	// write text
 	f.write((const char *)output_buffer.data() + data_size, output_buffer.size() - data_size);
