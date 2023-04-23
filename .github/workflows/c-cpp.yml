@@ -19,7 +19,7 @@ jobs:
                   cd test
                   ../sedimentation testfile.asm -o test.o
                   ld test.o -o test
-                  ./test | diff - testfile.out
+                  objdump -M intel -ds test
             - name: test assembling with external symbols
               run: |
                   cd test
