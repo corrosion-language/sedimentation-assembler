@@ -232,7 +232,7 @@ mem_output *parse_mem(std::string in, short &size) {
 			ops.erase(ops.begin());
 		} else
 			base = -1;
-		if (ops.back() != '*' && reg_size(tokens.back()) == -1) {
+		if (ops.size() && ops.back() != '*' && reg_size(tokens.back()) == -1) {
 			offset = std::stoi(tokens.back(), 0, 0);
 			if (out->reloc.second != NONE)
 				force = true;
@@ -349,10 +349,10 @@ std::pair<unsigned long long, short> parse_imm(std::string s) {
 				size = 32;
 			return {val, size};
 		}
-	} catch (std::invalid_argument) {
+	} catch (std::invalid_argument const &) {
 		error = "symbole « " + s + " » non défini";
 		return {0, -1};
-	} catch (std::out_of_range) {
+	} catch (std::out_of_range const &) {
 		error = "valeur d'immédiate trop grande";
 		return {0, -1};
 	}

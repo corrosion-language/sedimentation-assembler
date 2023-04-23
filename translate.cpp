@@ -165,7 +165,10 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 		if (matched) {
 			for (size_t j = 0; j < args.size(); j++) {
 				if (types[j].second == -1) {
-					types[j].second = _sizes[tokens[j + 1][1] - 'A'];
+					if (tokens[j + 1][1] == '*')
+						types[j].second = 8;
+					else
+						types[j].second = _sizes[tokens[j + 1][1] - 'A'];
 				}
 			}
 			std::vector<short> del;
@@ -184,7 +187,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 		}
 	}
 	if (valid.empty())
-		cerr(linenum, "combination de opcode et des opérandes invalide");
+		cerr(linenum, "combination d'opcode et des opérandes invalide");
 	for (size_t i = 1; i < valid.size(); i++) {
 		if (valid[i].second != valid[i - 1].second)
 			cerr(linenum, "taille d'opération non spécifiée");
@@ -210,7 +213,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				a1 += (args[0][1] == 'h') * 4;
 				size_t i = p.first.back()[0] == 'w';
 				if (args[0][1] == 'h' && i)
-					cerr(linenum, "combination de opcode et des opérandes invalide");
+					cerr(linenum, "combination d'opcode et des opérandes invalide");
 				if (i || (types[0].second == 8 && args[0][1] != 'h' && a1 >= 4) || a1 >= 8)
 					tmp += 0x40 | (i << 3) | (a1 & 8);
 				short reg = 0;
@@ -259,6 +262,8 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 
 				for (int i = 0; i < data->offsize; i += 8)
 					tmp += (data->offset >> i) & 0xff;
+
+				delete data;
 			} else if (p.first[1][0] == 'I') {
 				auto a1 = parse_imm(args[0]);
 				short s1 = _sizes[p.first[1][1] - 'A'];
@@ -396,6 +401,8 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 
 				for (int i = 0; i < data->offsize; i += 8)
 					tmp += (data->offset >> i) & 0xff;
+
+				delete data;
 
 				if (imm.first != -1) {
 					auto a1 = parse_imm(args[imm.first - 1]);

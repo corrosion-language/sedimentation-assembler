@@ -7,7 +7,6 @@ OBJS=$(SRCS:.cpp=.o)
 .PHONY: debug release test clean
 
 debug: sedimentation
-	./sedimentation test.asm
 
 release: CFLAGS += -O2
 release: sedimentation
@@ -16,7 +15,9 @@ release: sedimentation
 sedimentation: $(OBJS)
 	$(CC) $(CFLAGS) -o sedimentation $(OBJS)
 
-%.o: %.cpp $(HDRS)
+translate.o: translate.cpp instr.dat
+
+%.o: %.cpp $(HDRS) Makefile
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
