@@ -113,7 +113,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	shdr.offset = shdr.offset + shdr.size;
 	shdr.size = (labels.size() + extern_labels.size() + !!data_size + !!bss_size + 1) * sizeof(symbol);
 	shdr.link = ehdr.shnum - 2; // strtab
-	shdr.info = shdr.size / sizeof(symbol) - global.size(); // index of last local symbol + 1
+	shdr.info = shdr.size / sizeof(symbol) - global.size() - extern_labels.size(); // index of last local symbol + 1
 	shdr.addralign = 8;
 	shdr.entsize = sizeof(symbol);
 	f.write((const char *)&shdr, sizeof(section_header));
@@ -182,20 +182,12 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 		ordered_labels.push_back("");
 	}
 	sym.info = 0;
-	sym.shndx = 0;
 	// write symtab
-	for (auto s : extern_labels) {
-		sym.name = i;
-		i += s.size() + 1;
-		f.write((const char *)&sym, sizeof(symbol));
-		ordered_labels.push_back(s);
-	}
 	for (auto l : labels) {
 		if (global.find(l.first) != global.end())
 			continue;
 		sym.name = i;
 		i += l.first.size() + 1;
-		sym.info = 0;
 		sym.other = 0;
 		if (l.second.first == TEXT)
 			sym.shndx = 1; // text
@@ -208,12 +200,19 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 		f.write((const char *)&sym, sizeof(symbol));
 		ordered_labels.push_back(l.first);
 	}
+	sym.info = 0x10;
+	sym.shndx = 0;
+	for (auto s : extern_labels) {
+		sym.name = i;
+		i += s.size() + 1;
+		f.write((const char *)&sym, sizeof(symbol));
+		ordered_labels.push_back(s);
+	}
 	for (auto l : labels) {
 		if (global.find(l.first) == global.end())
 			continue;
 		sym.name = i;
 		i += l.first.size() + 1;
-		sym.info = 0x10;
 		sym.other = 0;
 		if (l.second.first == TEXT)
 			sym.shndx = 1; // text

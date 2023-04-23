@@ -1,24 +1,21 @@
 section .data
-	msg: db "123321test text this will work", 10, 0
-	f: db "%s %x %f\n", 0
-	six: dq 6
+	msg: db "123321test", 0
+	f: db "%s %x %ld", 10, 0
+	two: dq 2
 section .text
 global _start
 extern printf
 _start:
 	finit
 	fldpi
-	fild qword [rel six]
+	fild qword [rel two]
 	fdivp
 	fsin
-	fstp qword [rel six]
-	mov rdi, msg
-	mov rax, [rel six]
-	push rax
-	mov rax, 0xdeadbeef
-	push rax
-	mov rax, msg
-	push rax
+	fistp qword [rel two]
+	lea rdi, [rel f]
+	lea rsi, [rel msg]
+	mov edx, 0xdeadbeef
+	mov rcx, [rel two]
 	call printf wrt ..plt
 	mov eax, 60
 	xor edi, edi

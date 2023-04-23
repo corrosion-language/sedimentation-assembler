@@ -5,3 +5,5 @@ test.asm
 callgrind*
 .vscode/
 in
+test/test
+test/test2
