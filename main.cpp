@@ -7,7 +7,7 @@ const char *input_name;
 // output file
 std::ofstream output;
 // output file name
-const char *output_name;
+char *output_name;
 // lines of input file
 std::vector<std::string> lines;
 // labels in data section (name, offset)
@@ -378,7 +378,9 @@ int main(int argc, char *argv[]) {
 	if (!output.is_open()) {
 		std::string tmp = std::string(input_name);
 		tmp = tmp.substr(0, tmp.find_last_of('.')) + ".o";
-		output_name = tmp.c_str();
+		output_name = new char[tmp.size() + 1];
+		memcpy(output_name, tmp.c_str(), tmp.size() + 1);
+		output_name[tmp.size()] = '\0';
 		output.open(output_name);
 		if (!output.is_open()) {
 			std::cerr << "Erreur : impossible d'ouvrir le fichier de sortie « a.out »" << std::endl;

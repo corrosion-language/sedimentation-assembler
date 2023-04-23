@@ -121,18 +121,6 @@ mem_output *parse_mem(std::string in, short &size) {
 	mem_output *out = new mem_output;
 
 	// resolve labels and combine with imms if possible
-	if (data_labels.find(tokens.front()) != data_labels.end() || bss_labels.find(tokens.front()) != bss_labels.end()) {
-		tokens.push_back(tokens.front());
-		ops.push_back('+');
-		tokens.erase(tokens.begin());
-		ops.erase(ops.begin());
-	}
-	if (data_labels.find(tokens.back()) != data_labels.end() || bss_labels.find(tokens.back()) != bss_labels.end()) {
-		out->reloc.first = tokens.back();
-		out->reloc.second = ABS;
-		tokens.pop_back();
-		ops.pop_back();
-	}
 	if (tokens.size() > 1 &&
 		(data_labels.find(tokens[tokens.size() - 2]) != data_labels.end() || bss_labels.find(tokens[tokens.size() - 2]) != bss_labels.end())) {
 		out->reloc.first = tokens[tokens.size() - 2];
@@ -141,6 +129,18 @@ mem_output *parse_mem(std::string in, short &size) {
 			return nullptr;
 		tokens.erase(tokens.end() - 2);
 		ops.pop_back();
+	} else {
+		if (data_labels.find(tokens.front()) != data_labels.end() || bss_labels.find(tokens.front()) != bss_labels.end()) {
+			tokens.push_back(tokens.front());
+			ops.push_back('+');
+			tokens.erase(tokens.begin());
+			ops.erase(ops.begin());
+		}
+		if (data_labels.find(tokens.back()) != data_labels.end() || bss_labels.find(tokens.back()) != bss_labels.end()) {
+			out->reloc.first = tokens.back();
+			out->reloc.second = ABS;
+			tokens.back() = "0";
+		}
 	}
 
 	// check to see if we need to use SIB
@@ -304,7 +304,7 @@ std::pair<unsigned long long, short> parse_imm(std::string s) {
 	if (s.ends_with("wrt ..plt"))
 		return {0, -4};
 	if (text_labels_map.find(s) != text_labels_map.end())
-		return {0, -3};
+		return {text_labels_map.at(s), -3};
 	if (labels.find(s) != labels.end())
 		return {0, -2};
 	// if character, return character

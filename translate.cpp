@@ -77,6 +77,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				} else {
 					types.push_back({IMM, 32});
 				}
+				tmp.first = 0;
 			} else if (tmp.second == -2 || tmp.second == -4) {
 				types.push_back({IMM, 32});
 			} else {
@@ -286,6 +287,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					} else {
 						reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32});
 					}
+					a1.first = 0;
 				} else if (a1.second == -4) {
 					reloc.push_back({output_buffer.size() + tmp.size(), 0, PLT, args[0].substr(0, args[0].size() - 10), 32});
 				}
@@ -338,6 +340,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					} else {
 						reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 32});
 					}
+					a2.first = 0;
 				}
 				for (int i = 0; i < s2; i += 8)
 					tmp += (a2.first >> i) & 0xff;
@@ -409,6 +412,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 						} else {
 							reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32});
 						}
+						a1.first = 0;
 					}
 					for (int i = 0; i < s1; i += 8)
 						tmp += (a1.first >> i) & 0xff;
