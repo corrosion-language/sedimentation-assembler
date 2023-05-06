@@ -274,7 +274,7 @@ void handle_vex(std::string s, std::vector<std::string> args, const size_t linen
 
 			for (int i = 0; i < data->offsize; i += 8)
 				tmp += (data->offset >> i) & 0xff;
-		} else if (args.size() == 3) {
+		} else if (args.size() == 3 || args.size() == 4) {
 			if (p.first[3][0] == 'I' && (s.starts_with("vpsl") || s.starts_with("vpsr"))) {
 				// special case: vvvv, r/m, imm
 				vvvv = reg_num(args[0]);
@@ -373,7 +373,7 @@ void handle_vex(std::string s, std::vector<std::string> args, const size_t linen
 						reg ^= 8;
 					}
 
-					if ((rxb & 0b11) == 0 && mmmmm == 0 && w == 0) {
+					if (!(rxb & 0b11) && !mmmmm && !w) {
 						tmp += 0xc5;
 						tmp += (rxb << 5) | (vvvv << 3) | (l << 2) | pp;
 						tmp.back() ^= 0xf8;
@@ -390,7 +390,7 @@ void handle_vex(std::string s, std::vector<std::string> args, const size_t linen
 							break;
 						tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
 					}
-					tmp += (uint8_t)data->rm | (reg << 3);
+					tmp += (reg << 3) | data->rm;
 					if (data->sib != 0x7fff)
 						tmp += data->sib;
 
@@ -401,6 +401,16 @@ void handle_vex(std::string s, std::vector<std::string> args, const size_t linen
 
 					for (int i = 0; i < data->offsize; i += 8)
 						tmp += (data->offset >> i) & 0xff;
+
+					if (args.size() == 4) {
+						std::pair<short, short> a4;
+						if (types[3].first == IMM)
+							a4 = {parse_imm(args[3]).first, _sizes[p.first[4][1] - 'A']};
+						else
+							a4 = {reg_num(args[3]) << 4, 8};
+						for (int i = 0; i < a4.second; i += 8)
+							tmp += (a4.first >> i) & 0xff;
+					}
 				}
 			}
 		}
