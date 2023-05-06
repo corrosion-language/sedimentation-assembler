@@ -42,7 +42,7 @@ static const std::unordered_map<std::string, short> _reg_num{
 	{"ymm6", 6},   {"ymm7", 7},	  {"ymm8", 8},	 {"ymm9", 9},	{"ymm10", 10}, {"ymm11", 11}, {"ymm12", 12}, {"ymm13", 13}, {"ymm14", 14}, {"ymm15", 15},
 };
 
-const static short _sizes[] = {8, 16, 32, 64, 128, 256};
+const static short _sizes[] = {-1, 8, -1, 32, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 64, -1, -1, 80, -1, -1, 16, 128, 256, 512};
 
 struct reloc_entry {
 	uint64_t offset = 0;
