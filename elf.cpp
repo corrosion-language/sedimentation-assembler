@@ -117,7 +117,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	shdr.addr = 0;
 	shdr.offset = shdr.offset + shdr.size;
 	shdr.size = (labels.size() + extern_labels.size() + !!data_size + !!bss_size + 1) * sizeof(symbol);
-	shdr.link = ehdr.shnum - 1 - relocations.size(); // strtab
+	shdr.link = ehdr.shnum - 1 - !!relocations.size(); // strtab
 	shdr.info = shdr.size / sizeof(symbol) - global.size() - extern_labels.size(); // index of last local symbol + 1
 	shdr.addralign = 8;
 	shdr.entsize = sizeof(symbol);

@@ -1,0 +1,1019 @@
+char vex_map[] = R"(
+
+andn RC RC MC 0.0.2.0.f2
+andn RD RD MD 0.0.2.1.f2
+
+bextr RC MC RC 0.0.2.0.f7
+bextr RD MD RD 0.0.2.1.f7
+
+blsi RC MC 0.0.2.0.f3/3
+blsi RD MD 0.0.2.1.f3/3
+
+blsmsk RC MC 0.0.2.0.f3/2
+blsmsk RD MD 0.0.2.1.f3/2
+
+blsr RC MC 0.0.2.0.f3/1
+blsr RD MD 0.0.2.1.f3/1
+
+bzhi RC MC RC 0.0.2.0.f5
+bzhi RD MD RD 0.0.2.1.f5
+
+mulx RC RC MC 0.3.2.0.f6
+mulx RD RD MD 0.3.2.1.f6
+
+pdep RC RC MC 0.3.2.0.f5
+pdep RD RD MD 0.3.2.1.f5
+
+pext RC RC MC 0.2.2.0.f5
+pext RD RD MD 0.2.2.1.f5
+
+rorx RC MC IA 0.3.3.0.f0
+rorx RD MD IA 0.3.3.1.f0
+
+sarx RC MC RC 0.2.2.0.f7
+sarx RD MD RD 0.2.2.1.f7
+
+shlx RC MC RC 0.1.2.0.f7
+shlx RD MD RD 0.1.2.1.f7
+
+shrx RC MC RC 0.3.2.0.f7
+shrx RD MD RD 0.3.2.1.f7
+
+vaddpd RE RE ME 0.1.1.0.58
+vaddpd RF RF MF 1.1.1.0.58
+
+vaddps RE RE ME 0.0.1.0.58
+vaddps RF RF MF 1.0.1.0.58
+
+vaddsd RE RE ME 0.3.1.0.58
+
+vaddss RE RE ME 0.2.1.0.58
+
+vaddsubpd RE RE ME 0.1.1.0.d0
+vaddsubpd RF RF MF 1.1.1.0.d0
+
+vaddsubps RE RE ME 0.3.1.0.d0
+vaddsubps RF RF MF 1.3.1.0.d0
+
+vaesdec RE RE ME 0.1.2.0.de
+vaesdec RF RF MF 1.1.2.0.de
+
+vaesdeclast RE RE ME 0.1.2.0.df
+vaesdeclast RF RF MF 1.1.2.0.df
+
+vaesenc RE RE ME 0.1.2.0.dc
+vaesenc RF RF MF 1.1.2.0.dc
+
+vaesenclast RE RE ME 0.1.2.0.dd
+vaesenclast RF RF MF 1.1.2.0.dd
+
+vaesimc RE ME 0.1.2.0.db
+
+vaeskeygenassist RE ME IA 0.1.3.0.df
+
+vandnpd RE RE ME 0.1.1.0.55
+vandnpd RF RF MF 1.1.1.0.55
+
+vandnps RE RE ME 0.0.1.0.55
+vandnps RF RF MF 1.0.1.0.55
+
+vandpd RE RE ME 0.1.1.0.54
+vandpd RF RF MF 1.1.1.0.54
+
+vandps RE RE ME 0.0.1.0.54
+vandps RF RF MF 1.0.1.0.54
+
+vblendpd RE RE ME IA 0.1.3.0.0d
+vblendpd RF RF MF IA 1.1.3.0.0d
+
+vblendps RE RE ME IA 0.1.3.0.0c
+vblendps RF RF MF IA 1.1.3.0.0c
+
+vblendvpd RE RE ME RE 0.1.3.0.4b
+vblendvpd RF RF MF RF 1.1.3.0.4b
+
+vblendvps RE RE ME RE 0.1.3.0.4a
+vblendvps RF RF MF RF 1.1.3.0.4a
+
+vbroadcastf128 RF ME 1.1.2.0.1a
+
+vbroadcasti128 RF ME 1.1.2.0.5a
+
+vbroadcastsd RF MD 1.1.2.0.19
+vbroadcastsd RF RE 1.1.2.0.19
+
+vbroadcastss RE MC 0.1.2.0.18
+vbroadcastss RE RE 0.1.2.0.18
+vbroadcastss RF MC 1.1.2.0.18
+vbroadcastss RF RE 1.1.2.0.18
+
+vcmppd RE RE ME IA 0.1.1.0.c2
+vcmppd RF RF MF IA 1.1.1.0.c2
+
+vcmpps RE RE ME IA 0.0.1.0.c2
+vcmpps RF RF MF IA 1.0.1.0.c2
+
+vcmpsd RE RE ME IA 0.3.1.0.c2
+
+vcmpss RE RE ME IA 0.2.1.0.c2
+
+vcomisd RE ME 0.1.1.0.2f
+
+vcomiss RE ME 0.0.1.0.2f
+
+vcvtdq2pd RE ME 0.2.1.0.e6
+vcvtdq2pd RF ME 1.2.1.0.e6
+
+vcvtpd2ps RE ME 0.1.1.0.5a
+vcvtpd2ps RE MF 1.1.1.0.5a
+
+vcvtph2ps RE ME 0.1.2.0.13
+vcvtph2ps RF ME 1.1.2.0.13
+
+vcvtps2dq RE ME 0.1.1.0.5b
+vcvtps2dq RF MF 1.1.1.0.5b
+
+vcvtps2pd RE ME 0.0.1.0.5a
+vcvtps2pd RF ME 1.0.1.0.5a
+
+vcvtps2ph ME RE IA 0.1.3.0.1d
+vcvtps2ph ME RF IA 1.1.3.0.1d
+
+vcvtsd2si RC ME 0.3.1.0.2d
+vcvtsd2si RD ME 0.3.1.1.2d
+
+vcvtsd2ss RE RE ME 0.3.1.0.5a
+
+vcvtsi2sd RE RE MC 0.3.1.0.2a
+vcvtsi2sd RE RE MD 0.3.1.1.2a
+
+vcvtsi2ss RE RE MC 0.2.1.0.2a
+vcvtsi2ss RE RE MD 0.2.1.1.2a
+
+vcvtss2sd RE RE ME 0.2.1.0.5a
+
+vcvtss2si RC ME 0.2.1.0.2d
+vcvtss2si RD ME 0.2.1.1.2d
+
+vcvttpd2dq RE ME 0.1.1.0.e6
+vcvttpd2dq RE MF 1.1.1.0.e6
+
+vcvttps2dq RE ME 0.2.1.0.5b
+vcvttps2dq RF MF 1.2.1.0.5b
+
+vcvttsd2si RC ME 0.3.1.0.2c
+vcvttsd2si RD ME 0.3.1.1.2c
+
+vcvttss2si RC ME 0.2.1.0.2c
+vcvttss2si RD ME 0.2.1.1.2c
+
+vdivpd RE RE ME 0.1.1.0.5e
+vdivpd RF RF MF 1.1.1.0.5e
+
+vdivps RE RE ME 0.0.1.0.5e
+vdivps RF RF MF 1.0.1.0.5e
+
+vdivsd RE RE ME 0.3.1.0.5e
+
+vdivss RE RE ME 0.2.1.0.5e
+
+vdppd RE RE ME IA 0.1.3.0.41
+
+vdpps RE RE ME IA 0.1.3.0.40
+vdpps RF RF MF IA 1.1.3.0.40
+
+vextractf128 ME RF IA 1.1.3.0.19
+
+vextracti128 ME RF IA 1.1.3.0.39
+
+vextractps MC RE IA 0.1.3.0.17
+
+vfmadd132pd RE RE ME 0.1.2.1.98
+vfmadd132pd RF RF MF 1.1.2.1.98
+
+vfmadd132ps RE RE ME 0.1.2.0.98
+vfmadd132ps RF RF MF 1.1.2.0.98
+
+vfmadd132sd RE RE ME 0.1.2.1.99
+
+vfmadd132ss RE RE ME 0.1.2.0.99
+
+vfmadd213pd RE RE ME 0.1.2.1.a8
+vfmadd213pd RF RF MF 1.1.2.1.a8
+
+vfmadd213ps RE RE ME 0.1.2.0.a8
+vfmadd213ps RF RF MF 1.1.2.0.a8
+
+vfmadd213sd RE RE ME 0.1.2.1.a9
+
+vfmadd213ss RE RE ME 0.1.2.0.a9
+
+vfmadd231pd RE RE ME 0.1.2.1.b8
+vfmadd231pd RF RF MF 1.1.2.1.b8
+
+vfmadd231ps RE RE ME 0.1.2.0.b8
+vfmadd231ps RF RF MF 1.1.2.0.b8
+
+vfmadd231sd RE RE ME 0.1.2.1.b9
+
+vfmadd231ss RE RE ME 0.1.2.0.b9
+
+vfmaddsub132pd RE RE ME 0.1.2.1.96
+vfmaddsub132pd RF RF MF 1.1.2.1.96
+
+vfmaddsub132ps RE RE ME 0.1.2.0.96
+vfmaddsub132ps RF RF MF 1.1.2.0.96
+
+vfmaddsub213pd RE RE ME 0.1.2.1.a6
+vfmaddsub213pd RF RF MF 1.1.2.1.a6
+
+vfmaddsub213ps RE RE ME 0.1.2.0.a6
+vfmaddsub213ps RF RF MF 1.1.2.0.a6
+
+vfmaddsub231pd RE RE ME 0.1.2.1.b6
+vfmaddsub231pd RF RF MF 1.1.2.1.b6
+
+vfmaddsub231ps RE RE ME 0.1.2.0.b6
+vfmaddsub231ps RF RF MF 1.1.2.0.b6
+
+vfmsub132pd RE RE ME 0.1.2.1.9a
+vfmsub132pd RF RF MF 1.1.2.1.9a
+
+vfmsub132ps RE RE ME 0.1.2.0.9a
+vfmsub132ps RF RF MF 1.1.2.0.9a
+
+vfmsub132sd RE RE ME 0.1.2.1.9b
+
+vfmsub132ss RE RE ME 0.1.2.0.9b
+
+vfmsub213pd RE RE ME 0.1.2.1.aa
+vfmsub213pd RF RF MF 1.1.2.1.aa
+
+vfmsub213ps RE RE ME 0.1.2.0.aa
+vfmsub213ps RF RF MF 1.1.2.0.aa
+
+vfmsub213sd RE RE ME 0.1.2.1.ab
+
+vfmsub213ss RE RE ME 0.1.2.0.ab
+
+vfmsub231pd RE RE ME 0.1.2.1.ba
+vfmsub231pd RF RF MF 1.1.2.1.ba
+
+vfmsub231ps RE RE ME 0.1.2.0.ba
+vfmsub231ps RF RF MF 1.1.2.0.ba
+
+vfmsub231sd RE RE ME 0.1.2.1.bb
+
+vfmsub231ss RE RE ME 0.1.2.0.bb
+
+vfmsubadd132pd RE RE ME 0.1.2.1.97
+vfmsubadd132pd RF RF MF 1.1.2.1.97
+
+vfmsubadd132ps RE RE ME 0.1.2.0.97
+vfmsubadd132ps RF RF MF 1.1.2.0.97
+
+vfmsubadd213pd RE RE ME 0.1.2.1.a7
+vfmsubadd213pd RF RF MF 1.1.2.1.a7
+
+vfmsubadd213ps RE RE ME 0.1.2.0.a7
+vfmsubadd213ps RF RF MF 1.1.2.0.a7
+
+vfmsubadd231pd RE RE ME 0.1.2.1.b7
+vfmsubadd231pd RF RF MF 1.1.2.1.b7
+
+vfmsubadd231ps RE RE ME 0.1.2.0.b7
+vfmsubadd231ps RF RF MF 1.1.2.0.b7
+
+vfnmadd132pd RE RE ME 0.1.2.1.9c
+vfnmadd132pd RF RF MF 1.1.2.1.9c
+
+vfnmadd132ps RE RE ME 0.1.2.0.9c
+vfnmadd132ps RF RF MF 1.1.2.0.9c
+
+vfnmadd132sd RE RE ME 0.1.2.1.9d
+
+vfnmadd132ss RE RE ME 0.1.2.0.9d
+
+vfnmadd213pd RE RE ME 0.1.2.1.ac
+vfnmadd213pd RF RF MF 1.1.2.1.ac
+
+vfnmadd213ps RE RE ME 0.1.2.0.ac
+vfnmadd213ps RF RF MF 1.1.2.0.ac
+
+vfnmadd213sd RE RE ME 0.1.2.1.ad
+
+vfnmadd213ss RE RE ME 0.1.2.0.ad
+
+vfnmadd231pd RE RE ME 0.1.2.1.bc
+vfnmadd231pd RF RF MF 1.1.2.1.bc
+
+vfnmadd231ps RE RE ME 0.1.2.0.bc
+vfnmadd231ps RF RF MF 1.1.2.0.bc
+
+vfnmadd231sd RE RE ME 0.1.2.1.bd
+
+vfnmadd231ss RE RE ME 0.1.2.0.bd
+
+vfnmsub132pd RE RE ME 0.1.2.1.9e
+vfnmsub132pd RF RF MF 1.1.2.1.9e
+
+vfnmsub132ps RE RE ME 0.1.2.0.9e
+vfnmsub132ps RF RF MF 1.1.2.0.9e
+
+vfnmsub132sd RE RE ME 0.1.2.1.9f
+
+vfnmsub132ss RE RE ME 0.1.2.0.9f
+
+vfnmsub213pd RE RE ME 0.1.2.1.ae
+vfnmsub213pd RF RF MF 1.1.2.1.ae
+
+vfnmsub213ps RE RE ME 0.1.2.0.ae
+vfnmsub213ps RF RF MF 1.1.2.0.ae
+
+vfnmsub213sd RE RE ME 0.1.2.1.af
+
+vfnmsub213ss RE RE ME 0.1.2.0.af
+
+vfnmsub231pd RE RE ME 0.1.2.1.be
+vfnmsub231pd RF RF MF 1.1.2.1.be
+
+vfnmsub231ps RE RE ME 0.1.2.0.be
+vfnmsub231ps RF RF MF 1.1.2.0.be
+
+vfnmsub231sd RE RE ME 0.1.2.1.bf
+
+vfnmsub231ss RE RE ME 0.1.2.0.bf
+
+vgf2p8affineinvqb RE RE ME IA 0.1.3.1.cf
+vgf2p8affineinvqb RF RF MF IA 1.1.3.1.cf
+
+vgf2p8affineqb RE RE ME IA 0.1.3.1.ce
+vgf2p8affineqb RF RF MF IA 1.1.3.1.ce
+
+vgf2p8mulb RE RE ME 0.1.2.0.cf
+vgf2p8mulb RF RF MF 1.1.2.0.cf
+
+vhaddpd RE RE ME 0.1.1.0.7c
+vhaddpd RF RF MF 1.1.1.0.7c
+
+vhaddps RE RE ME 0.3.1.0.7c
+vhaddps RF RF MF 1.3.1.0.7c
+
+vhsubpd RE RE ME 0.1.1.0.7d
+vhsubpd RF RF MF 1.1.1.0.7d
+
+vhsubps RE RE ME 0.3.1.0.7d
+vhsubps RF RF MF 1.3.1.0.7d
+
+vinsertf128 RF RF ME IA 1.1.3.0.18
+
+vinserti128 RF RF ME IA 1.1.3.0.38
+
+vinsertps RE RE ME IA 0.1.3.0.21
+
+vlddqu RE ME 0.3.1.0.f0
+vlddqu RF MF 1.3.1.0.f0
+
+vldmxcsr MC 0.0.1.0.ae/2
+
+vmaskmovdqu RE RE 0.1.1.0.f7
+
+vmaskmovpd ME RE RE 0.1.2.0.2f
+vmaskmovpd MF RF RF 1.1.2.0.2f
+vmaskmovpd RE RE ME 0.1.2.0.2d
+vmaskmovpd RF RF MF 1.1.2.0.2d
+
+vmaskmovps ME RE RE 0.1.2.0.2e
+vmaskmovps MF RF RF 1.1.2.0.2e
+vmaskmovps RE RE ME 0.1.2.0.2c
+vmaskmovps RF RF MF 1.1.2.0.2c
+
+vmaxpd RE RE ME 0.1.1.0.5f
+vmaxpd RF RF MF 1.1.1.0.5f
+
+vmaxps RE RE ME 0.0.1.0.5f
+vmaxps RF RF MF 1.0.1.0.5f
+
+vmaxsd RE RE ME 0.3.1.0.5f
+
+vmaxss RE RE ME 0.2.1.0.5f
+
+vminpd RE RE ME 0.1.1.0.5d
+vminpd RF RF MF 1.1.1.0.5d
+
+vminps RE RE ME 0.0.1.0.5d
+vminps RF RF MF 1.0.1.0.5d
+
+vminsd RE RE ME 0.3.1.0.5d
+
+vminss RE RE ME 0.2.1.0.5d
+
+vmovapd ME RE 0.1.1.0.29
+vmovapd MF RF 1.1.1.0.29
+vmovapd RE ME 0.1.1.0.28
+vmovapd RF MF 1.1.1.0.28
+
+vmovaps ME RE 0.0.1.0.29
+vmovaps MF RF 1.0.1.0.29
+vmovaps RE ME 0.0.1.0.28
+vmovaps RF MF 1.0.1.0.28
+
+vmovd MC RE 0.1.1.0.7e
+vmovd RE MC 0.1.1.0.6e
+
+vmovddup RE ME 0.3.1.0.12
+vmovddup RF MF 1.3.1.0.12
+
+vmovdqa ME RE 0.1.1.0.7f
+vmovdqa MF RF 1.1.1.0.7f
+vmovdqa RE ME 0.1.1.0.6f
+vmovdqa RF MF 1.1.1.0.6f
+
+vmovdqu ME RE 0.2.1.0.7f
+vmovdqu MF RF 1.2.1.0.7f
+vmovdqu RE ME 0.2.1.0.6f
+vmovdqu RF MF 1.2.1.0.6f
+
+vmovhlps RE RE RE 0.0.1.0.12
+
+vmovhpd MD RE 0.1.1.0.17
+vmovhpd RE RE MD 0.1.1.0.16
+
+vmovhps MD RE 0.0.1.0.17
+vmovhps RE RE MD 0.0.1.0.16
+
+vmovlhps RE RE RE 0.0.1.0.16
+
+vmovlpd MD RE 0.1.1.0.13
+vmovlpd RE RE MD 0.1.1.0.12
+
+vmovlps MD RE 0.0.1.0.13
+vmovlps RE RE MD 0.0.1.0.12
+
+vmovmskpd RC RE 0.1.1.0.50
+vmovmskpd RC RF 1.1.1.0.50
+
+vmovmskps RC RE 0.0.1.0.50
+vmovmskps RC RF 1.0.1.0.50
+
+vmovntdq ME RE 0.1.1.0.e7
+vmovntdq MF RF 1.1.1.0.e7
+
+vmovntdqa RE ME 0.1.2.0.2a
+vmovntdqa RF MF 1.1.2.0.2a
+
+vmovntpd ME RE 0.1.1.0.2b
+vmovntpd MF RF 1.1.1.0.2b
+
+vmovntps ME RE 0.0.1.0.2b
+vmovntps MF RF 1.0.1.0.2b
+
+vmovq MD RE 0.1.1.1.7e
+vmovq ME RE 0.1.1.0.d6
+vmovq RE MD 0.1.1.1.6e
+vmovq RE ME 0.2.1.0.7e
+
+vmovsd MD RE 0.3.1.0.11
+vmovsd RE MD 0.3.1.0.10
+vmovsd RE RE RE 0.3.1.0.10
+vmovsd RE RE RE 0.3.1.0.11
+
+vmovshdup RE ME 0.2.1.0.16
+vmovshdup RF MF 1.2.1.0.16
+
+vmovsldup RE ME 0.2.1.0.12
+vmovsldup RF MF 1.2.1.0.12
+
+vmovss MC RE 0.2.1.0.11
+vmovss RE MC 0.2.1.0.10
+vmovss RE RE RE 0.2.1.0.10
+vmovss RE RE RE 0.2.1.0.11
+
+vmovupd ME RE 0.1.1.0.11
+vmovupd MF RF 1.1.1.0.11
+vmovupd RE ME 0.1.1.0.10
+vmovupd RF MF 1.1.1.0.10
+
+vmovups ME RE 0.0.1.0.11
+vmovups MF RF 1.0.1.0.11
+vmovups RE ME 0.0.1.0.10
+vmovups RF MF 1.0.1.0.10
+
+vmpsadbw RE RE ME IA 0.1.3.0.42
+vmpsadbw RF RF MF IA 1.1.3.0.42
+
+vmulpd RE RE ME 0.1.1.0.59
+vmulpd RF RF MF 1.1.1.0.59
+
+vmulps RE RE ME 0.0.1.0.59
+vmulps RF RF MF 1.0.1.0.59
+
+vmulsd RE RE ME 0.3.1.0.59
+
+vmulss RE RE ME 0.2.1.0.59
+
+vorpd RE RE ME 0.1.1.0.56
+vorpd RF RF MF 1.1.1.0.56
+
+vorps RE RE ME 0.0.1.0.56
+vorps RF RF MF 1.0.1.0.56
+
+vpabsb RE ME 0.1.2.0.1c
+vpabsb RF MF 1.1.2.0.1c
+
+vpabsd RE ME 0.1.2.0.1e
+vpabsd RF MF 1.1.2.0.1e
+
+vpabsw RE ME 0.1.2.0.1d
+vpabsw RF MF 1.1.2.0.1d
+
+vpackssdw RE RE ME 0.1.1.0.6b
+vpackssdw RF RF MF 1.1.1.0.6b
+
+vpacksswb RE RE ME 0.1.1.0.63
+vpacksswb RF RF MF 1.1.1.0.63
+
+vpackusdw RE RE ME 0.1.2.0.2b
+vpackusdw RF RF MF 1.1.2.0.2b
+
+vpackuswb RE RE ME 0.1.1.0.67
+vpackuswb RF RF MF 1.1.1.0.67
+
+vpaddb RE RE ME 0.1.1.0.fc
+vpaddb RF RF MF 1.1.1.0.fc
+
+vpaddd RE RE ME 0.1.1.0.fe
+vpaddd RF RF MF 1.1.1.0.fe
+
+vpaddq RE RE ME 0.1.1.0.d4
+vpaddq RF RF MF 1.1.1.0.d4
+
+vpaddsb RE RE ME 0.1.1.0.ec
+vpaddsb RF RF MF 1.1.1.0.ec
+
+vpaddsw RE RE ME 0.1.1.0.ed
+vpaddsw RF RF MF 1.1.1.0.ed
+
+vpaddusb RE RE ME 0.0.660f.0.dc
+vpaddusb RF RF MF 1.1.1.0.dc
+
+vpaddusw RE RE ME 0.1.1.0.dd
+vpaddusw RF RF MF 1.1.1.0.dd
+
+vpaddw RE RE ME 0.1.1.0.fd
+vpaddw RF RF MF 1.1.1.0.fd
+
+vpalignr RE RE ME IA 0.1.3.0.0f
+vpalignr RF RF MF IA 1.1.3.0.0f
+
+vpand RE RE ME 0.1.1.0.db
+vpand RF RF MF 1.1.1.0.db
+
+vpandn RE RE ME 0.1.1.0.df
+vpandn RF RF MF 1.1.1.0.df
+
+vpavgb RE RE ME 0.1.1.0.e0
+vpavgb RF RF MF 1.1.1.0.e0
+
+vpavgw RE RE ME 0.1.1.0.e3
+vpavgw RF RF MF 1.1.1.0.e3
+
+vpblendd RE RE ME IA 0.1.3.0.02
+vpblendd RF RF MF IA 1.1.3.0.02
+
+vpblendvb RE RE ME RE 0.1.3.0.4c
+vpblendvb RF RF MF RF 1.1.3.0.4c
+
+vpblendw RE RE ME IA 0.1.3.0.0e
+vpblendw RF RF MF IA 1.1.3.0.0e
+
+vpbroadcastb RE ME 0.1.2.0.78
+vpbroadcastb RF ME 1.1.2.0.78
+
+vpbroadcastd RE ME 0.1.2.0.58
+vpbroadcastd RF ME 1.1.2.0.58
+
+vpbroadcastq RE ME 0.1.2.0.59
+vpbroadcastq RF ME 1.1.2.0.59
+
+vpbroadcastw RE ME 0.1.2.0.79
+vpbroadcastw RF ME 1.1.2.0.79
+
+vpclmulqdq RE RE ME IA 0.1.3.0.44
+vpclmulqdq RF RF MF IA 1.1.3.0.44
+
+vpcmpeqb RE RE ME 0.1.1.0.74
+vpcmpeqb RF RF MF 1.1.1.0.74
+
+vpcmpeqd RE RE ME 0.1.1.0.76
+vpcmpeqd RF RF MF 1.1.1.0.76
+
+vpcmpeqq RE RE ME 0.1.2.0.29
+vpcmpeqq RF RF MF 1.1.2.0.29
+
+vpcmpeqw RE RE ME 0.1.1.0.75
+vpcmpeqw RF RF MF 1.1.1.0.75
+
+vpcmpestri RE ME IA 0.1.3.0.61
+
+vpcmpestrm RE ME IA 0.1.3.0.60
+
+vpcmpgtb RE RE ME 0.1.1.0.64
+vpcmpgtb RF RF MF 1.1.1.0.64
+
+vpcmpgtd RE RE ME 0.1.1.0.66
+vpcmpgtd RF RF MF 1.1.1.0.66
+
+vpcmpgtq RE RE ME 0.1.2.0.37
+vpcmpgtq RF RF MF 1.1.2.0.37
+
+vpcmpgtw RE RE ME 0.1.1.0.65
+vpcmpgtw RF RF MF 1.1.1.0.65
+
+vpcmpistri RE ME IA 0.1.3.0.63
+
+vpcmpistrm RE ME IA 0.1.3.0.62
+
+vpdpbusd RE RE ME 0.1.2.0.50
+vpdpbusd RF RF MF 1.1.2.0.50
+
+vpdpbusds RE RE ME 0.1.2.0.51
+vpdpbusds RF RF MF 1.1.2.0.51
+
+vpdpwssd RE RE ME 0.1.2.0.52
+vpdpwssd RF RF MF 1.1.2.0.52
+
+vpdpwssds RE RE ME 0.1.2.0.53
+vpdpwssds RF RF MF 1.1.2.0.53
+
+vperm2f128 RF RF MF IA 1.1.3.0.06
+
+vperm2i128 RF RF MF IA 1.1.3.0.46
+
+vpermd RF RF MF 1.1.2.0.36
+
+vpermilpd RE ME IA 0.1.3.0.05
+vpermilpd RE RE ME 0.1.2.0.0d
+vpermilpd RF MF IA 1.1.3.0.05
+vpermilpd RF RF MF 1.1.2.0.0d
+
+vpermilps RE ME IA 0.1.3.0.04
+vpermilps RE RE ME 0.1.2.0.0c
+vpermilps RF MF IA 1.1.3.0.04
+vpermilps RF RF MF 1.1.2.0.0c
+
+vpermpd RF MF IA 1.1.3.1.01
+
+vpermps RF RF MF 1.1.2.0.16
+
+vpermq RF MF IA 1.1.3.1.00
+
+vpextrb MA RE IA 0.1.3.0.14
+
+vpextrd MC RE IA 0.1.3.0.16
+
+vpextrq MD RE IA 0.1.3.1.16
+
+vpextrw MB RE IA 0.1.3.0.15
+vpextrw RB RE IA 0.1.1.0.c5
+
+vphaddd RE RE ME 0.1.2.0.02
+vphaddd RF RF MF 1.1.2.0.02
+
+vphaddsw RE RE ME 0.1.2.0.03
+vphaddsw RF RF MF 1.1.2.0.03
+
+vphaddw RE RE ME 0.1.2.0.01
+vphaddw RF RF MF 1.1.2.0.01
+
+vphminposuw RE ME 0.1.2.0.41
+
+vphsubd RE RE ME 0.1.2.0.06
+vphsubd RF RF MF 1.1.2.0.06
+
+vphsubsw RE RE ME 0.1.2.0.07
+vphsubsw RF RF MF 1.1.2.0.07
+
+vphsubw RE RE ME 0.1.2.0.05
+vphsubw RF RF MF 1.1.2.0.05
+
+vpinsrb RE RE MA IA 0.1.3.0.20
+
+vpinsrd RE RE MC IA 0.1.3.0.22
+
+vpinsrq RE RE MD IA 0.1.3.1.22
+
+vpinsrw RE RE MB IA 0.1.1.0.c4
+
+vpmaddubsw RE RE ME 0.1.2.0.04
+vpmaddubsw RF RF MF 1.1.2.0.04
+
+vpmaddwd RE RE ME 0.1.1.0.f5
+vpmaddwd RF RF MF 1.1.1.0.f5
+
+vpmaskmovd ME RE RE 0.1.2.0.8e
+vpmaskmovd MF RF RF 1.1.2.0.8e
+vpmaskmovd RE RE ME 0.1.2.0.8c
+vpmaskmovd RF RF MF 1.1.2.0.8c
+
+vpmaskmovq ME RE RE 0.1.2.1.8e
+vpmaskmovq MF RF RF 1.1.2.1.8e
+vpmaskmovq RE RE ME 0.1.2.1.8c
+vpmaskmovq RF RF MF 1.1.2.1.8c
+
+vpmaxsb RE RE ME 0.1.2.0.3c
+vpmaxsb RF RF MF 1.1.2.0.3c
+
+vpmaxsd RE RE ME 0.1.2.0.3d
+vpmaxsd RF RF MF 1.1.2.0.3d
+
+vpmaxsw RE RE ME 0.1.1.0.ee
+vpmaxsw RF RF MF 1.1.1.0.ee
+
+vpmaxub RE RE ME 0.1.1.0.de
+vpmaxub RF RF MF 1.1.1.0.de
+
+vpmaxud RE RE ME 0.1.2.0.3f
+vpmaxud RF RF MF 1.1.2.0.3f
+
+vpmaxuw RE RE ME 0.1.2.0.3e
+vpmaxuw RF RF MF 1.1.2.0.3e
+
+vpminsb RE RE ME 0.1.2.0.38
+vpminsb RF RF MF 1.1.2.0.38
+
+vpminsd RE RE ME 0.1.2.0.39
+vpminsd RF RF MF 1.1.2.0.39
+
+vpminsw RE RE ME 0.1.1.0.ea
+vpminsw RF RF MF 1.1.1.0.ea
+
+vpminub RE RE ME 0.1.1.0.da
+vpminub RF RF MF 1.1.1.0.da
+
+vpminud RE RE ME 0.1.2.0.3b
+vpminud RF RF MF 1.1.2.0.3b
+
+vpminuw RE RE ME 0.1.2.0.3a
+vpminuw RF RF MF 1.1.2.0.3a
+
+vpmovmskb RA RE 0.1.1.0.d7
+vpmovmskb RA RF 1.1.1.0.d7
+
+vpmovsxbd RE ME 0.1.2.0.21
+vpmovsxbd RF ME 1.1.2.0.21
+
+vpmovsxbq RE ME 0.1.2.0.22
+vpmovsxbq RF ME 1.1.2.0.22
+
+vpmovsxbw RE ME 0.1.2.0.20
+vpmovsxbw RF ME 1.1.2.0.20
+
+vpmovsxdq RE ME 0.1.2.0.25
+vpmovsxdq RF ME 1.1.2.0.25
+
+vpmovsxwd RE ME 0.1.2.0.23
+vpmovsxwd RF ME 1.1.2.0.23
+
+vpmovsxwq RE ME 0.1.2.0.24
+vpmovsxwq RF ME 1.1.2.0.24
+
+vpmovzxbd RE ME 0.1.2.0.31
+vpmovzxbd RF ME 1.1.2.0.31
+
+vpmovzxbq RE ME 0.1.2.0.32
+vpmovzxbq RF ME 1.1.2.0.32
+
+vpmovzxbw RE ME 0.1.2.0.30
+vpmovzxbw RF ME 1.1.2.0.30
+
+vpmovzxdq RE ME 0.1.2.0.38
+vpmovzxdq RF ME 1.1.2.0.35
+
+vpmovzxwd RE ME 0.1.2.0.33
+vpmovzxwd RF ME 1.1.2.0.33
+
+vpmovzxwq RE ME 0.1.2.0.34
+vpmovzxwq RF ME 1.1.2.0.34
+
+vpmuldq RE RE ME 0.1.2.0.28
+vpmuldq RF RF MF 1.1.2.0.28
+
+vpmulhrsw RE RE ME 0.1.2.0.0b
+vpmulhrsw RF RF MF 1.1.2.0.0b
+
+vpmulhuw RE RE ME 0.1.1.0.e4
+vpmulhuw RF RF MF 1.1.1.0.e4
+
+vpmulhw RE RE ME 0.1.1.0.e5
+vpmulhw RF RF MF 1.1.1.0.e5
+
+vpmulld RE RE ME 0.1.2.0.40
+vpmulld RF RF MF 1.1.2.0.40
+
+vpmullw RE RE ME 0.1.1.0.d5
+vpmullw RF RF MF 1.1.1.0.d5
+
+vpmuludq RE RE ME 0.1.1.0.f4
+vpmuludq RF RF MF 1.1.1.0.f4
+
+vpor RE RE ME 0.1.1.0.eb
+vpor RF RF MF 1.1.1.0.eb
+
+vpsadbw RE RE ME 0.1.1.0.f6
+vpsadbw RF RF MF 1.1.1.0.f6
+
+vpshufb RE RE ME 0.1.2.0.00
+vpshufb RF RF MF 1.1.2.0.00
+
+vpshufd RE ME IA 0.1.1.0.70
+vpshufd RF MF IA 1.1.1.0.70
+
+vpshufhw RE ME IA 0.2.1.0.70
+vpshufhw RF MF IA 1.2.1.0.70
+
+vpshuflw RE ME IA 0.3.1.0.70
+vpshuflw RF MF IA 1.3.1.0.70
+
+vpsignb RE RE ME 0.1.2.0.08
+vpsignb RF RF MF 1.1.2.0.08
+
+vpsignd RE RE ME 0.1.2.0.0a
+vpsignd RF RF MF 1.1.2.0.0a
+
+vpsignw RE RE ME 0.1.2.0.09
+vpsignw RF RF MF 1.1.2.0.09
+
+vpslld RE RE IA 0.1.1.0.72/6
+vpslld RE RE ME 0.1.1.0.f2
+vpslld RF RF IA 1.1.1.0.72/6
+vpslld RF RF ME 1.1.1.0.f2
+
+vpslldq RE RE IA 0.1.1.0.73/7
+vpslldq RF RF IA 1.1.1.0.73/7
+
+vpsllq RE RE IA 0.1.1.0.73/6
+vpsllq RE RE ME 0.1.1.0.f3
+vpsllq RF RF IA 1.1.1.0.73/6
+vpsllq RF RF ME 1.1.1.0.f3
+
+vpsllvd RE RE ME 0.1.2.0.47
+vpsllvd RF RF MF 1.1.2.0.47
+
+vpsllvq RE RE ME 0.1.2.1.47
+vpsllvq RF RF MF 1.1.2.1.47
+
+vpsllw RE RE IA 0.1.1.0.71/6
+vpsllw RE RE ME 0.1.1.0.f1
+vpsllw RF RF IA 1.1.1.0.71/6
+vpsllw RF RF ME 1.1.1.0.f1
+
+vpsrad RE RE IA 0.1.1.0.72/4
+vpsrad RE RE ME 0.1.1.0.e2
+vpsrad RF RF IA 1.1.1.0.72/4
+vpsrad RF RF ME 1.1.1.0.e2
+
+vpsravd RE RE ME 0.1.2.0.46
+vpsravd RF RF MF 1.1.2.0.46
+
+vpsraw RE RE IA 0.1.1.0.71/4
+vpsraw RE RE ME 0.1.1.0.e1
+vpsraw RF RF IA 1.1.1.0.71/4
+vpsraw RF RF ME 1.1.1.0.e1
+
+vpsrld RE RE IA 0.1.1.0.72/2
+vpsrld RE RE ME 0.1.1.0.d2
+vpsrld RF RF IA 1.1.1.0.72/2
+vpsrld RF RF ME 1.1.1.0.d2
+
+vpsrldq RE RE IA 0.1.1.0.73/3
+vpsrldq RF RF IA 1.1.1.0.73/3
+
+vpsrlq RE RE IA 0.1.1.0.73/2
+vpsrlq RE RE ME 0.1.1.0.d3
+vpsrlq RF RF IA 1.1.1.0.73/2
+vpsrlq RF RF ME 1.1.1.0.d3
+
+vpsrlvd RE RE ME 0.1.2.0.45
+vpsrlvd RF RF MF 1.1.2.0.45
+
+vpsrlvq RE RE ME 0.1.2.1.45
+vpsrlvq RF RF MF 1.1.2.1.45
+
+vpsrlw RE RE IA 0.1.1.0.71/2
+vpsrlw RE RE ME 0.1.1.0.d1
+vpsrlw RF RF IA 1.1.1.0.71/2
+vpsrlw RF RF ME 1.1.1.0.d1
+
+vpsubb RE RE ME 0.1.1.0.f8
+vpsubb RF RF MF 1.1.1.0.f8
+
+vpsubd RE RE ME 0.1.1.0.fa
+vpsubd RF RF MF 1.1.1.0.fa
+
+vpsubq RE RE ME 0.1.1.0.fb
+vpsubq RF RF MF 1.1.1.0.fb
+
+vpsubsb RE RE ME 0.1.1.0.e8
+vpsubsb RF RF MF 1.1.1.0.e8
+
+vpsubsw RE RE ME 0.1.1.0.e9
+vpsubsw RF RF MF 1.1.1.0.e9
+
+vpsubusb RE RE ME 0.1.1.0.d8
+vpsubusb RF RF MF 1.1.1.0.d8
+
+vpsubusw RE RE ME 0.1.1.0.d9
+vpsubusw RF RF MF 1.1.1.0.d9
+
+vpsubw RE RE ME 0.1.1.0.f9
+vpsubw RF RF MF 1.1.1.0.f9
+
+vptest RE ME 0.1.2.0.17
+vptest RF MF 1.1.2.0.17
+
+vpunpckhbw RE RE ME 0.1.1.0.68
+vpunpckhbw RF RF MF 1.1.1.0.68
+
+vpunpckhdq RE RE ME 0.1.1.0.6a
+vpunpckhdq RF RF MF 1.1.1.0.6a
+
+vpunpckhqdq RE RE ME 0.1.1.0.6d
+vpunpckhqdq RF RF MF 1.1.1.0.6d
+
+vpunpckhwd RE RE ME 0.1.1.0.69
+vpunpckhwd RF RF MF 1.1.1.0.69
+
+vpunpcklbw RE RE ME 0.1.1.0.60
+vpunpcklbw RF RF MF 1.1.1.0.60
+
+vpunpckldq RE RE ME 0.1.1.0.62
+vpunpckldq RF RF MF 1.1.1.0.62
+
+vpunpcklqdq RE RE ME 0.1.1.0.6c
+vpunpcklqdq RF RF MF 1.1.1.0.6c
+
+vpunpcklwd RE RE ME 0.1.1.0.61
+vpunpcklwd RF RF MF 1.1.1.0.61
+
+vshufpd RE RE ME IA 0.1.1.0.c6
+vshufpd RF RF MF IA 1.1.1.0.c6
+
+vshufps RE RE ME IA 0.0.1.0.c6
+vshufps RF RF MF IA 1.0.1.0.c6
+
+vsqrtpd RE ME 0.1.1.0.51
+vsqrtpd RF MF 1.1.1.0.51
+
+vsqrtps RE ME 0.0.1.0.51
+vsqrtps RF MF 1.0.1.0.51
+
+vsqrtsd RE RE ME 0.3.1.0.51
+
+vsqrtss RE RE ME 0.2.1.0.51
+
+vsubpd RE RE ME 0.1.1.0.5c
+vsubpd RF RF MF 1.1.1.0.5c
+
+vsubps RE RE ME 0.0.1.0.5c
+vsubps RF RF MF 1.0.1.0.5c
+
+vsubsd RE RE ME 0.3.1.0.5c
+
+vsubss RE RE ME 0.2.1.0.5c
+
+vtestpd RE ME 0.1.2.0.0f
+vtestpd RF MF 1.1.2.0.0f
+
+vtestps RE ME 0.1.2.0.0e
+vtestps RF MF 1.1.2.0.0e
+
+vucomisd RE ME 0.1.1.0.2e
+
+vucomiss RE ME 0.0.1.0.2e
+
+vunpckhpd RE RE ME 0.1.1.0.15
+vunpckhpd RF RF MF 1.1.1.0.15
+
+vunpckhps RE RE ME 0.0.1.0.15
+vunpckhps RF RF MF 1.0.1.0.15
+
+vunpcklpd RE RE ME 0.1.1.0.14
+vunpcklpd RF RF MF 1.1.1.0.14
+
+vunpcklps RE RE ME 0.0.1.0.14
+vunpcklps RF RF MF 1.0.1.0.14
+
+vxorpd RE RE ME 0.1.1.0.57
+vxorpd RF RF MF 1.1.1.0.57
+
+vxorps RE RE ME 0.0.1.0.57
+vxorps RF RF MF 1.0.1.0.57
+
+vzeroall 1.0.1.0.77
+
+vzeroupper 0.0.1.0.77
+
+)";
+
+unsigned int vex_map_size = sizeof(vex_map) - 1;

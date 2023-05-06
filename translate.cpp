@@ -1,24 +1,27 @@
 #include "translate.hpp"
 #include "instr.dat"
+#include "vex.hpp"
 #include <sys/mman.h>
-
-std::string error;
 
 void handle(std::string s, std::vector<std::string> args, const size_t linenum) {
 	error = "";
+	bool prefix = false;
 	// handle prefixes (lock, repne, repe)
 	if (s == "lock") {
 		output_buffer.push_back(0xf0);
 		s = args[0];
 		args.erase(args.begin());
+		prefix = true;
 	} else if (s == "repne" || s == "repnz" || s == "bnd") {
 		output_buffer.push_back(0xf2);
 		s = args[0];
 		args.erase(args.begin());
+		prefix = true;
 	} else if (s == "rep" || s == "repe" || s == "repz") {
 		output_buffer.push_back(0xf3);
 		s = args[0];
 		args.erase(args.begin());
+		prefix = true;
 	}
 	char *l = map;
 	char *r = map + map_size - 1;
@@ -46,8 +49,10 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 	// store all lines that match
 	while ((strncmp(l, s.c_str(), s.size()) != 0 || l[s.size()] != ' ') && l < map + map_size)
 		l++;
-	if (l >= map + map_size - 1)
-		cerr(linenum, "instruction inconnue « " + s + " »");
+	if (l >= map + map_size - 1 || *(l - 1) != '\n') {
+		handle_vex(s, args, linenum, prefix);
+		return;
+	}
 	r = std::find(l + 1, map + map_size, '\n');
 	std::vector<std::string> matches;
 	while (*l != '\n' && r != map + map_size) {
@@ -299,6 +304,9 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					}
 				} else if (a1.second == -4) {
 					reloc.push_back({output_buffer.size() + tmp.size(), 0, PLT, args[0].substr(0, args[0].size() - 10), 32});
+				} else if (a1.second == -5) {
+					reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, extern_labels[a1.first], 32});
+					a1.first = 0;
 				}
 				for (int i = 0; i < s1; i += 8)
 					tmp += (a1.first >> i) & 0xff;
@@ -351,6 +359,9 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 						reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 32});
 						a2.first = 0;
 					}
+				} else if (a2.second == -5) {
+					reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, extern_labels[a2.first], 32});
+					a2.first = 0;
 				}
 				for (int i = 0; i < s2; i += 8)
 					tmp += (a2.first >> i) & 0xff;
@@ -428,6 +439,9 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 							reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32});
 							a1.first = 0;
 						}
+					} else if (a1.second == -5) {
+						reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, extern_labels[a1.first], 32});
+						a1.first = 0;
 					}
 					for (int i = 0; i < s1; i += 8)
 						tmp += (a1.first >> i) & 0xff;

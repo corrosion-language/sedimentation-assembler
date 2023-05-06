@@ -344,6 +344,7 @@ void process_instructions() {
 					std::string label = line.substr(7);
 					if (label[0] == '.')
 						cerr(i + 1, "étiquette locale dans une directive extern");
+					extern_labels_map[label] = extern_labels.size();
 					extern_labels.push_back(label);
 					continue;
 				}

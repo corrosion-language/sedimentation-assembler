@@ -112,6 +112,8 @@ cbw 98
 
 cwde 98
 
+cdq 99
+
 cdqe w98
 
 clac 0f01ca
@@ -283,11 +285,15 @@ cmpxchg16b ME w0fc7/1
 
 cpuid 0fa2
 
+cqo w99
+
 crc32 RC MA pf20f38f0
 crc32 RC MB pf20f38f1
 crc32 RC MC pf20f38f1
 crc32 RD MA pf2w0f38f0
 crc32 RD MD pf2w0f38f1
+
+cwd 99
 
 dec MA fe/1
 dec MB ff/1
@@ -493,13 +499,13 @@ inc MB ff/0
 inc MC ff/0
 inc MD wff/0
 
-int3 cc
-
 int IA cd
 
-into ce
-
 int1 f1
+
+int3 cc
+
+into ce
 
 ja IA 77
 ja IC 0f87
