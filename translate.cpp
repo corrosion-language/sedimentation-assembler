@@ -3,25 +3,25 @@
 #include "vex.hpp"
 #include <sys/mman.h>
 
-void handle(std::string s, std::vector<std::string> args, const size_t linenum) {
+void handle(std::string s, std::vector<std::string> args, const size_t linenum, size_t instr_cnt) {
 	error = "";
 	bool prefix = false;
 	// handle prefixes (lock, repne, repe)
-	if (s == "lock") {
-		output_buffer.push_back(0xf0);
-		s = args[0];
-		args.erase(args.begin());
-		prefix = true;
-	} else if (s == "repne" || s == "repnz" || s == "bnd") {
-		output_buffer.push_back(0xf2);
-		s = args[0];
-		args.erase(args.begin());
-		prefix = true;
-	} else if (s == "rep" || s == "repe" || s == "repz") {
-		output_buffer.push_back(0xf3);
-		s = args[0];
-		args.erase(args.begin());
-		prefix = true;
+	while (true) {
+		if (s == "lock") {
+			output_buffer.push_back(0xf0);
+			prefix = true;
+		} else if (s == "repne" || s == "repnz" || s == "bnd") {
+			output_buffer.push_back(0xf2);
+			prefix = true;
+		} else if (s == "rep" || s == "repe" || s == "repz") {
+			output_buffer.push_back(0xf3);
+			prefix = true;
+		} else
+			break;
+		size_t i = args.front().find(' ');
+		s = args.front().substr(0, i);
+		args.front() = args.front().substr(i + 1);
 	}
 	char *l = map;
 	char *r = map + map_size - 1;
@@ -81,8 +81,12 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 						tmp.first = 0;
 					}
 				} else {
-					types.push_back({IMM, 32});
-					tmp.first = 0;
+					if (text_labels_instr[tmp.first] - instr_cnt <= 9) {
+						types.push_back({IMM, 8});
+					} else {
+						types.push_back({IMM, 32});
+						tmp.first = 0;
+					}
 				}
 			} else if (tmp.second == -2 || tmp.second == -4) {
 				types.push_back({IMM, 32});
@@ -273,7 +277,6 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				delete data;
 			} else if (p.first[1][0] == 'I') {
 				auto a1 = parse_imm(args[0]);
-				short s1 = _sizes[p.first[1][1] - 'A'];
 				size_t i = p.first.back()[0] == 'w';
 				if (i)
 					tmp += 0x48;
@@ -290,17 +293,21 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					reloc.push_back({output_buffer.size() + tmp.size(), 0, ABS, args[0], 32});
 				} else if (a1.second == -3) {
 					if (reloc_table.find(text_labels[a1.first]) != reloc_table.end()) {
-						int32_t off = reloc_table.at(text_labels.at(a1.first)) - output_buffer.size() - tmp.size() - 1;
+						int32_t off = reloc_table.at(text_labels.at(a1.first)) - output_buffer.size() - 3;
 						if ((int8_t)off == off) {
-							s1 = 8;
 							a1.first = off;
 						} else {
 							reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32});
 							a1.first = 0;
 						}
 					} else {
-						reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32});
-						a1.first = 0;
+						if (text_labels_instr[a1.first] - instr_cnt <= 9) {
+							reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 8});
+							a1.first = 0;
+						} else {
+							reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32});
+							a1.first = 0;
+						}
 					}
 				} else if (a1.second == -4) {
 					reloc.push_back({output_buffer.size() + tmp.size(), 0, PLT, args[0].substr(0, args[0].size() - 10), 32});
@@ -308,7 +315,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, extern_labels[a1.first], 32});
 					a1.first = 0;
 				}
-				for (int i = 0; i < s1; i += 8)
+				for (int i = 0; i < _sizes[p.first[1][1] - 'A']; i += 8)
 					tmp += (a1.first >> i) & 0xff;
 			}
 		} else if (types.size() >= 2) {
@@ -349,17 +356,21 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					reloc.push_back({output_buffer.size() + tmp.size(), 0, ABS, args[imm.first - 1], std::max(s2, (short)32)});
 				} else if (a2.second == -3) {
 					if (reloc_table.find(text_labels[a2.first]) != reloc_table.end()) {
-						int32_t off = reloc_table.at(text_labels.at(a2.first)) - output_buffer.size() - tmp.size() - 1;
+						int32_t off = reloc_table.at(text_labels.at(a2.first)) - output_buffer.size() - 3;
 						if ((int8_t)off == off) {
 							a2.first = off;
-							s2 = 8;
 						} else {
 							reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 32});
 							a2.first = 0;
 						}
 					} else {
-						reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 32});
-						a2.first = 0;
+						if (text_labels_instr[a2.first] - instr_cnt <= 9) {
+							reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 8});
+							a2.first = 0;
+						} else {
+							reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 32});
+							a2.first = 0;
+						}
 					}
 				} else if (a2.second == -5) {
 					reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, extern_labels[a2.first], 32});
@@ -433,8 +444,8 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					} else if (a1.second == -2) {
 						reloc.push_back({output_buffer.size() + tmp.size(), 0, ABS, args[imm.first - 1], std::max(s1, (short)32)});
 					} else if (a1.second == -3) {
-						if (s1 == 8 && reloc_table.find(text_labels[a1.first]) != reloc_table.end()) {
-							int32_t off = reloc_table.at(text_labels.at(a1.first)) - output_buffer.size() - tmp.size() - 1;
+						if (reloc_table.find(text_labels[a1.first]) != reloc_table.end()) {
+							int32_t off = reloc_table.at(text_labels.at(a1.first)) - output_buffer.size() - 3;
 							if ((int8_t)off == off) {
 								a1.first = off;
 							} else {
@@ -442,8 +453,13 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 								a1.first = 0;
 							}
 						} else {
-							reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32});
-							a1.first = 0;
+							if (text_labels_instr[a1.first] - instr_cnt <= 9) {
+								reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 8});
+								a1.first = 0;
+							} else {
+								reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32});
+								a1.first = 0;
+							}
 						}
 					} else if (a1.second == -5) {
 						reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, extern_labels[a1.first], 32});

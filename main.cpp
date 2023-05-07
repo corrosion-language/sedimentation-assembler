@@ -17,6 +17,7 @@ std::vector<std::string> text_labels;
 std::vector<std::string> extern_labels;
 std::unordered_map<std::string, size_t> text_labels_map;
 std::unordered_map<std::string, size_t> extern_labels_map;
+std::vector<size_t> text_labels_instr;
 // symbols (positions)
 std::vector<reloc_entry> relocations;
 std::unordered_map<std::string, std::pair<sect, size_t>> labels;
@@ -147,6 +148,7 @@ void preprocess() {
 
 void parse_labels() {
 	sect curr_sect = UNDEF;
+	size_t instr_cnt = 0;
 	for (size_t i = 0; i < lines.size(); i++) {
 		std::string line = lines[i];
 		while (line.size() == 0 && ++i < lines.size())
@@ -179,6 +181,7 @@ void parse_labels() {
 				line = label + ":";
 				text_labels_map[label] = text_labels.size();
 				text_labels.push_back(label);
+				text_labels_instr.push_back(instr_cnt);
 			} else if (curr_sect == UNDEF) {
 				cerr(i + 1, "étiquette hors d'une section");
 			} else if (curr_sect == BSS) {
@@ -256,6 +259,9 @@ void parse_labels() {
 								case '"':
 									output_buffer.push_back('"');
 									break;
+								case '\'':
+									output_buffer.push_back('\'');
+									break;
 								case 'x':
 									output_buffer.push_back(std::stoul(args[i].substr(j + 2, 2), nullptr, 16));
 									j += 2;
@@ -296,12 +302,14 @@ void parse_labels() {
 				data_size += output_buffer.size() - tmp;
 				data_labels[label] = tmp;
 			}
-		}
+		} else if (curr_sect == TEXT && !line.starts_with("global ") && !line.starts_with("extern "))
+			instr_cnt++;
 	}
 }
 
 void process_instructions() {
 	sect curr_sect = UNDEF;
+	size_t instr_cnt = 0;
 	for (size_t i = 0; i < lines.size(); i++) {
 		std::string line = lines[i];
 		while (line.size() == 0 && ++i < lines.size())
@@ -360,7 +368,8 @@ void process_instructions() {
 					args.push_back(line.substr(pos + 1, next - pos - 1));
 					pos = next;
 				}
-				handle(instr, args, i + 1);
+				handle(instr, args, i + 1, instr_cnt);
+				instr_cnt++;
 			}
 		}
 	}
