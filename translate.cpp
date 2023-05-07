@@ -228,7 +228,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 				short reg = 0;
 				for (; i < p.first.back().size(); i += 2) {
 					if (p.first.back()[i] == '/') {
-						reg = std::stoi(p.first.back().substr(i + 1, 1), nullptr, 16);
+						reg = std::stoi(p.first.back().substr(i + 1, 1));
 						break;
 					}
 					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
@@ -257,7 +257,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 				short reg = 0;
 				for (size_t i = w; i < p.first.back().size(); i += 2) {
 					if (p.first.back()[i] == '/') {
-						reg = std::stoi(p.first.back().substr(i + 1, 1), nullptr, 16);
+						reg = std::stoi(p.first.back().substr(i + 1, 1));
 						break;
 					}
 					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
@@ -282,7 +282,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 					tmp += 0x48;
 				for (; i < p.first.back().size(); i += 2) {
 					if (p.first.back()[i] == '/') {
-						tmp += std::stoi(p.first.back().substr(i + 1, 1), nullptr, 16);
+						tmp += std::stoi(p.first.back().substr(i + 1, 1)) << 3;
 						break;
 					}
 					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
@@ -339,15 +339,15 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 				if (args[reg.first - 1][1] == 'h' && i)
 					cerr(linenum, "impossible d'utiliser un haut-demi registre avec une prefixe REX");
 				if (i || (a1 & 8))
-					tmp += 0x48 | (a1 >= 8);
+					tmp += 0x40 | (i << 3) | (a1 >= 8);
 				for (; i < p.first.back().size(); i += 2) {
 					if (p.first.back()[i] == '/') {
-						tmp += std::stoi(p.first.back().substr(i + 1, 1), nullptr, 16);
+						tmp += std::stoi(p.first.back().substr(i + 1, 1)) << 3;
 						break;
 					}
 					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
 				}
-				tmp.back() += a1 & 7;
+				tmp.back() |= 0xc0 | (a1 & 7);
 				auto a2 = parse_imm(args[imm.first - 1]);
 				short s2 = _sizes[p.first[imm.first][1] - 'A'];
 				if (a2.second == -1) {
@@ -416,7 +416,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 				}
 				for (size_t i = p.first.back()[0] == 'w'; i < p.first.back().size(); i += 2) {
 					if (p.first.back()[i] == '/') {
-						rm |= std::stoi(p.first.back().substr(i + 1, 1), nullptr, 16) << 3;
+						rm |= std::stoi(p.first.back().substr(i + 1, 1)) << 3;
 						break;
 					}
 					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
