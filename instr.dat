@@ -1,116 +1,156 @@
 char map[] = R"(
 
 adc 0B IB 14
-adc 0W IW 15
 adc 0D ID 15
 adc 0Q ID w15
+adc 0W IW 15
 adc MB IB 80/2
-adc MW IW 81/2
-adc MD ID 81/2
-adc MQ ID w81/2
-adc MW IB 83/2
-adc MD IB 83/2
-adc MQ IB w83/2
 adc MB RB 10
-adc MW RW 11
+adc MD IB 83/2
+adc MD ID 81/2
 adc MD RD 11
+adc MQ IB w83/2
+adc MQ ID w81/2
 adc MQ RQ w11
+adc MW IB 83/2
+adc MW IW 81/2
+adc MW RW 11
 adc RB MB 12
-adc RW MW 13
 adc RD MD 13
 adc RQ MQ w13
+adc RW MW 13
 
 adcx RD MD p660f38f6
 adcx RQ MQ p66w0f38f6
 
 add 0B IB 04
-add 0W IW 05
 add 0D ID 05
 add 0Q ID w05
+add 0W IW 05
 add MB IB 80/0
-add MW IW 81/0
-add MD ID 81/0
-add MQ ID w81/0
-add MW IB 83/0
-add MD IB 83/0
-add MQ IB w83/0
 add MB RB 00
-add MW RW 01
+add MD IB 83/0
+add MD ID 81/0
 add MD RD 01
+add MQ IB w83/0
+add MQ ID w81/0
 add MQ RQ w01
+add MW IB 83/0
+add MW IW 81/0
+add MW RW 01
 add RB MB 02
-add RW MW 03
 add RD MD 03
 add RQ MQ w03
+add RW MW 03
+
+addpd RX MX p660f58
+
+addps RX MX 0f58
+
+addsd RX MQ pf20f58
+addsd RX RX pf20f58
+
+addss RX MD pf30f58
+addss RX RX pf30f58
+
+addsubpd RX MX p660fd0
+
+addsubps RX MX pf20fd0
 
 adox RD MD pf30f38f6
 adox RQ MQ pf3w0f38f6
 
+aesdec RX MX p660f38de
+
+aesdeclast RX MX p660f38df
+
+aesenc RX MX p660f38dc
+
+aesenclast RX MX p660f38dd
+
+aesimc RX MX p660f38db
+
+aeskeygenassist RX MX IB p660f3adf
+
 and 0B IB 24
-and 0W IW 25
 and 0D ID 25
 and 0Q ID w25
+and 0W IW 25
 and MB IB 80/4
-and MW IW 81/4
-and MD ID 81/4
-and MQ ID w81/4
-and MW IB 83/4
-and MD IB 83/4
-and MQ IB w83/4
 and MB RB 20
-and MW RW 21
+and MD IB 83/4
+and MD ID 81/4
 and MD RD 21
+and MQ IB w83/4
+and MQ ID w81/4
 and MQ RQ w21
+and MW IB 83/4
+and MW IW 81/4
+and MW RW 21
 and RB MB 22
-and RW MW 23
 and RD MD 23
 and RQ MQ w23
+and RW MW 23
 
-bsf RB MB 0fbc
-bsf RW MW 0fbc
+andnpd RX MX p660f55
+
+andnps RX MX 0f55
+
+andpd RX MX p660f54
+
+andps RX MX 0f54
+
+blendpd RX MX IB p660f3a0d
+
+blendps RX MX IB p660f3a0c
+
+blendvpd RX MX p660f3815
+
+blendvps RX MX p660f3814
+
 bsf RD MD 0fbc
+bsf RQ MQ w0fbc
+bsf RW MW 0fbc
 
-bsr RB MB 0fbd
-bsr RW MW 0fbd
 bsr RD MD 0fbd
+bsr RQ MQ w0fbd
+bsr RW MW 0fbd
 
 bswap RD 0fc8
 bswap RQ w0fc8
 
-bt MW RW 0fa3
+bt MD IB 0fba/4
 bt MD RD 0fa3
+bt MQ IB w0fba/4
 bt MQ RQ w0fa3
 bt MW IB 0fba/4
-bt MD IB 0fba/4
-bt MQ IB w0fba/4
+bt MW RW 0fa3
 
-btc MW RW 0fbb
+btc MD IB 0fba/7
 btc MD RD 0fbb
+btc MQ IB w0fba/7
 btc MQ RQ w0fbb
 btc MW IB 0fba/7
-btc MD IB 0fba/7
-btc MQ IB w0fba/7
+btc MW RW 0fbb
 
-btr MW RW 0fb3
+btr MD IB 0fba/6
 btr MD RD 0fb3
+btr MQ IB w0fba/6
 btr MQ RQ w0fb3
-btr RW IB 0fba/6
-btr RD IB 0fba/6
-btr RQ IB w0fba/6
+btr MW IB 0fba/6
+btr MW RW 0fb3
 
-bts MW RW 0fab
+bts MD IB 0fba/5
 bts MD RD 0fab
+bts MQ IB w0fba/5
 bts MQ RQ w0fab
-bts RW IB 0fba/5
-bts RD IB 0fba/5
-bts RQ IB w0fba/5
+bts MW IB 0fba/5
+bts MW RW 0fab
 
-call ID e8
 call MQ ff/2
+call RD e8cd
 
 cbw 98
-
-cwde 98
 
 cdq 99
 
@@ -120,280 +160,402 @@ clac 0f01ca
 
 clc f8
 
-cld fd
+cld fc
 
 cldemote MB 0f1c/0
 
-clflush MB 0fae/7
-
-clflushopt MB 660fae/7
-
 cli fa
 
-clwb MB 660fae/6
+clrssbsy MQ pf30fae/6
+
+clts 0f06
+
+clwb MB p660fae/6
 
 cmc f5
 
-cmova RW MW 0f47
 cmova RD MD 0f47
 cmova RQ MQ w0f47
+cmova RW MW 0f47
 
-cmovae RW MW 0f43
 cmovae RD MD 0f43
 cmovae RQ MQ w0f43
+cmovae RW MW 0f43
 
-cmovb RW MW 0f42
 cmovb RD MD 0f42
 cmovb RQ MQ w0f42
+cmovb RW MW 0f42
 
-cmovbe RW MW 0f46
 cmovbe RD MD 0f46
 cmovbe RQ MQ w0f46
+cmovbe RW MW 0f46
 
-cmovc RW MW 0f42
 cmovc RD MD 0f42
 cmovc RQ MQ w0f42
+cmovc RW MW 0f42
 
-cmove RW MW 0f44
 cmove RD MD 0f44
 cmove RQ MQ w0f44
+cmove RW MW 0f44
 
-cmovg RW MW 0f4f
 cmovg RD MD 0f4f
-cmovg RQ MQw0f4f
+cmovg RQ MQ w0f4f
+cmovg RW MW 0f4f
 
-cmovge RW MW 0f4d
 cmovge RD MD 0f4d
 cmovge RQ MQ w0f4d
+cmovge RW MW 0f4d
 
-cmovl RW MW 0f4c
 cmovl RD MD 0f4c
 cmovl RQ MQ w0f4c
+cmovl RW MW 0f4c
 
-cmovle RW MW 0f4e
 cmovle RD MD 0f4e
 cmovle RQ MQ w0f4e
+cmovle RW MW 0f4e
 
-cmovna RW MW 0f46
 cmovna RD MD 0f46
 cmovna RQ MQ w0f46
+cmovna RW MW 0f46
 
-cmovnae RW MW 0f42
 cmovnae RD MD 0f42
 cmovnae RQ MQ w0f42
+cmovnae RW MW 0f42
 
-cmovnb RW MW 0f43
 cmovnb RD MD 0f43
 cmovnb RQ MQ w0f43
+cmovnb RW MW 0f43
 
-cmovnbe RW MW 0f47
 cmovnbe RD MD 0f47
 cmovnbe RQ MQ w0f47
+cmovnbe RW MW 0f47
 
-cmovnc RW MW 0f43
 cmovnc RD MD 0f43
 cmovnc RQ MQ w0f43
+cmovnc RW MW 0f43
 
-cmovne RW MW 0f45
 cmovne RD MD 0f45
 cmovne RQ MQ w0f45
+cmovne RW MW 0f45
 
-cmovng RW MW 0f4e
 cmovng RD MD 0f4e
 cmovng RQ MQ w0f4e
+cmovng RW MW 0f4e
 
-cmovnge RW MW 0f4c
 cmovnge RD MD 0f4c
 cmovnge RQ MQ w0f4c
+cmovnge RW MW 0f4c
 
-cmovnl RW MW 0f4d
 cmovnl RD MD 0f4d
 cmovnl RQ MQ w0f4d
+cmovnl RW MW 0f4d
 
-cmovnle RW MW 0f4f
 cmovnle RD MD 0f4f
 cmovnle RQ MQ w0f4f
+cmovnle RW MW 0f4f
 
-cmovno RW MW 0f41
 cmovno RD MD 0f41
 cmovno RQ MQ w0f41
+cmovno RW MW 0f41
 
-cmovnp RW MW 0f4b
 cmovnp RD MD 0f4b
 cmovnp RQ MQ w0f4b
+cmovnp RW MW 0f4b
 
-cmovns RW MW 0f49
 cmovns RD MD 0f49
 cmovns RQ MQ w0f49
+cmovns RW MW 0f49
 
-cmovnz RW MW 0f45
 cmovnz RD MD 0f45
 cmovnz RQ MQ w0f45
+cmovnz RW MW 0f45
 
-cmovo RW MW 0f40
 cmovo RD MD 0f40
 cmovo RQ MQ w0f40
+cmovo RW MW 0f40
 
-cmovp RW MW 0f4a
 cmovp RD MD 0f4a
 cmovp RQ MQ w0f4a
+cmovp RW MW 0f4a
 
-cmovpe RW MW 0f4a
 cmovpe RD MD 0f4a
 cmovpe RQ MQ w0f4a
+cmovpe RW MW 0f4a
 
-cmovpo RW MW 0f4b
 cmovpo RD MD 0f4b
 cmovpo RQ MQ w0f4b
+cmovpo RW MW 0f4b
 
-cmovs RW MW 0f48
 cmovs RD MD 0f48
 cmovs RQ MQ w0f48
+cmovs RW MW 0f48
 
-cmovz RW MW 0f44
 cmovz RD MD 0f44
 cmovz RQ MQ w0f44
+cmovz RW MW 0f44
 
 cmp 0B IB 3c
-cmp 0W IW 3d
 cmp 0D ID 3d
 cmp 0Q ID w3d
+cmp 0W IW 3d
 cmp MB IB 80/7
-cmp MW IW 81/7
-cmp MD ID 81/7
-cmp MQ ID w81/7
-cmp MW IB 83/7
-cmp MD IB 83/7
-cmp MQ IB w83/7
 cmp MB RB 38
-cmp MW RW 39
+cmp MD IB 83/7
+cmp MD ID 81/7
 cmp MD RD 39
+cmp MQ IB w83/7
+cmp MQ ID w81/7
 cmp MQ RQ w39
+cmp MW IB 83/7
+cmp MW IW 81/7
+cmp MW RW 39
 cmp RB MB 3a
-cmp RW MW 3b
 cmp RD MD 3b
 cmp RQ MQ w3b
+cmp RW MW 3b
+
+cmppd RX MX IB p660fc2
+
+cmpps RX MX IB 0fc2
+
+cmps MB MB a6
+cmps MD MD a7
+cmps MQ MQ wa7
+cmps MW MW a7
+
+cmpsb a6
+
+cmpsd RX MQ IB pf20fc2
+cmpsd RX RX IB pf20fc2
+cmpsd a7
+
+cmpsq wa7
+
+cmpss RX MD IB pf30fc2
+cmpss RX RX IB pf30fc2
+
+cmpsw a7
 
 cmpxchg MB RB 0fb0
-cmpxchg MW RW 0fb1
 cmpxchg MD RD 0fb1
 cmpxchg MQ RQ w0fb1
+cmpxchg MW RW 0fb1
+
+cmpxchg16b MX w0fc7/1
 
 cmpxchg8b MQ 0fc7/1
 
-cmpxchg16b MX w0fc7/1
+comisd RX MQ p660f2f
+comisd RX RX p660f2f
+
+comiss RX MD 0f2f
+comiss RX RX 0f2f
 
 cpuid 0fa2
 
 cqo w99
 
 crc32 RD MB pf20f38f0
-crc32 RD MW pf20f38f1
 crc32 RD MD pf20f38f1
+crc32 RD MW pf20f38f1
 crc32 RQ MB pf2w0f38f0
 crc32 RQ MQ pf2w0f38f1
 
+cvtdq2pd RX MQ pf30fe6
+cvtdq2pd RX RX pf30fe6
+
+cvtpd2ps RX MX p660f5a
+
+cvtps2dq RX MX p660f5b
+
+cvtps2pd RX MQ 0f5a
+cvtps2pd RX RX 0f5a
+
+cvtsd2si RD MQ pf20f2d
+cvtsd2si RD RX pf20f2d
+cvtsd2si RQ MQ pf2w0f2d
+cvtsd2si RQ RX pf2w0f2d
+
+cvtsd2ss RX MQ pf20f5a
+cvtsd2ss RX RX pf20f5a
+
+cvtsi2sd RX MD pf20f2a
+cvtsi2sd RX MQ pf2w0f2a
+
+cvtsi2ss RX MD pf30f2a
+cvtsi2ss RX MQ pf3w0f2a
+
+cvtss2sd RX MD pf30f5a
+cvtss2sd RX RX pf30f5a
+
+cvtss2si RD MD pf30f2d
+cvtss2si RD RX pf30f2d
+cvtss2si RQ MD pf3w0f2d
+cvtss2si RQ RX pf3w0f2d
+
+cvttpd2dq RX MX p660fe6
+
+cvttps2dq RX MX pf30f5b
+
+cvttsd2si RD MQ pf20f2c
+cvttsd2si RD RX pf20f2c
+cvttsd2si RQ MQ pf2w0f2c
+cvttsd2si RQ RX pf2w0f2c
+
+cvttss2si RD MD pf30f2c
+cvttss2si RD RX pf30f2c
+cvttss2si RQ MD pf3w0f2c
+cvttss2si RQ RX pf3w0f2c
+
 cwd 99
 
+cwde 98
+
 dec MB fe/1
-dec MW ff/1
 dec MD ff/1
 dec MQ wff/1
+dec MW ff/1
 
 div MB f6/6
-div MW f7/6
 div MD f7/6
 div MQ wf7/6
+div MW f7/6
 
+divpd RX MX p660f5e
 
+divps RX MX 0f5e
 
-f2xm1 d9f0
+divsd RX MQ pf20f5e
+divsd RX RX pf20f5e
 
-fabs d9e1
+divss RX MD pf30f5e
+divss RX RX pf30f5e
 
+dppd RX MX IB p660f3a41
+
+dpps RX MX IB p660f3a40
+
+emms 0f77
+
+endbr32 pf30f1efb
+
+endbr64 pf30f1efa
+
+enter IW IB c8
+enter IW L0 c800
+enter IW L1 c801
+
+extractps MD RX IB p660f3a17
+
+fadd 0T RT d8c0
 fadd MD d8/0
 fadd MQ dc/0
+fadd RT 0T dcc0
 
+faddp RT 0T dec0
 faddp dec1
-
-fiadd MD da/0
-fiadd MQ de/0
-
-fbld df/4
-
-fbstp df/6
-
-fchs d9e0
 
 fclex 9bdbe2
 
-fnclex dbe2
+fcmovb 0T RT dac0
+
+fcmovbe 0T RT dad0
+
+fcmove 0T RT dac8
+
+fcmovnb 0T RT dbc0
+
+fcmovnbe 0T RT dbd0
+
+fcmovne 0T RT dbc8
+
+fcmovnu 0T RT dbd8
+
+fcmovu 0T RT dad8
 
 fcom MD d8/2
 fcom MQ dc/2
+fcom RT d8d0
 fcom d8d1
+
+fcomi 0T RT dbf0
+
+fcomip 0T RT dff0
 
 fcomp MD d8/3
 fcomp MQ dc/3
+fcomp RT d8d8
 fcomp d8d9
 
 fcompp ded9
 
-fcos d9ff
-
-fdecstp d9f6
-
+fdiv 0T RT d8f0
 fdiv MD d8/6
 fdiv MQ dc/6
+fdiv RT 0T dcf8
 
+fdivp RT 0T def8
 fdivp def9
 
-fidiv MD da/6
-fidiv MQ de/6
-
+fdivr 0T RT d8f8
 fdivr MD d8/7
 fdivr MQ dc/7
+fdivr RT 0T dcf0
 
+fdivrp RT 0T def0
 fdivrp def1
 
-fidivr MD da/7
-fidivr MQ de/7
+fiadd MD da/0
+fiadd MW de/0
 
-ficom MW de/2
 ficom MD da/2
+ficom MW de/2
 
-ficomp MW de/3
 ficomp MD da/3
+ficomp MW de/3
 
-fild MW df/0
+fidiv MD da/6
+fidiv MW de/6
+
+fidivr MD da/7
+fidivr MW de/7
+
 fild MD db/0
 fild MQ df/5
+fild MW df/0
 
-fincstp d9f7
+fimul MD da/1
+fimul MW de/1
 
 finit 9bdbe3
 
-fninit dbe3
-
-fist MW df/2
 fist MD db/2
+fist MW df/2
 
-fistp MW df/3
 fistp MD db/3
 fistp MQ df/7
+fistp MW df/3
 
-fisttp MW df/1
 fisttp MD db/1
 fisttp MQ dd/1
+fisttp MW df/1
+
+fisub MD da/4
+fisub MW de/4
+
+fisubr MD da/5
+fisubr MW de/5
 
 fld MD d9/0
 fld MQ dd/0
+fld MT db/5
+fld RT d9c0
 
 fld1 d9e8
 
-fldl2t d9e9
-
 fldl2e d9ea
+
+fldl2t d9e9
 
 fldlg2 d9ec
 
@@ -403,15 +565,19 @@ fldpi d9eb
 
 fldz d9ee
 
+fmul 0T RT d8c8
 fmul MD d8/1
 fmul MQ dc/1
+fmul RT 0T dcc8
 
+fmulp RT 0T dec8
 fmulp dec9
 
-fimul MD da/1
-fimul MQ de/1
+fnclex dbe2
 
-fnop d9d0
+fninit dbe3
+
+fnstsw 0W dfe0
 
 fpatan d9f3
 
@@ -421,48 +587,50 @@ fprem1 d9f5
 
 fptan d9f2
 
-frndint d9fc
-
-fscale d9fd
-
-fsin d9fe
-
 fsincos d9fb
-
-fsqrt d9fa
 
 fst MD d9/2
 fst MQ dd/2
+fst RT ddd0
 
 fstp MD d9/3
 fstp MQ dd/3
+fstp MT db/7
+fstp RT ddd8
 
+fstsw 0W 9bdfe0
+
+fsub 0T RT d8e0
 fsub MD d8/4
 fsub MQ dc/4
+fsub RT 0T dce8
 
+fsubp RT 0T dee8
 fsubp dee9
 
-fisub MD da/4
-fisub MQ de/4
-
+fsubr 0T RT d8e8
 fsubr MD d8/5
 fsubr MQ dc/5
+fsubr RT 0T dce0
 
+fsubrp RT 0T dee0
 fsubrp dee1
 
-fisubr MD da/5
-fisubr MQ de/5
-
-ftst d9e4
-
+fucom RT dde0
 fucom dde1
 
+fucomi 0T RT dbe8
+
+fucomip 0T RT dfe8
+
+fucomp RT dde8
 fucomp dde9
 
 fucompp dae9
 
-fxam d9e5
+fwait 9b
 
+fxch RT d9c8
 fxch d9c9
 
 fxtract d9f4
@@ -471,33 +639,69 @@ fyl2x d9f1
 
 fyl2xp1 d9f9
 
+gf2p8affineinvqb RX MX IB p660f3acf
 
+gf2p8affineqb RX MX IB p660f3ace
+
+gf2p8mulb RX MX p660f38cf
+
+haddpd RX MX p660f7c
+
+haddps RX MX pf20f7c
 
 hlt f4
 
+hsubpd RX MX p660f7d
+
+hsubps RX MX pf20f7d
+
 idiv MB f6/7
-idiv MW f7/7
 idiv MD f7/7
 idiv MQ wf7/7
+idiv MW f7/7
 
 imul MB f6/5
-imul MW f7/5
 imul MD f7/5
 imul MQ wf7/5
-imul RW MW 0faf
+imul MW f7/5
 imul RD MD 0faf
-imul RQ MQ w0faf
-imul RW MW IB 6b
 imul RD MD IB 6b
-imul RQ MQ IB w6b
-imul RW MW IW 69
 imul RD MD ID 69
+imul RQ MQ IB w6b
 imul RQ MQ ID w69
+imul RQ MQ w0faf
+imul RW MW 0faf
+imul RW MW IB 6b
+imul RW MW IW 69
+
+in 0B 2W ec
+in 0B IB e4
+in 0D 2W ed
+in 0D IB e5
+in 0W 2W ed
+in 0W IB e5
 
 inc MB fe/0
-inc MW ff/0
 inc MD ff/0
 inc MQ wff/0
+inc MW ff/0
+
+incsspd RD pf30fae/5
+
+incsspq RQ pf3w0fae/5
+
+ins MB 2W 6c
+ins MD 2W 6d
+ins MW 2W 6d
+
+insb 6c
+
+insd 6d
+
+insertps RX MD IB p660f3a21
+insertps RX RX IB p660f3a21
+
+insw 6d
 
 int IB cd
 
@@ -505,430 +709,858 @@ int1 f1
 
 int3 cc
 
-into ce
+invd 0f08
 
-ja IB 77
-ja ID 0f87
+invpcid RQ MX p660f3882
 
-jae IB 73
-jae ID 0f83
+iret cf
 
-jb IB 72
-jb ID 0f82
+iretd cf
 
-jbe IB 76
-jbe ID 0f86
+iretq wcf
 
-jc IB 72
-jc ID 0f82
+ja RB 77cb
+ja RD 0f87cd
 
-je IB 74
-je ID 0f84
+jae RB 73cb
+jae RD 0f83cd
 
-jecxz IB e3
+jb RB 72cb
+jb RD 0f82cd
 
-jg IB 7f
-jg ID 0f8f
+jbe RB 76cb
+jbe RD 0f86cd
 
-jge IB 7d
-jge ID 0f8d
+jc RB 72cb
+jc RD 0f82cd
 
-jl IB 7c
-jl ID 0f8c
+je RB 74cb
+je RD 0f84cd
 
-jle IB 7e
-jle ID 0f8e
+jecxz RB e3cb
 
-jmp IB eb
-jmp ID e9
+jg RB 7fcb
+jg RD 0f8fcd
+
+jge RB 7dcb
+jge RD 0f8dcd
+
+jl RB 7ccb
+jl RD 0f8ccd
+
+jle RB 7ecb
+jle RD 0f8ecd
+
 jmp MQ ff/4
+jmp RB ebcb
+jmp RD e9cd
 
-jna IB 76
-jna ID 0f86
+jna RB 76cb
+jna RD 0f86cd
 
-jnae IB 72
-jnae ID 0f82
+jnae RB 72cb
+jnae RD 0f82cd
 
-jnb IB 73
-jnb ID 0f83
+jnb RB 73cb
+jnb RD 0f83cd
 
-jnbe IB 77
-jnbe ID 0f87
+jnbe RB 77cb
+jnbe RD 0f87cd
 
-jnc IB 73
-jnc ID 0f83
+jnc RB 73cb
+jnc RD 0f83cd
 
-jne IB 75
-jne ID 0f85
+jne RB 75cb
+jne RD 0f85cd
 
-jng IB 7e
-jng ID 0f8e
+jng RB 7ecb
+jng RD 0f8ecd
 
-jnge IB 7c
-jnge ID 0f8c
+jnge RB 7ccb
+jnge RD 0f8ccd
 
-jnl IB 7d
-jnl ID 0f8d
+jnl RB 7dcb
+jnl RD 0f8dcd
 
-jnle IB 7f
-jnle ID 0f8f
+jnle RB 7fcb
+jnle RD 0f8fcd
 
-jno IB 71
-jno ID 0f81
+jno RB 71cb
+jno RD 0f81cd
 
-jnp IB 7b
-jnp ID 0f8b
+jnp RB 7bcb
+jnp RD 0f8bcd
 
-jns IB 79
-jns ID 0f89
+jns RB 79cb
+jns RD 0f89cd
 
-jnz IB 75
-jnz ID 0f85
+jnz RB 75cb
+jnz RD 0f85cd
 
-jo IB 70
-jo ID 0f80
+jo RB 70cb
+jo RD 0f80cd
 
-jp IB 7a
-jp ID 0f8a
+jp RB 7acb
+jp RD 0f8acd
 
-jpe IB 7a
-jpe ID 0f8a
+jpe RB 7acb
+jpe RD 0f8acd
 
-jpo IB 7b
-jpo ID 0f8b
+jpo RB 7bcb
+jpo RD 0f8bcd
 
-jrcxz IB e3
+jrcxz RB e3cb
 
-js IB 78
-js ID 0f88
+js RB 78cb
+js RD 0f88cd
 
-jz IB 74
-jz ID 0f84
+jz RB 74cb
+jz RD 0f84cd
+jz RD 0f84cd
 
-lea RW M* 8d
+lddqu RX MX pf20ff0
+
+ldmxcsr MD 0fae/2
+
 lea RD M* 8d
 lea RQ M* w8d
+lea RW M* 8d
 
-loop IB e2
+leave c9
+leave c9
 
-loope IB e1
+lldt MW 0f00/2
 
-loopne IB e0
+lmsw MW 0f01/6
 
-lzcnt RW MW pf30fbd
+lods MB ac
+lods MD ad
+lods MQ wad
+lods MW ad
+
+lodsb ac
+
+lodsd ad
+
+lodsq wad
+
+lodsw ad
+
+loop RB e2cb
+
+loope RB e1cb
+
+loopne RB e0cb
+
+lsl RD MW 0f03
+lsl RQ MW w0f03
+lsl RW MW 0f03
+
+ltr MW 0f00/3
+
 lzcnt RD MD pf30fbd
 lzcnt RQ MQ pf3w0fbd
+lzcnt RW MW pf30fbd
 
-mov MB RB 88
-mov MW RW 89
-mov MD RD 89
-mov MQ RQ w89
-mov RB MB 8a
-mov RW MW 8b
-mov RD MD 8b
-mov RQ MQ w8b
-mov RB IB b0
-mov RW IW b8
-mov RD ID b8
-mov RQ IQ wb8
+maskmovdqu RX RX p660ff7
+
+maxpd RX MX p660f5f
+
+maxps RX MX 0f5f
+
+maxsd RX MQ pf20f5f
+maxsd RX RX pf20f5f
+
+maxss RX MD pf30f5f
+maxss RX RX pf30f5f
+
+minpd RX MX p660f5d
+
+minps RX MX 0f5d
+
+minsd RX MQ pf20f5d
+minsd RX RX pf20f5d
+
+minss RX MD pf30f5d
+minss RX RX pf30f5d
+
 mov MB IB c6/0
-mov MW IW c7/0
+mov MB RB 88
 mov MD ID c7/0
-mov MQ IQ wc7/0
+mov MD RD 89
+mov MQ ID wc7/0
+mov MQ RQ w89
+mov MW IW c7/0
+mov MW RW 89
+mov RB IB b0
+mov RB MB 8a
+mov RD ID b8
+mov RD MD 8b
+mov RQ IQ wb8
+mov RQ MQ w8b
+mov RW IW b8
+mov RW MW 8b
 
-movbe RW MW 0f38f0
-movbe RD MD 0f38f0
-movbe RQ MQ w0f38f0
-movbe MW RW 0f38f1
+movapd MX RX p660f29
+movapd RX MX p660f28
+
+movaps MX RX 0f29
+movaps RX MX 0f28
+
 movbe MD RD 0f38f1
 movbe MQ RQ w0f38f1
+movbe MW RW 0f38f1
+movbe RD MD 0f38f0
+movbe RQ MQ w0f38f0
+movbe RW MW 0f38f0
 
-movzx RW MB 0fb6
+movd MD MX p660f7e
+movd MX MD p660f6e
+
+movddup RX MQ pf20f12
+movddup RX RX pf20f12
+
+movdiri MD RD 0f38f9
+movdiri MQ RQ w0f38f9
+
+movdqa MX RX p660f7f
+movdqa RX MX p660f6f
+
+movdqu MX RX pf30f7f
+movdqu RX MX pf30f6f
+
+movhlps RX RX 0f12
+
+movhpd MQ RX p660f17
+movhpd RX MQ p660f16
+
+movhps MQ RX 0f17
+movhps RX MQ 0f16
+
+movlhps RX RX 0f16
+
+movlpd MQ RX p660f13
+movlpd RX MQ p660f12
+
+movlps MQ RX 0f13
+movlps RX MQ 0f12
+
+movmskpd RD MX p660f50
+movmskpd RQ MX p66w0f50
+
+movmskps RD MX 0f50
+movmskps RQ MX w0f50
+
+movntdq MX RX p660fe7
+
+movntdqa RX MX p660f382a
+
+movntpd MX RX p660f2b
+
+movntps MX RX 0f2b
+
+movq MQ MX p66w0f7e
+movq MQ RX p660fd6
+movq MX MQ p66w0f6e
+movq RX MQ pf30f7e
+movq RX RX p660fd6
+movq RX RX pf30f7e
+
+movs MB MB a4
+movs MD MD a5
+movs MQ MQ wa5
+movs MW MW a5
+
+movsb a4
+
+movsd MQ RX pf20f11
+movsd RX MQ pf20f10
+movsd RX RX pf20f10
+movsd RX RX pf20f11
+movsd a5
+
+movshdup RX MX pf30f16
+
+movsldup RX MX pf30f12
+
+movsq wa5
+
+movss MD RX pf30f11
+movss RX MD pf30f10
+movss RX RX pf30f10
+movss RX RX pf30f11
+
+movsw a5
+
+movsx RD MB 0fbe
+movsx RD MW 0fbf
+movsx RQ MB w0fbe
+movsx RQ MW w0fbf
+movsx RW MB 0fbe
+
+movsxd RD MD 63
+movsxd RQ MD w63
+movsxd RW MW 63
+
+movupd MX RX p660f11
+movupd RX MX p660f10
+
+movups MX RX 0f11
+movups RX MX 0f10
+
 movzx RD MB 0fb6
-movzx RQ MB w0fb6
 movzx RD MW 0fb7
+movzx RQ MB w0fb6
 movzx RQ MW w0fb7
+movzx RW MB 0fb6
+
+mpsadbw RX MX IB p660f3a42
 
 mul MB f6/4
-mul MW f7/4
 mul MD f7/4
 mul MQ wf7/4
+mul MW f7/4
+
+mulpd RX MX p660f59
+
+mulps RX MX 0f59
+
+mulsd RX MQ pf20f59
+mulsd RX RX pf20f59
+
+mulss RX MD pf30f59
+mulss RX RX pf30f59
+
+mwait 0f01c9
 
 neg MB f6/3
-neg MW f7/3
 neg MD f7/3
 neg MQ wf7/3
+neg MW f7/3
 
 nop 90
-nop MW 0f1f/0
 nop MD 0f1f/0
+nop MW 0f1f/0
 
 not MB f6/2
-not MW f7/2
 not MD f7/2
 not MQ wf7/2
+not MW f7/2
 
 or 0B IB 0c
-or 0W IW 0d
 or 0D ID 0d
 or 0Q ID w0d
+or 0W IW 0d
 or MB IB 80/1
-or MW IW 81/1
-or MD ID 81/1
-or MQ ID w81/1
-or MW IB 83/1
-or MD IB 83/1
-or MQ IB w83/1
 or MB RB 08
-or MW RW 09
+or MD IB 83/1
+or MD ID 81/1
 or MD RD 09
+or MQ IB w83/1
+or MQ ID w81/1
 or MQ RQ w09
+or MW IB 83/1
+or MW IW 81/1
+or MW RW 09
 or RB MB 0a
-or RW MW 0b
 or RD MD 0b
 or RQ MQ w0b
+or RW MW 0b
 
-pop MW 8f/0
+orpd RX MX p660f56
+
+orps RX MX 0f56
+
+out 2W 0B ee
+out 2W 0D ef
+out 2W 0W ef
+out IB 0B e6
+out IB 0D e7
+out IB 0W e7
+
+outs 2W MB 6e
+outs 2W MD 6f
+outs 2W MW 6f
+
+outsb 6e
+
+outsd 6f
+
+outsw 6f
+
+pabsb RX MX p660f381c
+
+pabsd RX MX p660f381e
+
+pabsw RX MX p660f381d
+
+packssdw RX MX p660f6b
+
+packsswb RX MX p660f63
+
+packusdw RX MX p660f382b
+
+packuswb RX MX p660f67
+
+paddb RX MX p660ffc
+
+paddd RX MX p660ffe
+
+paddq RX MX p660fd4
+
+paddsb RX MX p660fec
+
+paddsw RX MX p660fed
+
+paddusb RX MX p660fdc
+
+paddusw RX MX p660fdd
+
+paddw RX MX p660ffd
+
+palignr RX MX IB p660f3a0f
+
+pand RX MX p660fdb
+
+pandn RX MX p660fdf
+
+pause pf390
+
+pavgb RX MX p660fe0
+
+pavgw RX MX p660fe3
+
+pblendvb RX MX p660f3810
+
+pblendw RX MX IB p660f3a0e
+
+pclmulqdq RX MX IB p660f3a44
+
+pcmpeqb RX MX p660f74
+
+pcmpeqd RX MX p660f76
+
+pcmpeqq RX MX p660f3829
+
+pcmpeqw RX MX p660f75
+
+pcmpestri RX MX IB p660f3a61
+
+pcmpestrm RX MX IB p660f3a60
+
+pcmpgtb RX MX p660f64
+
+pcmpgtd RX MX p660f66
+
+pcmpgtq RX MX p660f3837
+
+pcmpgtw RX MX p660f65
+
+pcmpistri RX MX IB p660f3a63
+
+pcmpistrm RX MX IB p660f3a62
+
+pconfig 0f01c5
+
+pextrb MB RX IB p660f3a14
+
+pextrd MD RX IB p660f3a16
+
+pextrq MQ RX IB p66w0f3a16
+
+pextrw RD MX IB p660fc5
+
+phaddd RX MX p660f3802
+
+phaddsw RX MX p660f3803
+
+phaddw RX MX p660f3801
+
+phminposuw RX MX p660f3841
+
+phsubd RX MX p660f3806
+
+phsubsw RX MX p660f3807
+
+phsubw RX MX p660f3805
+
+pinsrb RX MB IB p660f3a20
+pinsrb RX RD IB p660f3a20
+
+pinsrd RX MD IB p660f3a22
+
+pinsrq RX MQ IB p66w0f3a22
+
+pinsrw MX MW IB p660fc4
+pinsrw MX RD IB p660fc4
+
+pmaddubsw RX MX p660f3804
+
+pmaddwd RX MX p660ff5
+
+pmaxsb RX MX p660f383c
+
+pmaxsd RX MX p660f383d
+
+pmaxsw RX MX p660fee
+
+pmaxub RX MX p660fde
+
+pmaxud RX MX p660f383f
+
+pmaxuw RX MX p660f383e
+
+pminsb RX MX p660f3838
+
+pminsd RX MX p660f3839
+
+pminsw RX MX p660fea
+
+pminub RX MX p660fda
+
+pminud RX MX p660f383b
+
+pminuw RX MX p660f383a
+
+pmovmskb RD MX p660fd7
+
+pmovsxbd RX MD p660f3821
+pmovsxbd RX RX p660f3821
+
+pmovsxbq RX MW p660f3822
+pmovsxbq RX RX p660f3822
+
+pmovsxbw RX MQ p660f3820
+pmovsxbw RX RX p660f3820
+
+pmovsxdq RX MQ p660f3825
+pmovsxdq RX RX p660f3825
+
+pmovsxwd RX MQ p660f3823
+pmovsxwd RX RX p660f3823
+
+pmovsxwq RX MD p660f3824
+pmovsxwq RX RX p660f3824
+
+pmovzxbd RX MD p660f3831
+pmovzxbd RX RX p660f3831
+
+pmovzxbq RX MW p660f3832
+pmovzxbq RX RX p660f3832
+
+pmovzxbw RX MQ p660f3830
+pmovzxbw RX RX p660f3830
+
+pmovzxdq RX MQ p660f3835
+pmovzxdq RX RX p660f3835
+
+pmovzxwd RX MQ p660f3833
+pmovzxwd RX RX p660f3833
+
+pmovzxwq RX MD p660f3834
+pmovzxwq RX RX p660f3834
+
+pmuldq RX MX p660f3828
+
+pmulhrsw RX MX p660f380b
+
+pmulhuw RX MX p660fe4
+
+pmulhw RX MX p660fe5
+
+pmulld RX MX p660f3840
+
+pmullw RX MX p660fd5
+
+pmuludq RX MX p660ff4
+
 pop MQ 8f/0
-pop RW 58
+pop MW 8f/0
 pop RQ 58
+pop RW 58
 
-popcnt RW MW pf30fb8
 popcnt RD MD pf30fb8
 popcnt RQ MQ pf3w0fb8
+popcnt RW MW pf30fb8
 
-popf 669d
+popf 9d
+
 popfq 9d
 
-push MW ff/6
-push MQ ff/6
-push RW 50
-push RQ 50
+por RX MX p660feb
+
+prefetchnta MB 0f18/0
+
+prefetcht0 MB 0f18/1
+
+prefetcht1 MB 0f18/2
+
+prefetcht2 MB 0f18/3
+
+prefetchw MB 0f0d/1
+
+psadbw RX MX p660ff6
+
+pshufb RX MX p660f3800
+
+pshufd RX MX IB p660f70
+
+pshufhw RX MX IB pf30f70
+
+pshuflw RX MX IB pf20f70
+
+psignb RX MX p660f3808
+
+psignd RX MX p660f380a
+
+psignw RX MX p660f3809
+
+pslld RX IB p660f72/6
+pslld RX MX p660ff2
+
+pslldq RX IB p660f73/7
+
+psllq RX IB p660f73/6
+psllq RX MX p660ff3
+
+psllw RX IB p660f71/6
+psllw RX MX p660ff1
+
+psrad RX IB p660f72/4
+psrad RX MX p660fe2
+
+psraw RX IB p660f71/4
+psraw RX MX p660fe1
+
+psrld RX IB p660f72/2
+psrld RX MX p660fd2
+
+psrldq RX IB p660f73/3
+
+psrlq RX IB p660f73/2
+psrlq RX MX p660fd3
+
+psrlw RX IB p660f71/2
+psrlw RX MX p660fd1
+
+psubb RX MX p660ff8
+
+psubd RX MX p660ffa
+
+psubq RX MX p660ffb
+
+psubsb RX MX p660fe8
+
+psubsw RX MX p660fe9
+
+psubusb RX MX p660fd8
+
+psubusw RX MX p660fd9
+
+psubw RX MX p660ff9
+
+ptest RX MX p660f3817
+
+ptwrite MD pf30fae/4
+ptwrite MQ pf3w0fae/4
+
+punpckhbw RX MX p660f68
+
+punpckhdq RX MX p660f6a
+
+punpckhqdq RX MX p660f6d
+
+punpckhwd RX MX p660f69
+
+punpcklbw RX MX p660f60
+
+punpckldq RX MX p660f62
+
+punpcklqdq RX MX p660f6c
+
+punpcklwd RX MX p660f61
+
 push IB 6a
-push IW 68
 push ID 68
+push IW 68
+push MQ ff/6
+push MW ff/6
+push RQ 50
+push RW 50
 
 pushf 9c
-pushfq 669c
 
-rcl MB L1 d0/2
-rcl MB 1B d2/2
-rcl MB IB c0/2
-rcl MW L1 d1/2
-rcl MW 1B d3/2
-rcl MW IB c1/2
-rcl MD L1 d1/2
-rcl MQ L1 wd1/2
-rcl MD 1B d3/2
-rcl MQ 1B wd3/2
-rcl MD IB c1/2
-rcl MQ IB wc1/2
+pushfq 9c
 
-rcr MB L1 d0/3
-rcr MB 1B d2/3
-rcr MB IB c0/3
-rcr MW L1 d1/3
-rcr MW 1B d3/3
-rcr MW IB c1/3
-rcr MD L1 d1/3
-rcr MQ L1 wd1/3
-rcr MD 1B d3/3
-rcr MQ 1B wd3/3
-rcr MD IB c1/3
-rcr MQ IB wc1/3
+rdmsr 0f32
 
-rdpid MQ f30fc7/7
+rdpid RQ pf30fc7/7
 
-rdrand RW 0fc7/6
-rdrand RD 0fc7/6
-rdrand RQ w0fc7/6
+rdpkru 0f01ee
 
-rdseed RW 0fc7/7
+rdpmc 0f33
+
 rdseed RD 0fc7/7
 rdseed RQ w0fc7/7
+rdseed RW 0fc7/7
 
-ret c3
+rdtsc 0f31
+
+rdtscp 0f01f9
+
 ret IW c2
+ret IW ca
+ret c3
+ret cb
 
-rol MB L1 d0/0
-rol MB 1B d2/0
-rol MB IB c0/0
-rol MW L1 d1/0
-rol MW 1B d3/0
-rol MW IB c1/0
-rol MD L1 d1/0
-rol MQ L1 wd1/0
-rol MD 1B d3/0
-rol MQ 1B wd3/0
-rol MD IB c1/0
-rol MQ IB wc1/0
-
-ror MB L1 d0/1
-ror MB 1B d2/1
-ror MB IB c0/1
-ror MW L1 d1/1
-ror MW 1B d3/1
-ror MW IB c1/1
-ror MD L1 d1/1
-ror MQ L1 wd1/1
-ror MD 1B d3/1
-ror MQ 1B wd3/1
-ror MD IB c1/1
-ror MQ IB wc1/1
-
-sal MB L1 d0/4
-sal MB 1B d2/4
-sal MB IB c0/4
-sal MW L1 d1/4
-sal MW 1B d3/4
-sal MW IB c1/4
-sal MD L1 d1/4
-sal MQ L1 wd1/4
-sal MD 1B d3/4
-sal MQ 1B wd3/4
-sal MD IB c1/4
-sal MQ IB wc1/4
-
-sar MB L1 d0/7
-sar MB 1B d2/7
-sar MB IB c0/7
-sar MW L1 d1/7
-sar MW 1B d3/7
-sar MW IB c1/7
-sar MD L1 d1/7
-sar MQ L1 wd1/7
-sar MD 1B d3/7
-sar MQ 1B wd3/7
-sar MD IB c1/7
-sar MQ IB wc1/7
+rsm 0faa
 
 sbb 0B IB 1c
-sbb 0W IW 1d
 sbb 0D ID 1d
 sbb 0Q ID w1d
+sbb 0W IW 1d
 sbb MB IB 80/3
-sbb MW IW 81/3
-sbb MD ID 81/3
-sbb MQ ID w81/3
-sbb MW IB 83/3
-sbb MD IB 83/3
-sbb MQ IB w83/3
 sbb MB RB 18
-sbb MW RW 19
+sbb MD IB 83/3
+sbb MD ID 81/3
 sbb MD RD 19
+sbb MQ IB w83/3
+sbb MQ ID w81/3
 sbb MQ RQ w19
+sbb MW IB 83/3
+sbb MW IW 81/3
+sbb MW RW 19
 sbb RB MB 1a
-sbb RW MW 1b
 sbb RD MD 1b
 sbb RQ MQ w1b
+sbb RW MW 1b
+
+scas MB ae
+scas MD af
+scas MQ waf
+scas MW af
 
 scasb ae
 
-scasw 66af
-
 scasd af
 
-scasq 48af
+scasq waf
 
-seta IB 0f97
+scasw af
 
-setae IB 0f93
+serialize 0f01e8
 
-setb IB 0f92
+seta MB 0f97
 
-setbe IB 0f96
+setae MB 0f93
 
-setc IB 0f92
+setb MB 0f92
 
-sete IB 0f94
+setbe MB 0f96
 
-setg IB 0f9f
+setc MB 0f92
 
-setge IB 0f9d
+sete MB 0f94
 
-setl IB 0f9c
+setg MB 0f9f
 
-setle IB 0f9e
+setge MB 0f9d
 
-setna IB 0f96
+setl MB 0f9c
 
-setnae IB 0f92
+setle MB 0f9e
 
-setnb IB 0f93
+setna MB 0f96
 
-setnbe IB 0f97
+setnae MB 0f92
 
-setnc IB 0f93
+setnb MB 0f93
 
-setne IB 0f95
+setnbe MB 0f97
 
-setng IB 0f9e
+setnc MB 0f93
 
-setnge IB 0f9c
+setne MB 0f95
 
-setnl IB 0f9d
+setng MB 0f9e
 
-setnle IB 0f9f
+setnge MB 0f9c
 
-setno IB 0f91
+setnl MB 0f9d
 
-setnp IB 0f9b
+setnle MB 0f9f
 
-setns IB 0f99
+setno MB 0f91
 
-setnz IB 0f95
+setnp MB 0f9b
 
-seto IB 0f90
+setns MB 0f99
 
-setp IB 0f9a
+setnz MB 0f95
 
-setpe IB 0f9a
+seto MB 0f90
 
-setpo IB 0f9b
+setp MB 0f9a
 
-sets IB 0f98
+setpe MB 0f9a
 
-setz IB 0f94
+setpo MB 0f9b
 
-shl MB L1 d0/4
-shl MB 1B d2/4
-shl MB IB c0/4
-shl MW L1 d1/4
-shl MW 1B d3/4
-shl MW IB c1/4
-shl MD L1 d1/4
-shl MQ L1 wd1/4
-shl MD 1B d3/4
-shl MQ 1B wd3/4
-shl MD IB c1/4
-shl MQ IB wc1/4
+sets MB 0f98
 
-shld MW RW IB 0fa4
+setssbsy pf30f01e8
+
+setz MB 0f94
+
+sfence 0faef8
+
+sha1msg1 RX MX 0f38c9
+
+sha1msg2 RX MX 0f38ca
+
+sha1nexte RX MX 0f38c8
+
+sha1rnds4 RX MX IB 0f3acc
+
+sha256msg1 RX MX 0f38cc
+
+sha256msg2 RX MX 0f38cd
+
+sha256rnds2 RX MX 0f38cb
+
+shld MD RD 1B 0fa5
 shld MD RD IB 0fa4
+shld MQ RQ 1B w0fa5
 shld MQ RQ IB w0fa4
 shld MW RW 1B 0fa5
-shld MD RD 1B 0fa5
-shld MQ RQ 1B w0fa5
+shld MW RW IB 0fa4
 
-shr MB L1 d0/5
-shr MB 1B d2/5
-shr MB IB c0/5
-shr MW L1 d1/5
-shr MW 1B d3/5
-shr MW IB c1/5
-shr MD L1 d1/5
-shr MQ L1 wd1/5
-shr MD 1B d3/5
-shr MQ 1B wd3/5
-shr MD IB c1/5
-shr MQ IB wc1/5
-
-shrd MW RW IB 0fac
+shrd MD RD 1B 0fad
 shrd MD RD IB 0fac
+shrd MQ RQ 1B w0fad
 shrd MQ RQ IB w0fac
 shrd MW RW 1B 0fad
-shrd MD RD 1B 0fad
-shrd MQ RQ 1B w0fad
+shrd MW RW IB 0fac
+
+shufpd RX MX IB p660fc6
+
+shufps RX MX IB 0fc6
+
+sldt MW 0f00/0
+
+smsw MW 0f01/4
+smsw RD 0f01/4
+smsw RQ w0f01/4
+
+sqrtpd RX MX p660f51
+
+sqrtps RX MX 0f51
+
+sqrtsd RX MQ pf20f51
+sqrtsd RX RX pf20f51
+
+sqrtss RX MD pf30f51
+sqrtss RX RX pf30f51
 
 stac 0f01cb
 
@@ -938,90 +1570,169 @@ std fd
 
 sti fb
 
+stos MB aa
+stos MD ab
+stos MQ wab
+stos MW ab
+
+stosb aa
+
+stosd ab
+
+stosq wab
+
+stosw ab
+
+str MW 0f00/1
+
 sub 0B IB 2c
-sub 0W IW 2d
 sub 0D ID 2d
 sub 0Q ID w2d
+sub 0W IW 2d
 sub MB IB 80/5
-sub MW IW 81/5
-sub MD ID 81/5
-sub MQ ID w81/5
-sub MW IB 83/5
-sub MD IB 83/5
-sub MQ IB w83/5
 sub MB RB 28
-sub MW RW 29
+sub MD IB 83/5
+sub MD ID 81/5
 sub MD RD 29
+sub MQ IB w83/5
+sub MQ ID w81/5
 sub MQ RQ w29
+sub MW IB 83/5
+sub MW IW 81/5
+sub MW RW 29
 sub RB MB 2a
-sub RW MW 2b
 sub RD MD 2b
 sub RQ MQ w2b
+sub RW MW 2b
+
+subpd RX MX p660f5c
+
+subps RX MX 0f5c
+
+subsd RX MQ pf20f5c
+subsd RX RX pf20f5c
+
+subss RX MD pf30f5c
+subss RX RX pf30f5c
+
+swapgs 0f01f8
 
 syscall 0f05
 
+sysenter 0f34
+
+sysexit 0f35
+sysexit w0f35
+
+sysret 0f07
+sysret w0f07
+
 test 0B IB a8
-test 0W IW a9
 test 0D ID a9
 test 0Q ID wa9
+test 0W IW a9
 test MB IB f6/0
-test MW IW f7/0
-test MD ID f7/0
-test MQ ID wf7/0
 test MB RB 84
-test MW RW 85
-test MD RD 85 
+test MD ID f7/0
+test MD RD 85
+test MQ ID wf7/0
 test MQ RQ w85
+test MW IW f7/0
+test MW RW 85
 
-tzcnt RW MW pf30fbc
 tzcnt RD MD pf30fbc
 tzcnt RQ MQ pf3w0fbc
+tzcnt RW MW pf30fbc
 
-ud0 RD MD 0fff
+ucomisd RX MQ p660f2e
+ucomisd RX RX p660f2e
+
+ucomiss RX MD 0f2e
+ucomiss RX RX 0f2e
+
+ud01 RD MD 0fff
 
 ud1 RD MD 0fb9
 
 ud2 0f0b
 
+unpckhpd RX MX p660f15
+
+unpckhps RX MX 0f15
+
+unpcklpd RX MX p660f14
+
+unpcklps RX MX 0f14
+
+verr MW 0f00/4
+
+verw MW 0f00/5
+
+wait 9b
+
+wbinvd 0f09
+
+wrmsr 0f30
+
+wrpkru 0f01ef
+
+xabort IB c6f8
+
 xadd MB RB 0fc0
-xadd MW RW 0fc1
 xadd MD RD 0fc1
 xadd MQ RQ w0fc1
+xadd MW RW 0fc1
 
-xchg 0W RW 90
+xbegin RD c7f8
+xbegin RW c7f8
+
 xchg 0D RD 90
 xchg 0Q RQ w90
-xchg RW 0W 90
-xchg RD 0D 90
-xchg RQ 0Q w90
-xchg RB MB 86
+xchg 0W RW 90
 xchg MB RB 86
-xchg RW MW 87
-xchg MW RW 87
-xchg RD MD 87
 xchg MD RD 87
-xchg RQ MQ w87
 xchg MQ RQ w87
+xchg MW RW 87
+xchg RB MB 86
+xchg RD 0D 90
+xchg RD MD 87
+xchg RQ 0Q w90
+xchg RQ MQ w87
+xchg RW 0W 90
+xchg RW MW 87
+
+xend 0f01d5
+
+xgetbv 0f01d0
+
+xlat MB d7
+
+xlatb d7
+xlatb wd7
 
 xor 0B IB 34
-xor 0W IW 35
 xor 0D ID 35
 xor 0Q ID w35
+xor 0W IW 35
 xor MB IB 80/6
-xor MW IW 81/6
-xor MD ID 81/6
-xor MQ ID w81/6
-xor MW IB 83/6
-xor MD IB 83/6
-xor MQ IB w83/6
 xor MB RB 30
-xor MW RW 31
+xor MD IB 83/6
+xor MD ID 81/6
 xor MD RD 31
+xor MQ IB w83/6
+xor MQ ID w81/6
 xor MQ RQ w31
+xor MW IB 83/6
+xor MW IW 81/6
+xor MW RW 31
 xor RB MB 32
-xor RW MW 33
 xor RD MD 33
 xor RQ MQ w33
+xor RW MW 33
+
+xorpd RX MX p660f57
+
+xorps RX MX 0f57
 
 )";
 

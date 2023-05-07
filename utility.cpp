@@ -27,8 +27,12 @@ short mem_size(std::string s) {
 		return 32;
 	if (s.starts_with("qword "))
 		return 64;
-	if (s.starts_with("oword ") || s.starts_with("xmmword "))
+	if (s.starts_with("tbyte "))
+		return 80;
+	if (s.starts_with("oword ") || s.starts_with("xword ") || s.starts_with("xmmword "))
 		return 128;
+	if (s.starts_with("yword ") || s.starts_with("ymmword "))
+		return 256;
 	return -1;
 }
 
@@ -75,20 +79,9 @@ mem_output *parse_mem(std::string in, short &size) {
 	// [off] NO SIB
 	if (size == -1 || in[0] != '[') {
 		short tmp;
-		if (in.starts_with("byte "))
-			tmp = 8;
-		else if (in.starts_with("word "))
-			tmp = 16;
-		else if (in.starts_with("dword "))
-			tmp = 32;
-		else if (in.starts_with("qword "))
-			tmp = 64;
-		else if (in.starts_with("oword ") || in.starts_with("xmmword "))
-			tmp = 128;
-		else {
-			error = "taille d'operation non spécifiée";
+		tmp = mem_size(in);
+		if (tmp == -1)
 			return nullptr;
-		}
 		size = tmp;
 		in = in.substr(5 + (tmp >= 32));
 	}

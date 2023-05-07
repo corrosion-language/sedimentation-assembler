@@ -26,7 +26,7 @@ static const std::unordered_map<std::string, short> _reg_size{
 	{"xmm4", 128},	{"xmm5", 128},	{"xmm6", 128},	{"xmm7", 128}, {"xmm8", 128},  {"xmm9", 128},  {"xmm10", 128}, {"xmm11", 128}, {"xmm12", 128},
 	{"xmm13", 128}, {"xmm14", 128}, {"xmm15", 128}, {"ymm0", 256}, {"ymm1", 256},  {"ymm2", 256},  {"ymm3", 256},  {"ymm4", 256},  {"ymm5", 256},
 	{"ymm6", 256},	{"ymm7", 256},	{"ymm8", 256},	{"ymm9", 256}, {"ymm10", 256}, {"ymm11", 256}, {"ymm12", 256}, {"ymm13", 256}, {"ymm14", 256},
-	{"ymm15", 256},
+	{"ymm15", 256}, {"st0", 80},	{"st1", 80},	{"st2", 80},   {"st3", 80},	   {"st4", 80},	   {"st5", 80},	   {"st6", 80},	   {"st7", 80},
 };
 
 static const std::unordered_map<std::string, short> _reg_num{
@@ -40,6 +40,7 @@ static const std::unordered_map<std::string, short> _reg_num{
 	{"xmm2", 2},   {"xmm3", 3},	  {"xmm4", 4},	 {"xmm5", 5},	{"xmm6", 6},   {"xmm7", 7},	  {"xmm8", 8},	 {"xmm9", 9},	{"xmm10", 10}, {"xmm11", 11},
 	{"xmm12", 12}, {"xmm13", 13}, {"xmm14", 14}, {"xmm15", 15}, {"ymm0", 0},   {"ymm1", 1},	  {"ymm2", 2},	 {"ymm3", 3},	{"ymm4", 4},   {"ymm5", 5},
 	{"ymm6", 6},   {"ymm7", 7},	  {"ymm8", 8},	 {"ymm9", 9},	{"ymm10", 10}, {"ymm11", 11}, {"ymm12", 12}, {"ymm13", 13}, {"ymm14", 14}, {"ymm15", 15},
+	{"st0", 0},	   {"st1", 1},	  {"st2", 2},	 {"st3", 3},	{"st4", 4},	   {"st5", 5},	  {"st6", 6},	 {"st7", 7},
 };
 
 const static short _sizes[] = {-1, 8, -1, 32, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 64, -1, -1, 80, -1, -1, 16, 128, 256, 512};

@@ -177,7 +177,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				}
 			}
 			std::vector<short> del;
-			for (size_t j = 1; j < args.size(); j++) {
+			for (size_t j = 1; j <= args.size(); j++) {
 				if (isdigit(tokens[j][0]) || (tokens[j][0] >= 'a' && tokens[j][0] <= 'f'))
 					del.push_back(j - 1);
 				else if (tokens[j][0] == 'L')
@@ -218,7 +218,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				a1 += (args[0][1] == 'h') * 4;
 				size_t i = p.first.back()[0] == 'w';
 				if (args[0][1] == 'h' && i)
-					cerr(linenum, "combination d'opcode et des opérandes invalide");
+					cerr(linenum, "impossible d'utiliser un haut-demi registre avec une prefixe REX");
 				if (i || (types[0].second == 8 && args[0][1] != 'h' && a1 >= 4) || a1 >= 8)
 					tmp += 0x40 | (i << 3) | (a1 & 8);
 				short reg = 0;
@@ -329,6 +329,8 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 			if (mem.first == -1) {
 				short a1 = reg_num(args[reg.first - 1]);
 				size_t i = p.first.back()[0] == 'w';
+				if (args[reg.first - 1][1] == 'h' && i)
+					cerr(linenum, "impossible d'utiliser un haut-demi registre avec une prefixe REX");
 				if (i || (a1 & 8))
 					tmp += 0x48 | (a1 >= 8);
 				for (; i < p.first.back().size(); i += 2) {
@@ -395,8 +397,12 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					else
 						rm |= (a1 & 7) << 3;
 				}
-				if (rex != 0)
+				if (rex != 0) {
+					if (reg.first != -1)
+						if (args[reg.first - 1][1] == 'h')
+							cerr(linenum, "impossible d'utiliser un haut-demi registre avec une prefixe REX");
 					tmp += rex;
+				}
 				for (size_t i = p.first.back()[0] == 'w'; i < p.first.back().size(); i += 2) {
 					if (p.first.back()[i] == '/') {
 						rm |= std::stoi(p.first.back().substr(i + 1, 1), nullptr, 16) << 3;
