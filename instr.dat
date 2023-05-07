@@ -1392,6 +1392,32 @@ pushf 9c
 
 pushfq 9c
 
+rcl MB 1B d2/2
+rcl MB IB c0/2
+rcl MB L1 d0/2
+rcl MD 1B d3/2
+rcl MD IB c1/2
+rcl MD L1 d1/2
+rcl MQ 1B wd3/2
+rcl MQ IB wc1/2
+rcl MQ L1 wd1/2
+rcl MW 1B d3/2
+rcl MW IB c1/2
+rcl MW L1 d1/2
+
+rcr MB 1B d2/3
+rcr MB IB c0/3
+rcr MB L1 d0/3
+rcr MD 1B d3/3
+rcr MD IB c1/3
+rcr MD L1 d1/3
+rcr MQ 1B wd3/3
+rcr MQ IB wc1/3
+rcr MQ L1 wd1/3
+rcr MW 1B d3/3
+rcr MW IB c1/3
+rcr MW L1 d1/3
+
 rdmsr 0f32
 
 rdpid RQ pf30fc7/7
@@ -1413,7 +1439,59 @@ ret IW ca
 ret c3
 ret cb
 
+rol MB 1B d2/0
+rol MB IB c0/0
+rol MB L1 d0/0
+rol MD 1B d3/0
+rol MD IB c1/0
+rol MD L1 d1/0
+rol MQ 1B wd3/0
+rol MQ IB wc1/0
+rol MQ L1 wd1/0
+rol MW 1B d3/0
+rol MW IB c1/0
+rol MW L1 d1/0
+
+ror MB 1B d2/1
+ror MB IB c0/1
+ror MB L1 d0/1
+ror MD 1B d3/1
+ror MD IB c1/1
+ror MD L1 d1/1
+ror MQ 1B wd3/1
+ror MQ IB wc1/1
+ror MQ L1 wd1/1
+ror MW 1B d3/1
+ror MW IB c1/1
+ror MW L1 d1/1
+
 rsm 0faa
+
+sal MB 1B d2/4
+sal MB IB c0/4
+sal MB L1 d0/4
+sal MD 1B d3/4
+sal MD IB c1/4
+sal MD L1 d1/4
+sal MQ 1B wd3/4
+sal MQ IB wc1/4
+sal MQ L1 wd1/4
+sal MW 1B d3/4
+sal MW IB c1/4
+sal MW L1 d1/4
+
+sar MB 1B d2/7
+sar MB IB c0/7
+sar MB L1 d0/7
+sar MD 1B d3/7
+sar MD IB c1/7
+sar MD L1 d1/7
+sar MQ 1B wd3/7
+sar MQ IB wc1/7
+sar MQ L1 wd1/7
+sar MW 1B d3/7
+sar MW IB c1/7
+sar MW L1 d1/7
 
 sbb 0B IB 1c
 sbb 0D ID 1d
@@ -1528,12 +1606,38 @@ sha256msg2 RX MX 0f38cd
 
 sha256rnds2 RX MX 0f38cb
 
+shl MB 1B d2/4
+shl MB IB c0/4
+shl MB L1 d0/4
+shl MD 1B d3/4
+shl MD IB c1/4
+shl MD L1 d1/4
+shl MQ 1B wd3/4
+shl MQ IB wc1/4
+shl MQ L1 wd1/4
+shl MW 1B d3/4
+shl MW IB c1/4
+shl MW L1 d1/4
+
 shld MD RD 1B 0fa5
 shld MD RD IB 0fa4
 shld MQ RQ 1B w0fa5
 shld MQ RQ IB w0fa4
 shld MW RW 1B 0fa5
 shld MW RW IB 0fa4
+
+shr MB 1B d2/5
+shr MB IB c0/5
+shr MB L1 d0/5
+shr MD 1B d3/5
+shr MD IB c1/5
+shr MD L1 d1/5
+shr MQ 1B wd3/5
+shr MQ IB wc1/5
+shr MQ L1 wd1/5
+shr MW 1B d3/5
+shr MW IB c1/5
+shr MW L1 d1/5
 
 shrd MD RD 1B 0fad
 shrd MD RD IB 0fac
