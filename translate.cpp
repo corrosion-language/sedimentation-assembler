@@ -73,7 +73,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 				cerr(linenum, error);
 			} else if (tmp.second == -3) {
 				if (reloc_table.find(text_labels[tmp.first]) != reloc_table.end()) {
-					int32_t off = reloc_table.at(text_labels.at(tmp.first)) - output_buffer.size() - 3;
+					int32_t off = reloc_table.at(text_labels.at(tmp.first)) - output_buffer.size() - 2;
 					if ((int8_t)off == off) {
 						types.push_back({IMM, 8});
 					} else {
@@ -293,7 +293,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 					reloc.push_back({output_buffer.size() + tmp.size(), 0, ABS, args[0], 32});
 				} else if (a1.second == -3) {
 					if (reloc_table.find(text_labels[a1.first]) != reloc_table.end()) {
-						int32_t off = reloc_table.at(text_labels.at(a1.first)) - output_buffer.size() - 3;
+						int32_t off = reloc_table.at(text_labels.at(a1.first)) - output_buffer.size() - 2;
 						if ((int8_t)off == off) {
 							a1.first = off;
 						} else {
@@ -340,14 +340,18 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 					cerr(linenum, "impossible d'utiliser un haut-demi registre avec une prefixe REX");
 				if (i || (a1 & 8))
 					tmp += 0x40 | (i << 3) | (a1 >= 8);
+				int reg = 0x7fff;
 				for (; i < p.first.back().size(); i += 2) {
 					if (p.first.back()[i] == '/') {
-						tmp += std::stoi(p.first.back().substr(i + 1, 1)) << 3;
+						reg = std::stoi(p.first.back().substr(i + 1, 1));
 						break;
 					}
 					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
 				}
-				tmp.back() |= 0xc0 | (a1 & 7);
+				if (reg == 0x7fff)
+					tmp.back() += a1 & 7;
+				else
+					tmp.back() += 0xc0 | (reg << 3) | (a1 & 7);
 				auto a2 = parse_imm(args[imm.first - 1]);
 				short s2 = _sizes[p.first[imm.first][1] - 'A'];
 				if (a2.second == -1) {
@@ -356,7 +360,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 					reloc.push_back({output_buffer.size() + tmp.size(), 0, ABS, args[imm.first - 1], std::max(s2, (short)32)});
 				} else if (a2.second == -3) {
 					if (reloc_table.find(text_labels[a2.first]) != reloc_table.end()) {
-						int32_t off = reloc_table.at(text_labels.at(a2.first)) - output_buffer.size() - 3;
+						int32_t off = reloc_table.at(text_labels.at(a2.first)) - output_buffer.size() - 2;
 						if ((int8_t)off == off) {
 							a2.first = off;
 						} else {
@@ -445,7 +449,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 						reloc.push_back({output_buffer.size() + tmp.size(), 0, ABS, args[imm.first - 1], std::max(s1, (short)32)});
 					} else if (a1.second == -3) {
 						if (reloc_table.find(text_labels[a1.first]) != reloc_table.end()) {
-							int32_t off = reloc_table.at(text_labels.at(a1.first)) - output_buffer.size() - 3;
+							int32_t off = reloc_table.at(text_labels.at(a1.first)) - output_buffer.size() - 2;
 							if ((int8_t)off == off) {
 								a1.first = off;
 							} else {

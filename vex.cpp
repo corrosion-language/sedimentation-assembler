@@ -293,7 +293,7 @@ void handle_vex(std::string s, std::vector<std::string> args, const size_t linen
 					tmp.back() ^= 0x78;
 				}
 
-				short reg;
+				short reg = 0;
 				for (size_t i = 8; i < p.first.back().size(); i += 2) {
 					if (p.first.back()[i] == '/') {
 						reg = std::stoi(p.first.back().substr(i + 1, 1), nullptr, 16);
