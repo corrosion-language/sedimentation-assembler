@@ -447,6 +447,10 @@ enter IW L1 c801
 
 extractps MD RX IB p660f3a17
 
+f2xm1 d9f0
+
+fabs d9e1
+
 fadd 0T RT d8c0
 fadd MD d8/0
 fadd MQ dc/0
@@ -454,6 +458,8 @@ fadd RT 0T dcc0
 
 faddp RT 0T dec0
 faddp dec1
+
+fchs d9e0
 
 fclex 9bdbe2
 
@@ -489,6 +495,10 @@ fcomp d8d9
 
 fcompp ded9
 
+fcos d9ff
+
+fdecstp d9f6
+
 fdiv 0T RT d8f0
 fdiv MD d8/6
 fdiv MQ dc/6
@@ -504,6 +514,8 @@ fdivr RT 0T dcf0
 
 fdivrp RT 0T def0
 fdivrp def1
+
+ffree RT d9c0
 
 fiadd MD da/0
 fiadd MW de/0
@@ -526,6 +538,8 @@ fild MW df/0
 
 fimul MD da/1
 fimul MW de/1
+
+fincstp d9f7
 
 finit 9bdbe3
 
@@ -553,6 +567,8 @@ fld RT d9c0
 
 fld1 d9e8
 
+fldcw MW d9/5
+
 fldl2e d9ea
 
 fldl2t d9e9
@@ -577,6 +593,8 @@ fnclex dbe2
 
 fninit dbe3
 
+fnop d9d0
+
 fnstsw 0W dfe0
 
 fpatan d9f3
@@ -587,7 +605,15 @@ fprem1 d9f5
 
 fptan d9f2
 
+frndint d9fc
+
+fscale d9fd
+
+fsin d9fe
+
 fsincos d9fb
+
+fsqrt d9fa
 
 fst MD d9/2
 fst MQ dd/2
@@ -616,6 +642,8 @@ fsubr RT 0T dce0
 fsubrp RT 0T dee0
 fsubrp dee1
 
+ftst d9e4
+
 fucom RT dde0
 fucom dde1
 
@@ -629,6 +657,8 @@ fucomp dde9
 fucompp dae9
 
 fwait 9b
+
+fxam d9e5
 
 fxch RT d9c8
 fxch d9c9
