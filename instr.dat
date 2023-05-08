@@ -147,7 +147,7 @@ bts MQ RQ w0fab
 bts MW IB 0fba/5
 bts MW RW 0fab
 
-call ID e8cd
+call ID e8
 call MQ ff/2
 
 cbw 98
@@ -1420,6 +1420,8 @@ push RW 50
 pushf 9c
 
 pushfq 9c
+
+pxor RX MX p660fef
 
 rcl MB 1B d2/2
 rcl MB IB c0/2

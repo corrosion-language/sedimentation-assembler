@@ -14,15 +14,27 @@ jobs:
             - uses: actions/checkout@v3
             - name: compile test binary
               run: make release -j4
-            - name: test normal assembling
+            - name: Test normal assembling
               run: |
                   cd test
                   ../sedimentation testfile.asm -o test.o
                   ld test.o -o test
                   ./test | diff - testfile.out
-            - name: test assembling with external symbols
+            - name: Test assembling with external symbols
               run: |
                   cd test
-                  ../sedimentation testc.asm -o test2.o
-                  gcc -nostartfiles test2.o -o test2
-                  ./test2 | diff - testc.out
+                  ../sedimentation testc.asm -o testc.o
+                  gcc -nostartfiles testc.o -o testc
+                  ./testc | diff - testc.out
+            - name: Test SSE instructions
+              run: |
+                  cd test
+                  ../sedimentation testsse.asm -o testsse.o
+                  gcc -nostartfiles testsse.o -o testsse
+                  ./testsse | diff - testsse.out
+            - name: Test AVX instructions
+              run: |
+                  cd test
+                  ../sedimentation testavx.asm -o testavx.o
+                  gcc -nostartfiles testavx.o -o testavx
+                  ./testavx | diff - testavx.out
