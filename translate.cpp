@@ -173,12 +173,8 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 		}
 		if (matched) {
 			for (size_t j = 0; j < args.size(); j++) {
-				if (types[j].second == -1) {
-					if (tokens[j + 1][1] == '*')
-						types[j].second = 8;
-					else
-						types[j].second = _sizes[tokens[j + 1][1] - 'A'];
-				}
+				if (types[j].second == -1 && tokens[j + 1][1] == '*')
+					types[j].second = 8;
 			}
 			std::vector<short> del;
 			for (size_t j = 1; j <= args.size(); j++) {
@@ -197,9 +193,11 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 	}
 	if (valid.empty())
 		cerr(linenum, "combination d'opcode et des opérandes invalide");
-	for (size_t i = 1; i < valid.size(); i++) {
-		if (valid[i].second != valid[i - 1].second)
-			cerr(linenum, "taille d'opération non spécifiée");
+	if (valid.size() > 1) {
+		for (size_t i = 0; i < args.size(); i++) {
+			if (types[i].second == -1)
+				cerr(linenum, "taille d'opération non spécifiée");
+		}
 	}
 	if (types.size() == 2 && types[0].first == REG && types[1].first == REG) {
 		types[1].first = MEM;
@@ -217,6 +215,10 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 			p.first.back() = p.first.back().substr(3);
 		}
 		if (types.size() == 0) {
+			if (p.first.back()[0] == 'w') {
+				tmp += 0x48;
+				p.first.back() = p.first.back().substr(1);
+			}
 			for (size_t i = 0; i < p.first.back().size(); i += 2)
 				tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
 		} else if (types.size() == 1) {
