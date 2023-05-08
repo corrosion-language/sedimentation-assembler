@@ -1,0 +1,1017 @@
+char vex_map[] = R"(
+
+andn RD RD MD 0.0.2.0.f2
+andn RQ RQ MQ 0.0.2.1.f2
+
+bextr RD MD RD 0.0.2.0.f7
+bextr RQ MQ RQ 0.0.2.1.f7
+
+blsi RD MD 0.0.2.0.f3/3
+blsi RQ MQ 0.0.2.1.f3/3
+
+blsmsk RD MD 0.0.2.0.f3/2
+blsmsk RQ MQ 0.0.2.1.f3/2
+
+blsr RD MD 0.0.2.0.f3/1
+blsr RQ MQ 0.0.2.1.f3/1
+
+bzhi RD MD RD 0.0.2.0.f5
+bzhi RQ MQ RQ 0.0.2.1.f5
+
+mulx RD RD MD 0.3.2.0.f6
+mulx RQ RQ MQ 0.3.2.1.f6
+
+pdep RD RD MD 0.3.2.0.f5
+pdep RQ RQ MQ 0.3.2.1.f5
+
+pext RD RD MD 0.2.2.0.f5
+pext RQ RQ MQ 0.2.2.1.f5
+
+rorx RD MD IB 0.3.3.0.f0
+rorx RQ MQ IB 0.3.3.1.f0
+
+sarx RD MD RD 0.2.2.0.f7
+sarx RQ MQ RQ 0.2.2.1.f7
+
+shlx RD MD RD 0.1.2.0.f7
+shlx RQ MQ RQ 0.1.2.1.f7
+
+shrx RD MD RD 0.3.2.0.f7
+shrx RQ MQ RQ 0.3.2.1.f7
+
+vaddpd RX RX MX 0.1.1.0.58
+vaddpd RY RY MY 1.1.1.0.58
+
+vaddps RX RX MX 0.0.1.0.58
+vaddps RY RY MY 1.0.1.0.58
+
+vaddsd RX RX MX 0.3.1.0.58
+
+vaddss RX RX MX 0.2.1.0.58
+
+vaddsubpd RX RX MX 0.1.1.0.d0
+vaddsubpd RY RY MY 1.1.1.0.d0
+
+vaddsubps RX RX MX 0.3.1.0.d0
+vaddsubps RY RY MY 1.3.1.0.d0
+
+vaesdec RX RX MX 0.1.2.0.de
+vaesdec RY RY MY 1.1.2.0.de
+
+vaesdeclast RX RX MX 0.1.2.0.df
+vaesdeclast RY RY MY 1.1.2.0.df
+
+vaesenc RX RX MX 0.1.2.0.dc
+vaesenc RY RY MY 1.1.2.0.dc
+
+vaesenclast RX RX MX 0.1.2.0.dd
+vaesenclast RY RY MY 1.1.2.0.dd
+
+vaesimc RX MX 0.1.2.0.db
+
+vaeskeygenassist RX MX IB 0.1.3.0.df
+
+vandnpd RX RX MX 0.1.1.0.55
+vandnpd RY RY MY 1.1.1.0.55
+
+vandnps RX RX MX 0.0.1.0.55
+vandnps RY RY MY 1.0.1.0.55
+
+vandpd RX RX MX 0.1.1.0.54
+vandpd RY RY MY 1.1.1.0.54
+
+vandps RX RX MX 0.0.1.0.54
+vandps RY RY MY 1.0.1.0.54
+
+vblendpd RX RX MX IB 0.1.3.0.0d
+vblendpd RY RY MY IB 1.1.3.0.0d
+
+vblendps RX RX MX IB 0.1.3.0.0c
+vblendps RY RY MY IB 1.1.3.0.0c
+
+vblendvpd RX RX MX RX 0.1.3.0.4b
+vblendvpd RY RY MY RY 1.1.3.0.4b
+
+vblendvps RX RX MX RX 0.1.3.0.4a
+vblendvps RY RY MY RY 1.1.3.0.4a
+
+vbroadcastf128 RY MX 1.1.2.0.1a
+
+vbroadcasti128 RY MX 1.1.2.0.5a
+
+vbroadcastsd RY MQ 1.1.2.0.19
+vbroadcastsd RY RX 1.1.2.0.19
+
+vbroadcastss RX MD 0.1.2.0.18
+vbroadcastss RX RX 0.1.2.0.18
+vbroadcastss RY MD 1.1.2.0.18
+vbroadcastss RY RX 1.1.2.0.18
+
+vcmppd RX RX MX IB 0.1.1.0.c2
+vcmppd RY RY MY IB 1.1.1.0.c2
+
+vcmpps RX RX MX IB 0.0.1.0.c2
+vcmpps RY RY MY IB 1.0.1.0.c2
+
+vcmpsd RX RX MX IB 0.3.1.0.c2
+
+vcmpss RX RX MX IB 0.2.1.0.c2
+
+vcomisd RX MX 0.1.1.0.2f
+
+vcomiss RX MX 0.0.1.0.2f
+
+vcvtdq2pd RX MX 0.2.1.0.e6
+vcvtdq2pd RY MX 1.2.1.0.e6
+
+vcvtpd2ps RX MX 0.1.1.0.5a
+vcvtpd2ps RX MY 1.1.1.0.5a
+
+vcvtph2ps RX MX 0.1.2.0.13
+vcvtph2ps RY MX 1.1.2.0.13
+
+vcvtps2dq RX MX 0.1.1.0.5b
+vcvtps2dq RY MY 1.1.1.0.5b
+
+vcvtps2pd RX MX 0.0.1.0.5a
+vcvtps2pd RY MX 1.0.1.0.5a
+
+vcvtps2ph MX RX IB 0.1.3.0.1d
+vcvtps2ph MX RY IB 1.1.3.0.1d
+
+vcvtsd2si RD MX 0.3.1.0.2d
+vcvtsd2si RQ MX 0.3.1.1.2d
+
+vcvtsd2ss RX RX MX 0.3.1.0.5a
+
+vcvtsi2sd RX RX MD 0.3.1.0.2a
+vcvtsi2sd RX RX MQ 0.3.1.1.2a
+
+vcvtsi2ss RX RX MD 0.2.1.0.2a
+vcvtsi2ss RX RX MQ 0.2.1.1.2a
+
+vcvtss2sd RX RX MX 0.2.1.0.5a
+
+vcvtss2si RD MX 0.2.1.0.2d
+vcvtss2si RQ MX 0.2.1.1.2d
+
+vcvttpd2dq RX MX 0.1.1.0.e6
+vcvttpd2dq RX MY 1.1.1.0.e6
+
+vcvttps2dq RX MX 0.2.1.0.5b
+vcvttps2dq RY MY 1.2.1.0.5b
+
+vcvttsd2si RD MX 0.3.1.0.2c
+vcvttsd2si RQ MX 0.3.1.1.2c
+
+vcvttss2si RD MX 0.2.1.0.2c
+vcvttss2si RQ MX 0.2.1.1.2c
+
+vdivpd RX RX MX 0.1.1.0.5e
+vdivpd RY RY MY 1.1.1.0.5e
+
+vdivps RX RX MX 0.0.1.0.5e
+vdivps RY RY MY 1.0.1.0.5e
+
+vdivsd RX RX MX 0.3.1.0.5e
+
+vdivss RX RX MX 0.2.1.0.5e
+
+vdppd RX RX MX IB 0.1.3.0.41
+
+vdpps RX RX MX IB 0.1.3.0.40
+vdpps RY RY MY IB 1.1.3.0.40
+
+vextractf128 MX RY IB 1.1.3.0.19
+
+vextracti128 MX RY IB 1.1.3.0.39
+
+vextractps MD RX IB 0.1.3.0.17
+
+vfmadd132pd RX RX MX 0.1.2.1.98
+vfmadd132pd RY RY MY 1.1.2.1.98
+
+vfmadd132ps RX RX MX 0.1.2.0.98
+vfmadd132ps RY RY MY 1.1.2.0.98
+
+vfmadd132sd RX RX MX 0.1.2.1.99
+
+vfmadd132ss RX RX MX 0.1.2.0.99
+
+vfmadd213pd RX RX MX 0.1.2.1.a8
+vfmadd213pd RY RY MY 1.1.2.1.a8
+
+vfmadd213ps RX RX MX 0.1.2.0.a8
+vfmadd213ps RY RY MY 1.1.2.0.a8
+
+vfmadd213sd RX RX MX 0.1.2.1.a9
+
+vfmadd213ss RX RX MX 0.1.2.0.a9
+
+vfmadd231pd RX RX MX 0.1.2.1.b8
+vfmadd231pd RY RY MY 1.1.2.1.b8
+
+vfmadd231ps RX RX MX 0.1.2.0.b8
+vfmadd231ps RY RY MY 1.1.2.0.b8
+
+vfmadd231sd RX RX MX 0.1.2.1.b9
+
+vfmadd231ss RX RX MX 0.1.2.0.b9
+
+vfmaddsub132pd RX RX MX 0.1.2.1.96
+vfmaddsub132pd RY RY MY 1.1.2.1.96
+
+vfmaddsub132ps RX RX MX 0.1.2.0.96
+vfmaddsub132ps RY RY MY 1.1.2.0.96
+
+vfmaddsub213pd RX RX MX 0.1.2.1.a6
+vfmaddsub213pd RY RY MY 1.1.2.1.a6
+
+vfmaddsub213ps RX RX MX 0.1.2.0.a6
+vfmaddsub213ps RY RY MY 1.1.2.0.a6
+
+vfmaddsub231pd RX RX MX 0.1.2.1.b6
+vfmaddsub231pd RY RY MY 1.1.2.1.b6
+
+vfmaddsub231ps RX RX MX 0.1.2.0.b6
+vfmaddsub231ps RY RY MY 1.1.2.0.b6
+
+vfmsub132pd RX RX MX 0.1.2.1.9a
+vfmsub132pd RY RY MY 1.1.2.1.9a
+
+vfmsub132ps RX RX MX 0.1.2.0.9a
+vfmsub132ps RY RY MY 1.1.2.0.9a
+
+vfmsub132sd RX RX MX 0.1.2.1.9b
+
+vfmsub132ss RX RX MX 0.1.2.0.9b
+
+vfmsub213pd RX RX MX 0.1.2.1.aa
+vfmsub213pd RY RY MY 1.1.2.1.aa
+
+vfmsub213ps RX RX MX 0.1.2.0.aa
+vfmsub213ps RY RY MY 1.1.2.0.aa
+
+vfmsub213sd RX RX MX 0.1.2.1.ab
+
+vfmsub213ss RX RX MX 0.1.2.0.ab
+
+vfmsub231pd RX RX MX 0.1.2.1.ba
+vfmsub231pd RY RY MY 1.1.2.1.ba
+
+vfmsub231ps RX RX MX 0.1.2.0.ba
+vfmsub231ps RY RY MY 1.1.2.0.ba
+
+vfmsub231sd RX RX MX 0.1.2.1.bb
+
+vfmsub231ss RX RX MX 0.1.2.0.bb
+
+vfmsubadd132pd RX RX MX 0.1.2.1.97
+vfmsubadd132pd RY RY MY 1.1.2.1.97
+
+vfmsubadd132ps RX RX MX 0.1.2.0.97
+vfmsubadd132ps RY RY MY 1.1.2.0.97
+
+vfmsubadd213pd RX RX MX 0.1.2.1.a7
+vfmsubadd213pd RY RY MY 1.1.2.1.a7
+
+vfmsubadd213ps RX RX MX 0.1.2.0.a7
+vfmsubadd213ps RY RY MY 1.1.2.0.a7
+
+vfmsubadd231pd RX RX MX 0.1.2.1.b7
+vfmsubadd231pd RY RY MY 1.1.2.1.b7
+
+vfmsubadd231ps RX RX MX 0.1.2.0.b7
+vfmsubadd231ps RY RY MY 1.1.2.0.b7
+
+vfnmadd132pd RX RX MX 0.1.2.1.9c
+vfnmadd132pd RY RY MY 1.1.2.1.9c
+
+vfnmadd132ps RX RX MX 0.1.2.0.9c
+vfnmadd132ps RY RY MY 1.1.2.0.9c
+
+vfnmadd132sd RX RX MX 0.1.2.1.9d
+
+vfnmadd132ss RX RX MX 0.1.2.0.9d
+
+vfnmadd213pd RX RX MX 0.1.2.1.ac
+vfnmadd213pd RY RY MY 1.1.2.1.ac
+
+vfnmadd213ps RX RX MX 0.1.2.0.ac
+vfnmadd213ps RY RY MY 1.1.2.0.ac
+
+vfnmadd213sd RX RX MX 0.1.2.1.ad
+
+vfnmadd213ss RX RX MX 0.1.2.0.ad
+
+vfnmadd231pd RX RX MX 0.1.2.1.bc
+vfnmadd231pd RY RY MY 1.1.2.1.bc
+
+vfnmadd231ps RX RX MX 0.1.2.0.bc
+vfnmadd231ps RY RY MY 1.1.2.0.bc
+
+vfnmadd231sd RX RX MX 0.1.2.1.bd
+
+vfnmadd231ss RX RX MX 0.1.2.0.bd
+
+vfnmsub132pd RX RX MX 0.1.2.1.9e
+vfnmsub132pd RY RY MY 1.1.2.1.9e
+
+vfnmsub132ps RX RX MX 0.1.2.0.9e
+vfnmsub132ps RY RY MY 1.1.2.0.9e
+
+vfnmsub132sd RX RX MX 0.1.2.1.9f
+
+vfnmsub132ss RX RX MX 0.1.2.0.9f
+
+vfnmsub213pd RX RX MX 0.1.2.1.ae
+vfnmsub213pd RY RY MY 1.1.2.1.ae
+
+vfnmsub213ps RX RX MX 0.1.2.0.ae
+vfnmsub213ps RY RY MY 1.1.2.0.ae
+
+vfnmsub213sd RX RX MX 0.1.2.1.af
+
+vfnmsub213ss RX RX MX 0.1.2.0.af
+
+vfnmsub231pd RX RX MX 0.1.2.1.be
+vfnmsub231pd RY RY MY 1.1.2.1.be
+
+vfnmsub231ps RX RX MX 0.1.2.0.be
+vfnmsub231ps RY RY MY 1.1.2.0.be
+
+vfnmsub231sd RX RX MX 0.1.2.1.bf
+
+vfnmsub231ss RX RX MX 0.1.2.0.bf
+
+vgf2p8affineinvqb RX RX MX IB 0.1.3.1.cf
+vgf2p8affineinvqb RY RY MY IB 1.1.3.1.cf
+
+vgf2p8affineqb RX RX MX IB 0.1.3.1.ce
+vgf2p8affineqb RY RY MY IB 1.1.3.1.ce
+
+vgf2p8mulb RX RX MX 0.1.2.0.cf
+vgf2p8mulb RY RY MY 1.1.2.0.cf
+
+vhaddpd RX RX MX 0.1.1.0.7c
+vhaddpd RY RY MY 1.1.1.0.7c
+
+vhaddps RX RX MX 0.3.1.0.7c
+vhaddps RY RY MY 1.3.1.0.7c
+
+vhsubpd RX RX MX 0.1.1.0.7d
+vhsubpd RY RY MY 1.1.1.0.7d
+
+vhsubps RX RX MX 0.3.1.0.7d
+vhsubps RY RY MY 1.3.1.0.7d
+
+vinsertf128 RY RY MX IB 1.1.3.0.18
+
+vinserti128 RY RY MX IB 1.1.3.0.38
+
+vinsertps RX RX MX IB 0.1.3.0.21
+
+vlddqu RX MX 0.3.1.0.f0
+vlddqu RY MY 1.3.1.0.f0
+
+vldmxcsr MD 0.0.1.0.ae/2
+
+vmaskmovdqu RX RX 0.1.1.0.f7
+
+vmaskmovpd MX RX RX 0.1.2.0.2f
+vmaskmovpd MY RY RY 1.1.2.0.2f
+vmaskmovpd RX RX MX 0.1.2.0.2d
+vmaskmovpd RY RY MY 1.1.2.0.2d
+
+vmaskmovps MX RX RX 0.1.2.0.2e
+vmaskmovps MY RY RY 1.1.2.0.2e
+vmaskmovps RX RX MX 0.1.2.0.2c
+vmaskmovps RY RY MY 1.1.2.0.2c
+
+vmaxpd RX RX MX 0.1.1.0.5f
+vmaxpd RY RY MY 1.1.1.0.5f
+
+vmaxps RX RX MX 0.0.1.0.5f
+vmaxps RY RY MY 1.0.1.0.5f
+
+vmaxsd RX RX MX 0.3.1.0.5f
+
+vmaxss RX RX MX 0.2.1.0.5f
+
+vminpd RX RX MX 0.1.1.0.5d
+vminpd RY RY MY 1.1.1.0.5d
+
+vminps RX RX MX 0.0.1.0.5d
+vminps RY RY MY 1.0.1.0.5d
+
+vminsd RX RX MX 0.3.1.0.5d
+
+vminss RX RX MX 0.2.1.0.5d
+
+vmovapd MX RX 0.1.1.0.29
+vmovapd MY RY 1.1.1.0.29
+vmovapd RX MX 0.1.1.0.28
+vmovapd RY MY 1.1.1.0.28
+
+vmovaps MX RX 0.0.1.0.29
+vmovaps MY RY 1.0.1.0.29
+vmovaps RX MX 0.0.1.0.28
+vmovaps RY MY 1.0.1.0.28
+
+vmovd MD RX 0.1.1.0.7e
+vmovd RX MD 0.1.1.0.6e
+
+vmovddup RX MX 0.3.1.0.12
+vmovddup RY MY 1.3.1.0.12
+
+vmovdqa MX RX 0.1.1.0.7f
+vmovdqa MY RY 1.1.1.0.7f
+vmovdqa RX MX 0.1.1.0.6f
+vmovdqa RY MY 1.1.1.0.6f
+
+vmovdqu MX RX 0.2.1.0.7f
+vmovdqu MY RY 1.2.1.0.7f
+vmovdqu RX MX 0.2.1.0.6f
+vmovdqu RY MY 1.2.1.0.6f
+
+vmovhlps RX RX RX 0.0.1.0.12
+
+vmovhpd MQ RX 0.1.1.0.17
+vmovhpd RX RX MQ 0.1.1.0.16
+
+vmovhps MQ RX 0.0.1.0.17
+vmovhps RX RX MQ 0.0.1.0.16
+
+vmovlhps RX RX RX 0.0.1.0.16
+
+vmovlpd MQ RX 0.1.1.0.13
+vmovlpd RX RX MQ 0.1.1.0.12
+
+vmovlps MQ RX 0.0.1.0.13
+vmovlps RX RX MQ 0.0.1.0.12
+
+vmovmskpd RD RX 0.1.1.0.50
+vmovmskpd RD RY 1.1.1.0.50
+
+vmovmskps RD RX 0.0.1.0.50
+vmovmskps RD RY 1.0.1.0.50
+
+vmovntdq MX RX 0.1.1.0.e7
+vmovntdq MY RY 1.1.1.0.e7
+
+vmovntdqa RX MX 0.1.2.0.2a
+vmovntdqa RY MY 1.1.2.0.2a
+
+vmovntpd MX RX 0.1.1.0.2b
+vmovntpd MY RY 1.1.1.0.2b
+
+vmovntps MX RX 0.0.1.0.2b
+vmovntps MY RY 1.0.1.0.2b
+
+vmovq MQ RX 0.1.1.1.7e
+vmovq MX RX 0.1.1.0.d6
+vmovq RX MQ 0.1.1.1.6e
+vmovq RX MX 0.2.1.0.7e
+
+vmovsd MQ RX 0.3.1.0.11
+vmovsd RX MQ 0.3.1.0.10
+vmovsd RX RX RX 0.3.1.0.10
+
+vmovshdup RX MX 0.2.1.0.16
+vmovshdup RY MY 1.2.1.0.16
+
+vmovsldup RX MX 0.2.1.0.12
+vmovsldup RY MY 1.2.1.0.12
+
+vmovss MD RX 0.2.1.0.11
+vmovss RX MD 0.2.1.0.10
+vmovss RX RX RX 0.2.1.0.10
+
+vmovupd MX RX 0.1.1.0.11
+vmovupd MY RY 1.1.1.0.11
+vmovupd RX MX 0.1.1.0.10
+vmovupd RY MY 1.1.1.0.10
+
+vmovups MX RX 0.0.1.0.11
+vmovups MY RY 1.0.1.0.11
+vmovups RX MX 0.0.1.0.10
+vmovups RY MY 1.0.1.0.10
+
+vmpsadbw RX RX MX IB 0.1.3.0.42
+vmpsadbw RY RY MY IB 1.1.3.0.42
+
+vmulpd RX RX MX 0.1.1.0.59
+vmulpd RY RY MY 1.1.1.0.59
+
+vmulps RX RX MX 0.0.1.0.59
+vmulps RY RY MY 1.0.1.0.59
+
+vmulsd RX RX MX 0.3.1.0.59
+
+vmulss RX RX MX 0.2.1.0.59
+
+vorpd RX RX MX 0.1.1.0.56
+vorpd RY RY MY 1.1.1.0.56
+
+vorps RX RX MX 0.0.1.0.56
+vorps RY RY MY 1.0.1.0.56
+
+vpabsb RX MX 0.1.2.0.1c
+vpabsb RY MY 1.1.2.0.1c
+
+vpabsd RX MX 0.1.2.0.1e
+vpabsd RY MY 1.1.2.0.1e
+
+vpabsw RX MX 0.1.2.0.1d
+vpabsw RY MY 1.1.2.0.1d
+
+vpackssdw RX RX MX 0.1.1.0.6b
+vpackssdw RY RY MY 1.1.1.0.6b
+
+vpacksswb RX RX MX 0.1.1.0.63
+vpacksswb RY RY MY 1.1.1.0.63
+
+vpackusdw RX RX MX 0.1.2.0.2b
+vpackusdw RY RY MY 1.1.2.0.2b
+
+vpackuswb RX RX MX 0.1.1.0.67
+vpackuswb RY RY MY 1.1.1.0.67
+
+vpaddb RX RX MX 0.1.1.0.fc
+vpaddb RY RY MY 1.1.1.0.fc
+
+vpaddd RX RX MX 0.1.1.0.fe
+vpaddd RY RY MY 1.1.1.0.fe
+
+vpaddq RX RX MX 0.1.1.0.d4
+vpaddq RY RY MY 1.1.1.0.d4
+
+vpaddsb RX RX MX 0.1.1.0.ec
+vpaddsb RY RY MY 1.1.1.0.ec
+
+vpaddsw RX RX MX 0.1.1.0.ed
+vpaddsw RY RY MY 1.1.1.0.ed
+
+vpaddusb RX RX MX 0.0.660f.0.dc
+vpaddusb RY RY MY 1.1.1.0.dc
+
+vpaddusw RX RX MX 0.1.1.0.dd
+vpaddusw RY RY MY 1.1.1.0.dd
+
+vpaddw RX RX MX 0.1.1.0.fd
+vpaddw RY RY MY 1.1.1.0.fd
+
+vpalignr RX RX MX IB 0.1.3.0.0f
+vpalignr RY RY MY IB 1.1.3.0.0f
+
+vpand RX RX MX 0.1.1.0.db
+vpand RY RY MY 1.1.1.0.db
+
+vpandn RX RX MX 0.1.1.0.df
+vpandn RY RY MY 1.1.1.0.df
+
+vpavgb RX RX MX 0.1.1.0.e0
+vpavgb RY RY MY 1.1.1.0.e0
+
+vpavgw RX RX MX 0.1.1.0.e3
+vpavgw RY RY MY 1.1.1.0.e3
+
+vpblendd RX RX MX IB 0.1.3.0.02
+vpblendd RY RY MY IB 1.1.3.0.02
+
+vpblendvb RX RX MX RX 0.1.3.0.4c
+vpblendvb RY RY MY RY 1.1.3.0.4c
+
+vpblendw RX RX MX IB 0.1.3.0.0e
+vpblendw RY RY MY IB 1.1.3.0.0e
+
+vpbroadcastb RX MX 0.1.2.0.78
+vpbroadcastb RY MX 1.1.2.0.78
+
+vpbroadcastd RX MX 0.1.2.0.58
+vpbroadcastd RY MX 1.1.2.0.58
+
+vpbroadcastq RX MX 0.1.2.0.59
+vpbroadcastq RY MX 1.1.2.0.59
+
+vpbroadcastw RX MX 0.1.2.0.79
+vpbroadcastw RY MX 1.1.2.0.79
+
+vpclmulqdq RX RX MX IB 0.1.3.0.44
+vpclmulqdq RY RY MY IB 1.1.3.0.44
+
+vpcmpeqb RX RX MX 0.1.1.0.74
+vpcmpeqb RY RY MY 1.1.1.0.74
+
+vpcmpeqd RX RX MX 0.1.1.0.76
+vpcmpeqd RY RY MY 1.1.1.0.76
+
+vpcmpeqq RX RX MX 0.1.2.0.29
+vpcmpeqq RY RY MY 1.1.2.0.29
+
+vpcmpeqw RX RX MX 0.1.1.0.75
+vpcmpeqw RY RY MY 1.1.1.0.75
+
+vpcmpestri RX MX IB 0.1.3.0.61
+
+vpcmpestrm RX MX IB 0.1.3.0.60
+
+vpcmpgtb RX RX MX 0.1.1.0.64
+vpcmpgtb RY RY MY 1.1.1.0.64
+
+vpcmpgtd RX RX MX 0.1.1.0.66
+vpcmpgtd RY RY MY 1.1.1.0.66
+
+vpcmpgtq RX RX MX 0.1.2.0.37
+vpcmpgtq RY RY MY 1.1.2.0.37
+
+vpcmpgtw RX RX MX 0.1.1.0.65
+vpcmpgtw RY RY MY 1.1.1.0.65
+
+vpcmpistri RX MX IB 0.1.3.0.63
+
+vpcmpistrm RX MX IB 0.1.3.0.62
+
+vpdpbusd RX RX MX 0.1.2.0.50
+vpdpbusd RY RY MY 1.1.2.0.50
+
+vpdpbusds RX RX MX 0.1.2.0.51
+vpdpbusds RY RY MY 1.1.2.0.51
+
+vpdpwssd RX RX MX 0.1.2.0.52
+vpdpwssd RY RY MY 1.1.2.0.52
+
+vpdpwssds RX RX MX 0.1.2.0.53
+vpdpwssds RY RY MY 1.1.2.0.53
+
+vperm2f128 RY RY MY IB 1.1.3.0.06
+
+vperm2i128 RY RY MY IB 1.1.3.0.46
+
+vpermd RY RY MY 1.1.2.0.36
+
+vpermilpd RX MX IB 0.1.3.0.05
+vpermilpd RX RX MX 0.1.2.0.0d
+vpermilpd RY MY IB 1.1.3.0.05
+vpermilpd RY RY MY 1.1.2.0.0d
+
+vpermilps RX MX IB 0.1.3.0.04
+vpermilps RX RX MX 0.1.2.0.0c
+vpermilps RY MY IB 1.1.3.0.04
+vpermilps RY RY MY 1.1.2.0.0c
+
+vpermpd RY MY IB 1.1.3.1.01
+
+vpermps RY RY MY 1.1.2.0.16
+
+vpermq RY MY IB 1.1.3.1.00
+
+vpextrb MB RX IB 0.1.3.0.14
+
+vpextrd MD RX IB 0.1.3.0.16
+
+vpextrq MQ RX IB 0.1.3.1.16
+
+vpextrw MW RX IB 0.1.3.0.15
+vpextrw RW RX IB 0.1.1.0.c5
+
+vphaddd RX RX MX 0.1.2.0.02
+vphaddd RY RY MY 1.1.2.0.02
+
+vphaddsw RX RX MX 0.1.2.0.03
+vphaddsw RY RY MY 1.1.2.0.03
+
+vphaddw RX RX MX 0.1.2.0.01
+vphaddw RY RY MY 1.1.2.0.01
+
+vphminposuw RX MX 0.1.2.0.41
+
+vphsubd RX RX MX 0.1.2.0.06
+vphsubd RY RY MY 1.1.2.0.06
+
+vphsubsw RX RX MX 0.1.2.0.07
+vphsubsw RY RY MY 1.1.2.0.07
+
+vphsubw RX RX MX 0.1.2.0.05
+vphsubw RY RY MY 1.1.2.0.05
+
+vpinsrb RX RX MB IB 0.1.3.0.20
+
+vpinsrd RX RX MD IB 0.1.3.0.22
+
+vpinsrq RX RX MQ IB 0.1.3.1.22
+
+vpinsrw RX RX MW IB 0.1.1.0.c4
+
+vpmaddubsw RX RX MX 0.1.2.0.04
+vpmaddubsw RY RY MY 1.1.2.0.04
+
+vpmaddwd RX RX MX 0.1.1.0.f5
+vpmaddwd RY RY MY 1.1.1.0.f5
+
+vpmaskmovd MX RX RX 0.1.2.0.8e
+vpmaskmovd MY RY RY 1.1.2.0.8e
+vpmaskmovd RX RX MX 0.1.2.0.8c
+vpmaskmovd RY RY MY 1.1.2.0.8c
+
+vpmaskmovq MX RX RX 0.1.2.1.8e
+vpmaskmovq MY RY RY 1.1.2.1.8e
+vpmaskmovq RX RX MX 0.1.2.1.8c
+vpmaskmovq RY RY MY 1.1.2.1.8c
+
+vpmaxsb RX RX MX 0.1.2.0.3c
+vpmaxsb RY RY MY 1.1.2.0.3c
+
+vpmaxsd RX RX MX 0.1.2.0.3d
+vpmaxsd RY RY MY 1.1.2.0.3d
+
+vpmaxsw RX RX MX 0.1.1.0.ee
+vpmaxsw RY RY MY 1.1.1.0.ee
+
+vpmaxub RX RX MX 0.1.1.0.de
+vpmaxub RY RY MY 1.1.1.0.de
+
+vpmaxud RX RX MX 0.1.2.0.3f
+vpmaxud RY RY MY 1.1.2.0.3f
+
+vpmaxuw RX RX MX 0.1.2.0.3e
+vpmaxuw RY RY MY 1.1.2.0.3e
+
+vpminsb RX RX MX 0.1.2.0.38
+vpminsb RY RY MY 1.1.2.0.38
+
+vpminsd RX RX MX 0.1.2.0.39
+vpminsd RY RY MY 1.1.2.0.39
+
+vpminsw RX RX MX 0.1.1.0.ea
+vpminsw RY RY MY 1.1.1.0.ea
+
+vpminub RX RX MX 0.1.1.0.da
+vpminub RY RY MY 1.1.1.0.da
+
+vpminud RX RX MX 0.1.2.0.3b
+vpminud RY RY MY 1.1.2.0.3b
+
+vpminuw RX RX MX 0.1.2.0.3a
+vpminuw RY RY MY 1.1.2.0.3a
+
+vpmovmskb RB RX 0.1.1.0.d7
+vpmovmskb RB RY 1.1.1.0.d7
+
+vpmovsxbd RX MX 0.1.2.0.21
+vpmovsxbd RY MX 1.1.2.0.21
+
+vpmovsxbq RX MX 0.1.2.0.22
+vpmovsxbq RY MX 1.1.2.0.22
+
+vpmovsxbw RX MX 0.1.2.0.20
+vpmovsxbw RY MX 1.1.2.0.20
+
+vpmovsxdq RX MX 0.1.2.0.25
+vpmovsxdq RY MX 1.1.2.0.25
+
+vpmovsxwd RX MX 0.1.2.0.23
+vpmovsxwd RY MX 1.1.2.0.23
+
+vpmovsxwq RX MX 0.1.2.0.24
+vpmovsxwq RY MX 1.1.2.0.24
+
+vpmovzxbd RX MX 0.1.2.0.31
+vpmovzxbd RY MX 1.1.2.0.31
+
+vpmovzxbq RX MX 0.1.2.0.32
+vpmovzxbq RY MX 1.1.2.0.32
+
+vpmovzxbw RX MX 0.1.2.0.30
+vpmovzxbw RY MX 1.1.2.0.30
+
+vpmovzxdq RX MX 0.1.2.0.38
+vpmovzxdq RY MX 1.1.2.0.35
+
+vpmovzxwd RX MX 0.1.2.0.33
+vpmovzxwd RY MX 1.1.2.0.33
+
+vpmovzxwq RX MX 0.1.2.0.34
+vpmovzxwq RY MX 1.1.2.0.34
+
+vpmuldq RX RX MX 0.1.2.0.28
+vpmuldq RY RY MY 1.1.2.0.28
+
+vpmulhrsw RX RX MX 0.1.2.0.0b
+vpmulhrsw RY RY MY 1.1.2.0.0b
+
+vpmulhuw RX RX MX 0.1.1.0.e4
+vpmulhuw RY RY MY 1.1.1.0.e4
+
+vpmulhw RX RX MX 0.1.1.0.e5
+vpmulhw RY RY MY 1.1.1.0.e5
+
+vpmulld RX RX MX 0.1.2.0.40
+vpmulld RY RY MY 1.1.2.0.40
+
+vpmullw RX RX MX 0.1.1.0.d5
+vpmullw RY RY MY 1.1.1.0.d5
+
+vpmuludq RX RX MX 0.1.1.0.f4
+vpmuludq RY RY MY 1.1.1.0.f4
+
+vpor RX RX MX 0.1.1.0.eb
+vpor RY RY MY 1.1.1.0.eb
+
+vpsadbw RX RX MX 0.1.1.0.f6
+vpsadbw RY RY MY 1.1.1.0.f6
+
+vpshufb RX RX MX 0.1.2.0.00
+vpshufb RY RY MY 1.1.2.0.00
+
+vpshufd RX MX IB 0.1.1.0.70
+vpshufd RY MY IB 1.1.1.0.70
+
+vpshufhw RX MX IB 0.2.1.0.70
+vpshufhw RY MY IB 1.2.1.0.70
+
+vpshuflw RX MX IB 0.3.1.0.70
+vpshuflw RY MY IB 1.3.1.0.70
+
+vpsignb RX RX MX 0.1.2.0.08
+vpsignb RY RY MY 1.1.2.0.08
+
+vpsignd RX RX MX 0.1.2.0.0a
+vpsignd RY RY MY 1.1.2.0.0a
+
+vpsignw RX RX MX 0.1.2.0.09
+vpsignw RY RY MY 1.1.2.0.09
+
+vpslld RX RX IB 0.1.1.0.72/6
+vpslld RX RX MX 0.1.1.0.f2
+vpslld RY RY IB 1.1.1.0.72/6
+vpslld RY RY MX 1.1.1.0.f2
+
+vpslldq RX RX IB 0.1.1.0.73/7
+vpslldq RY RY IB 1.1.1.0.73/7
+
+vpsllq RX RX IB 0.1.1.0.73/6
+vpsllq RX RX MX 0.1.1.0.f3
+vpsllq RY RY IB 1.1.1.0.73/6
+vpsllq RY RY MX 1.1.1.0.f3
+
+vpsllvd RX RX MX 0.1.2.0.47
+vpsllvd RY RY MY 1.1.2.0.47
+
+vpsllvq RX RX MX 0.1.2.1.47
+vpsllvq RY RY MY 1.1.2.1.47
+
+vpsllw RX RX IB 0.1.1.0.71/6
+vpsllw RX RX MX 0.1.1.0.f1
+vpsllw RY RY IB 1.1.1.0.71/6
+vpsllw RY RY MX 1.1.1.0.f1
+
+vpsrad RX RX IB 0.1.1.0.72/4
+vpsrad RX RX MX 0.1.1.0.e2
+vpsrad RY RY IB 1.1.1.0.72/4
+vpsrad RY RY MX 1.1.1.0.e2
+
+vpsravd RX RX MX 0.1.2.0.46
+vpsravd RY RY MY 1.1.2.0.46
+
+vpsraw RX RX IB 0.1.1.0.71/4
+vpsraw RX RX MX 0.1.1.0.e1
+vpsraw RY RY IB 1.1.1.0.71/4
+vpsraw RY RY MX 1.1.1.0.e1
+
+vpsrld RX RX IB 0.1.1.0.72/2
+vpsrld RX RX MX 0.1.1.0.d2
+vpsrld RY RY IB 1.1.1.0.72/2
+vpsrld RY RY MX 1.1.1.0.d2
+
+vpsrldq RX RX IB 0.1.1.0.73/3
+vpsrldq RY RY IB 1.1.1.0.73/3
+
+vpsrlq RX RX IB 0.1.1.0.73/2
+vpsrlq RX RX MX 0.1.1.0.d3
+vpsrlq RY RY IB 1.1.1.0.73/2
+vpsrlq RY RY MX 1.1.1.0.d3
+
+vpsrlvd RX RX MX 0.1.2.0.45
+vpsrlvd RY RY MY 1.1.2.0.45
+
+vpsrlvq RX RX MX 0.1.2.1.45
+vpsrlvq RY RY MY 1.1.2.1.45
+
+vpsrlw RX RX IB 0.1.1.0.71/2
+vpsrlw RX RX MX 0.1.1.0.d1
+vpsrlw RY RY IB 1.1.1.0.71/2
+vpsrlw RY RY MX 1.1.1.0.d1
+
+vpsubb RX RX MX 0.1.1.0.f8
+vpsubb RY RY MY 1.1.1.0.f8
+
+vpsubd RX RX MX 0.1.1.0.fa
+vpsubd RY RY MY 1.1.1.0.fa
+
+vpsubq RX RX MX 0.1.1.0.fb
+vpsubq RY RY MY 1.1.1.0.fb
+
+vpsubsb RX RX MX 0.1.1.0.e8
+vpsubsb RY RY MY 1.1.1.0.e8
+
+vpsubsw RX RX MX 0.1.1.0.e9
+vpsubsw RY RY MY 1.1.1.0.e9
+
+vpsubusb RX RX MX 0.1.1.0.d8
+vpsubusb RY RY MY 1.1.1.0.d8
+
+vpsubusw RX RX MX 0.1.1.0.d9
+vpsubusw RY RY MY 1.1.1.0.d9
+
+vpsubw RX RX MX 0.1.1.0.f9
+vpsubw RY RY MY 1.1.1.0.f9
+
+vptest RX MX 0.1.2.0.17
+vptest RY MY 1.1.2.0.17
+
+vpunpckhbw RX RX MX 0.1.1.0.68
+vpunpckhbw RY RY MY 1.1.1.0.68
+
+vpunpckhdq RX RX MX 0.1.1.0.6a
+vpunpckhdq RY RY MY 1.1.1.0.6a
+
+vpunpckhqdq RX RX MX 0.1.1.0.6d
+vpunpckhqdq RY RY MY 1.1.1.0.6d
+
+vpunpckhwd RX RX MX 0.1.1.0.69
+vpunpckhwd RY RY MY 1.1.1.0.69
+
+vpunpcklbw RX RX MX 0.1.1.0.60
+vpunpcklbw RY RY MY 1.1.1.0.60
+
+vpunpckldq RX RX MX 0.1.1.0.62
+vpunpckldq RY RY MY 1.1.1.0.62
+
+vpunpcklqdq RX RX MX 0.1.1.0.6c
+vpunpcklqdq RY RY MY 1.1.1.0.6c
+
+vpunpcklwd RX RX MX 0.1.1.0.61
+vpunpcklwd RY RY MY 1.1.1.0.61
+
+vshufpd RX RX MX IB 0.1.1.0.c6
+vshufpd RY RY MY IB 1.1.1.0.c6
+
+vshufps RX RX MX IB 0.0.1.0.c6
+vshufps RY RY MY IB 1.0.1.0.c6
+
+vsqrtpd RX MX 0.1.1.0.51
+vsqrtpd RY MY 1.1.1.0.51
+
+vsqrtps RX MX 0.0.1.0.51
+vsqrtps RY MY 1.0.1.0.51
+
+vsqrtsd RX RX MX 0.3.1.0.51
+
+vsqrtss RX RX MX 0.2.1.0.51
+
+vsubpd RX RX MX 0.1.1.0.5c
+vsubpd RY RY MY 1.1.1.0.5c
+
+vsubps RX RX MX 0.0.1.0.5c
+vsubps RY RY MY 1.0.1.0.5c
+
+vsubsd RX RX MX 0.3.1.0.5c
+
+vsubss RX RX MX 0.2.1.0.5c
+
+vtestpd RX MX 0.1.2.0.0f
+vtestpd RY MY 1.1.2.0.0f
+
+vtestps RX MX 0.1.2.0.0e
+vtestps RY MY 1.1.2.0.0e
+
+vucomisd RX MX 0.1.1.0.2e
+
+vucomiss RX MX 0.0.1.0.2e
+
+vunpckhpd RX RX MX 0.1.1.0.15
+vunpckhpd RY RY MY 1.1.1.0.15
+
+vunpckhps RX RX MX 0.0.1.0.15
+vunpckhps RY RY MY 1.0.1.0.15
+
+vunpcklpd RX RX MX 0.1.1.0.14
+vunpcklpd RY RY MY 1.1.1.0.14
+
+vunpcklps RX RX MX 0.0.1.0.14
+vunpcklps RY RY MY 1.0.1.0.14
+
+vxorpd RX RX MX 0.1.1.0.57
+vxorpd RY RY MY 1.1.1.0.57
+
+vxorps RX RX MX 0.0.1.0.57
+vxorps RY RY MY 1.0.1.0.57
+
+vzeroall 1.0.1.0.77
+
+vzeroupper 0.0.1.0.77
+
+)";
+
+unsigned int vex_map_size = sizeof(vex_map) - 1;

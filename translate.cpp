@@ -1,24 +1,27 @@
 #include "translate.hpp"
 #include "instr.dat"
+#include "vex.hpp"
 #include <sys/mman.h>
 
-std::string error;
-
-void handle(std::string s, std::vector<std::string> args, const size_t linenum) {
+void handle(std::string s, std::vector<std::string> args, const size_t linenum, size_t instr_cnt) {
 	error = "";
+	bool prefix = false;
 	// handle prefixes (lock, repne, repe)
-	if (s == "lock") {
-		output_buffer.push_back(0xf0);
-		s = args[0];
-		args.erase(args.begin());
-	} else if (s == "repne" || s == "repnz" || s == "bnd") {
-		output_buffer.push_back(0xf2);
-		s = args[0];
-		args.erase(args.begin());
-	} else if (s == "rep" || s == "repe" || s == "repz") {
-		output_buffer.push_back(0xf3);
-		s = args[0];
-		args.erase(args.begin());
+	while (true) {
+		if (s == "lock") {
+			output_buffer.push_back(0xf0);
+			prefix = true;
+		} else if (s == "repne" || s == "repnz" || s == "bnd") {
+			output_buffer.push_back(0xf2);
+			prefix = true;
+		} else if (s == "rep" || s == "repe" || s == "repz") {
+			output_buffer.push_back(0xf3);
+			prefix = true;
+		} else
+			break;
+		size_t i = args.front().find(' ');
+		s = args.front().substr(0, i);
+		args.front() = args.front().substr(i + 1);
 	}
 	char *l = map;
 	char *r = map + map_size - 1;
@@ -46,8 +49,10 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 	// store all lines that match
 	while ((strncmp(l, s.c_str(), s.size()) != 0 || l[s.size()] != ' ') && l < map + map_size)
 		l++;
-	if (l >= map + map_size - 1)
-		cerr(linenum, "instruction inconnue « " + s + " »");
+	if (l >= map + map_size - 1 || *(l - 1) != '\n') {
+		handle_vex(s, args, linenum, prefix);
+		return;
+	}
 	r = std::find(l + 1, map + map_size, '\n');
 	std::vector<std::string> matches;
 	while (*l != '\n' && r != map + map_size) {
@@ -68,7 +73,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				cerr(linenum, error);
 			} else if (tmp.second == -3) {
 				if (reloc_table.find(text_labels[tmp.first]) != reloc_table.end()) {
-					int32_t off = reloc_table.at(text_labels.at(tmp.first)) - output_buffer.size() - 3;
+					int32_t off = reloc_table.at(text_labels.at(tmp.first)) - output_buffer.size() - 2;
 					if ((int8_t)off == off) {
 						types.push_back({IMM, 8});
 					} else {
@@ -76,8 +81,12 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 						tmp.first = 0;
 					}
 				} else {
-					types.push_back({IMM, 32});
-					tmp.first = 0;
+					if (text_labels_instr[tmp.first] - instr_cnt <= 9) {
+						types.push_back({IMM, 8});
+					} else {
+						types.push_back({IMM, 32});
+						tmp.first = 0;
+					}
 				}
 			} else if (tmp.second == -2 || tmp.second == -4) {
 				types.push_back({IMM, 32});
@@ -172,7 +181,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				}
 			}
 			std::vector<short> del;
-			for (size_t j = 1; j < args.size(); j++) {
+			for (size_t j = 1; j <= args.size(); j++) {
 				if (isdigit(tokens[j][0]) || (tokens[j][0] >= 'a' && tokens[j][0] <= 'f'))
 					del.push_back(j - 1);
 				else if (tokens[j][0] == 'L')
@@ -191,6 +200,11 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 	for (size_t i = 1; i < valid.size(); i++) {
 		if (valid[i].second != valid[i - 1].second)
 			cerr(linenum, "taille d'opération non spécifiée");
+	}
+	if (types.size() == 2 && types[0].first == REG && types[1].first == REG) {
+		types[1].first = MEM;
+		for (auto &p : valid)
+			p.first[2].front() = 'M';
 	}
 	std::string best = "";
 	size_t bestlen = -1;
@@ -213,13 +227,13 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				a1 += (args[0][1] == 'h') * 4;
 				size_t i = p.first.back()[0] == 'w';
 				if (args[0][1] == 'h' && i)
-					cerr(linenum, "combination d'opcode et des opérandes invalide");
+					cerr(linenum, "impossible d'utiliser un haut-demi registre avec une prefixe REX");
 				if (i || (types[0].second == 8 && args[0][1] != 'h' && a1 >= 4) || a1 >= 8)
 					tmp += 0x40 | (i << 3) | (a1 & 8);
 				short reg = 0;
 				for (; i < p.first.back().size(); i += 2) {
 					if (p.first.back()[i] == '/') {
-						reg = std::stoi(p.first.back().substr(i + 1, 1), nullptr, 16);
+						reg = std::stoi(p.first.back().substr(i + 1, 1));
 						break;
 					}
 					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
@@ -248,7 +262,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				short reg = 0;
 				for (size_t i = w; i < p.first.back().size(); i += 2) {
 					if (p.first.back()[i] == '/') {
-						reg = std::stoi(p.first.back().substr(i + 1, 1), nullptr, 16);
+						reg = std::stoi(p.first.back().substr(i + 1, 1));
 						break;
 					}
 					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
@@ -268,13 +282,12 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 				delete data;
 			} else if (p.first[1][0] == 'I') {
 				auto a1 = parse_imm(args[0]);
-				short s1 = _sizes[p.first[1][1] - 'A'];
 				size_t i = p.first.back()[0] == 'w';
 				if (i)
 					tmp += 0x48;
 				for (; i < p.first.back().size(); i += 2) {
 					if (p.first.back()[i] == '/') {
-						tmp += std::stoi(p.first.back().substr(i + 1, 1), nullptr, 16);
+						tmp += std::stoi(p.first.back().substr(i + 1, 1)) << 3;
 						break;
 					}
 					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
@@ -285,22 +298,29 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					reloc.push_back({output_buffer.size() + tmp.size(), 0, ABS, args[0], 32});
 				} else if (a1.second == -3) {
 					if (reloc_table.find(text_labels[a1.first]) != reloc_table.end()) {
-						int32_t off = reloc_table.at(text_labels.at(a1.first)) - output_buffer.size() - tmp.size() - 1;
+						int32_t off = reloc_table.at(text_labels.at(a1.first)) - output_buffer.size() - 2;
 						if ((int8_t)off == off) {
-							s1 = 8;
 							a1.first = off;
 						} else {
 							reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32});
 							a1.first = 0;
 						}
 					} else {
-						reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32});
-						a1.first = 0;
+						if (text_labels_instr[a1.first] - instr_cnt <= 9) {
+							reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 8});
+							a1.first = 0;
+						} else {
+							reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32});
+							a1.first = 0;
+						}
 					}
 				} else if (a1.second == -4) {
 					reloc.push_back({output_buffer.size() + tmp.size(), 0, PLT, args[0].substr(0, args[0].size() - 10), 32});
+				} else if (a1.second == -5) {
+					reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, extern_labels[a1.first], 32});
+					a1.first = 0;
 				}
-				for (int i = 0; i < s1; i += 8)
+				for (int i = 0; i < _sizes[p.first[1][1] - 'A']; i += 8)
 					tmp += (a1.first >> i) & 0xff;
 			}
 		} else if (types.size() >= 2) {
@@ -321,16 +341,22 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 			if (mem.first == -1) {
 				short a1 = reg_num(args[reg.first - 1]);
 				size_t i = p.first.back()[0] == 'w';
+				if (args[reg.first - 1][1] == 'h' && i)
+					cerr(linenum, "impossible d'utiliser un haut-demi registre avec une prefixe REX");
 				if (i || (a1 & 8))
-					tmp += 0x48 | (a1 >= 8);
+					tmp += 0x40 | (i << 3) | (a1 >= 8);
+				int reg = 0x7fff;
 				for (; i < p.first.back().size(); i += 2) {
 					if (p.first.back()[i] == '/') {
-						tmp += std::stoi(p.first.back().substr(i + 1, 1), nullptr, 16);
+						reg = std::stoi(p.first.back().substr(i + 1, 1));
 						break;
 					}
 					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
 				}
-				tmp.back() += a1 & 7;
+				if (reg == 0x7fff)
+					tmp.back() += a1 & 7;
+				else
+					tmp.back() += 0xc0 | (reg << 3) | (a1 & 7);
 				auto a2 = parse_imm(args[imm.first - 1]);
 				short s2 = _sizes[p.first[imm.first][1] - 'A'];
 				if (a2.second == -1) {
@@ -339,18 +365,25 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					reloc.push_back({output_buffer.size() + tmp.size(), 0, ABS, args[imm.first - 1], std::max(s2, (short)32)});
 				} else if (a2.second == -3) {
 					if (reloc_table.find(text_labels[a2.first]) != reloc_table.end()) {
-						int32_t off = reloc_table.at(text_labels.at(a2.first)) - output_buffer.size() - tmp.size() - 1;
+						int32_t off = reloc_table.at(text_labels.at(a2.first)) - output_buffer.size() - 2;
 						if ((int8_t)off == off) {
 							a2.first = off;
-							s2 = 8;
 						} else {
 							reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 32});
 							a2.first = 0;
 						}
 					} else {
-						reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 32});
-						a2.first = 0;
+						if (text_labels_instr[a2.first] - instr_cnt <= 9) {
+							reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 8});
+							a2.first = 0;
+						} else {
+							reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 32});
+							a2.first = 0;
+						}
 					}
+				} else if (a2.second == -5) {
+					reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, extern_labels[a2.first], 32});
+					a2.first = 0;
 				}
 				for (int i = 0; i < s2; i += 8)
 					tmp += (a2.first >> i) & 0xff;
@@ -384,11 +417,15 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					else
 						rm |= (a1 & 7) << 3;
 				}
-				if (rex != 0)
+				if (rex != 0) {
+					if (reg.first != -1)
+						if (args[reg.first - 1][1] == 'h')
+							cerr(linenum, "impossible d'utiliser un haut-demi registre avec une prefixe REX");
 					tmp += rex;
+				}
 				for (size_t i = p.first.back()[0] == 'w'; i < p.first.back().size(); i += 2) {
 					if (p.first.back()[i] == '/') {
-						rm |= std::stoi(p.first.back().substr(i + 1, 1), nullptr, 16) << 3;
+						rm |= std::stoi(p.first.back().substr(i + 1, 1)) << 3;
 						break;
 					}
 					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
@@ -416,8 +453,8 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 					} else if (a1.second == -2) {
 						reloc.push_back({output_buffer.size() + tmp.size(), 0, ABS, args[imm.first - 1], std::max(s1, (short)32)});
 					} else if (a1.second == -3) {
-						if (s1 == 8 && reloc_table.find(text_labels[a1.first]) != reloc_table.end()) {
-							int32_t off = reloc_table.at(text_labels.at(a1.first)) - output_buffer.size() - tmp.size() - 1;
+						if (reloc_table.find(text_labels[a1.first]) != reloc_table.end()) {
+							int32_t off = reloc_table.at(text_labels.at(a1.first)) - output_buffer.size() - 2;
 							if ((int8_t)off == off) {
 								a1.first = off;
 							} else {
@@ -425,9 +462,17 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum) 
 								a1.first = 0;
 							}
 						} else {
-							reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32});
-							a1.first = 0;
+							if (text_labels_instr[a1.first] - instr_cnt <= 9) {
+								reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 8});
+								a1.first = 0;
+							} else {
+								reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32});
+								a1.first = 0;
+							}
 						}
+					} else if (a1.second == -5) {
+						reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, extern_labels[a1.first], 32});
+						a1.first = 0;
 					}
 					for (int i = 0; i < s1; i += 8)
 						tmp += (a1.first >> i) & 0xff;

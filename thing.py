@@ -10,9 +10,6 @@ while True:
 deletions = []
 
 for i, line in enumerate(lines):
-	if line.startswith('VEX') or line.startswith('EVEX') or re.search(r'[x-z]mm', line):
-		lines[i] = vex(line)
-		continue
 	if not (line[0].isdigit() or line[0] == 'R' or 0x41 <= ord(line[0]) <= 0x46):
 		deletions.append(i)
 	if re.match(r'REX \+ ', line):

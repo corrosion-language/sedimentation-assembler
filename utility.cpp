@@ -1,5 +1,7 @@
 #include "utility.hpp"
 
+std::string error;
+
 short reg_num(std::string s) {
 	auto ptr = _reg_num.find(s);
 	if (ptr == _reg_num.end())
@@ -25,6 +27,12 @@ short mem_size(std::string s) {
 		return 32;
 	if (s.starts_with("qword "))
 		return 64;
+	if (s.starts_with("tbyte "))
+		return 80;
+	if (s.starts_with("oword ") || s.starts_with("xword ") || s.starts_with("xmmword "))
+		return 128;
+	if (s.starts_with("yword ") || s.starts_with("ymmword "))
+		return 256;
 	return -1;
 }
 
@@ -49,7 +57,7 @@ op_type get_optype(std::string s) {
 // this function will NOT handle invalid input properly
 mem_output *parse_mem(std::string in, short &size) {
 	if (reg_size(in) != -1) {
-		mem_output *out = new mem_output;
+		mem_output *out = new mem_output();
 		short s1 = reg_size(in);
 		short a1 = reg_num(in);
 		if (s1 == 16)
@@ -71,25 +79,14 @@ mem_output *parse_mem(std::string in, short &size) {
 	// [off] NO SIB
 	if (size == -1 || in[0] != '[') {
 		short tmp;
-		if (in.starts_with("byte "))
-			tmp = 8;
-		else if (in.starts_with("word "))
-			tmp = 16;
-		else if (in.starts_with("dword "))
-			tmp = 32;
-		else if (in.starts_with("qword "))
-			tmp = 64;
-		else if (in.starts_with("oword "))
-			tmp = 128;
-		else {
-			error = "taille d'operation non spécifiée";
+		tmp = mem_size(in);
+		if (tmp == -1)
 			return nullptr;
-		}
 		size = tmp;
 		in = in.substr(5 + (tmp >= 32));
 	}
 	if (in.starts_with("[rel ")) {
-		mem_output *out = new mem_output;
+		mem_output *out = new mem_output();
 		out->rm = 0x05;
 		out->offsize = 32;
 		out->reloc.second = REL;
@@ -118,7 +115,7 @@ mem_output *parse_mem(std::string in, short &size) {
 		}
 	}
 
-	mem_output *out = new mem_output;
+	mem_output *out = new mem_output();
 
 	// resolve labels and combine with imms if possible
 	if (tokens.size() > 1 &&
@@ -261,6 +258,10 @@ mem_output *parse_mem(std::string in, short &size) {
 			scale = 3;
 		else
 			return nullptr;
+		if (index == 4) {
+			error = "erreur : impossible d'utiliser sp comme un index";
+			return nullptr;
+		}
 		// size override
 		if (reg_size(tokens[0]) == 32)
 			out->prefix = 0x67;
@@ -305,6 +306,8 @@ std::pair<unsigned long long, short> parse_imm(std::string s) {
 		return {0, -4};
 	if (text_labels_map.find(s) != text_labels_map.end())
 		return {text_labels_map.at(s), -3};
+	if (extern_labels_map.find(s) != extern_labels_map.end())
+		return {extern_labels_map.at(s), -5};
 	if (labels.find(s) != labels.end())
 		return {0, -2};
 	// if character, return character

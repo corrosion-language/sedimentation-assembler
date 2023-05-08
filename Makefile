@@ -16,8 +16,9 @@ sedimentation: $(OBJS)
 	$(CC) $(CFLAGS) -o sedimentation $(OBJS)
 
 translate.o: translate.cpp instr.dat
+vex.o: vex.cpp vex.dat
 
-%.o: %.cpp $(HDRS) Makefile
+%.o: %.cpp %.hpp Makefile
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
