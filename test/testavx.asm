@@ -5,9 +5,10 @@ msg: db "%f", 10, 0
 section .text
 global _start
 extern printf
+extern exit
 _start:
 	; Calculate mean of the array
-	vmovaps ymm0, [rel a]
+	vmovups ymm0, [rel a]
 	vmovaps ymm1, ymm0
 	; Sum of the array
 	vhaddps ymm1, ymm1, ymm1
@@ -28,6 +29,5 @@ _start:
 	lea rdi, [rel msg]
 	mov al, 1
 	call printf wrt ..plt
-	mov eax, 60
 	xor edi, edi
-	syscall
+	call exit wrt ..plt

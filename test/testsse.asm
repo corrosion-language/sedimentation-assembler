@@ -5,6 +5,7 @@ format: db "%f", 10, 0
 section .text
 global _start
 extern printf
+extern exit
 _start:
 	; use SSE to calculate the SSE of 2 arrays
 	movups xmm0, [rel a]
@@ -17,6 +18,5 @@ _start:
 	lea rdi, [rel format]
 	mov al, 1
 	call printf wrt ..plt
-	mov eax, 60
 	xor edi, edi
-	syscall
+	call exit wrt ..plt
