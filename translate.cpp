@@ -198,6 +198,11 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 			if (types[i].second == -1)
 				cerr(linenum, "taille d'opération non spécifiée");
 		}
+	} else {
+		for (size_t i = 0; i < args.size(); i++) {
+			if (types[i].first == MEM)
+				types[i].second = _sizes[valid[0].first[i + 1][1] - 'A'];
+		}
 	}
 	if (types.size() == 2 && types[0].first == REG && types[1].first == REG) {
 		types[1].first = MEM;
