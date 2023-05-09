@@ -91,7 +91,7 @@ int parse_args(int argc, char *argv[]) {
 	return 0;
 }
 
-const std::regex lead_trail("^\\s*(.*?)\\s*$"), between("\\s*([,+\\-*\\/:\\\"])\\s*");
+const std::regex lead_trail(R"(^\s*(.*?)\s*$)"), between(R"(\s*([,+\-*\/:\\"])\s*)");
 
 void preprocess() {
 	for (size_t i = 0; i < lines.size(); i++) {
@@ -407,21 +407,20 @@ int main(int argc, char *argv[]) {
 	parse_labels();
 
 	// put all labels into a map
-	for (auto l : data_labels) {
+	for (const auto &l : data_labels) {
 		labels[l.first] = {DATA, l.second};
 	}
-	for (auto l : bss_labels) {
+	for (const auto &l : bss_labels) {
 		labels[l.first] = {BSS, l.second};
 	}
-	for (auto l : text_labels) {
+	for (const auto &l : text_labels) {
 		labels[l] = {TEXT, 0};
 	}
 
 	process_instructions();
 
-	for (auto l : reloc_table) {
+	for (const auto &l : reloc_table)
 		labels[l.first] = {TEXT, l.second - data_size};
-	}
 
 	generate_elf(output, output_buffer, data_size, bss_size);
 

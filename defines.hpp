@@ -2,7 +2,7 @@
 #ifndef DEFINES_HPP
 #define DEFINES_HPP
 
-#include <stdint.h>
+#include <cstdint>
 #include <string>
 #include <unordered_map>
 
@@ -43,7 +43,7 @@ static const std::unordered_map<std::string, short> _reg_num{
 	{"st0", 0},	   {"st1", 1},	  {"st2", 2},	 {"st3", 3},	{"st4", 4},	   {"st5", 5},	  {"st6", 6},	 {"st7", 7},
 };
 
-const static short _sizes[] = {-1, 8, -1, 32, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 64, -1, -1, 80, -1, -1, 16, 128, 256, 512};
+static const short _sizes[] = {-1, 8, -1, 32, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 64, -1, -1, 80, -1, -1, 16, 128, 256, 512};
 
 struct reloc_entry {
 	uint64_t offset = 0;

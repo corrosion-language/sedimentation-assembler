@@ -1871,4 +1871,4 @@ xorps RX MX 0f57
 
 )";
 
-unsigned int map_size = sizeof(map) - 1;
+static const unsigned int map_size = sizeof(map) - 1;

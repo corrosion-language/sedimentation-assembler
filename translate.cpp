@@ -64,9 +64,9 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 	for (const std::string &arg : args) {
 		enum op_type type = get_optype(arg);
 		if (type == REG) {
-			types.push_back({REG, reg_size(arg)});
+			types.emplace_back(REG, reg_size(arg));
 		} else if (type == MEM) {
-			types.push_back({MEM, mem_size(arg)});
+			types.emplace_back(MEM, mem_size(arg));
 		} else if (type == IMM) {
 			auto tmp = parse_imm(arg);
 			if (tmp.second == -1) {
@@ -75,23 +75,23 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 				if (reloc_table.find(text_labels[tmp.first]) != reloc_table.end()) {
 					int32_t off = reloc_table.at(text_labels.at(tmp.first)) - output_buffer.size() - 5;
 					if ((int8_t)off == off) {
-						types.push_back({IMM, 8});
+						types.emplace_back(IMM, 8);
 					} else {
-						types.push_back({IMM, 32});
+						types.emplace_back(IMM, 32);
 						tmp.first = 0;
 					}
 				} else {
 					if (text_labels_instr[tmp.first] - instr_cnt <= 9) {
-						types.push_back({IMM, 8});
+						types.emplace_back(IMM, 8);
 					} else {
-						types.push_back({IMM, 32});
+						types.emplace_back(IMM, 32);
 						tmp.first = 0;
 					}
 				}
 			} else if (tmp.second == -2 || tmp.second == -4) {
-				types.push_back({IMM, 32});
+				types.emplace_back(IMM, 32);
 			} else {
-				types.push_back({IMM, tmp.second});
+				types.emplace_back(IMM, tmp.second);
 			}
 		} else {
 			cerr(linenum, "opérande invalide « " + arg + " »");
@@ -188,7 +188,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 				types.erase(types.begin() + d);
 				tokens.erase(tokens.begin() + d + 1);
 			}
-			valid.push_back({tokens, size});
+			valid.emplace_back(tokens, size);
 		}
 	}
 	if (valid.empty())
@@ -279,7 +279,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 					tmp += data->sib;
 
 				if (data->reloc.second != NONE) {
-					reloc.push_back({output_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32});
+					reloc.emplace_back(output_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
 					data->offset = 0;
 				}
 
@@ -302,29 +302,29 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 				if (a1.second == -1) {
 					cerr(linenum, error);
 				} else if (a1.second == -2) {
-					reloc.push_back({output_buffer.size() + tmp.size(), 0, ABS, args[0], 32});
+					reloc.emplace_back(output_buffer.size() + tmp.size(), 0, ABS, args[0], 32);
 				} else if (a1.second == -3) {
 					if (reloc_table.find(text_labels[a1.first]) != reloc_table.end()) {
 						int32_t off = reloc_table.at(text_labels.at(a1.first)) - output_buffer.size() - 1 - _sizes[p.first[1][1] - 'A'] / 8;
 						if ((int8_t)off == off) {
 							a1.first = off;
 						} else {
-							reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32});
+							reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32);
 							a1.first = 0;
 						}
 					} else {
 						if (text_labels_instr[a1.first] - instr_cnt <= 9) {
-							reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 8});
+							reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 8);
 							a1.first = 0;
 						} else {
-							reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32});
+							reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32);
 							a1.first = 0;
 						}
 					}
 				} else if (a1.second == -4) {
-					reloc.push_back({output_buffer.size() + tmp.size(), 0, PLT, args[0].substr(0, args[0].size() - 10), 32});
+					reloc.emplace_back(output_buffer.size() + tmp.size(), 0, PLT, args[0].substr(0, args[0].size() - 10), 32);
 				} else if (a1.second == -5) {
-					reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, extern_labels[a1.first], 32});
+					reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, extern_labels[a1.first], 32);
 					a1.first = 0;
 				}
 				for (int i = 0; i < _sizes[p.first[1][1] - 'A']; i += 8)
@@ -367,27 +367,27 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 				if (a2.second == -1) {
 					cerr(linenum, error);
 				} else if (a2.second == -2) {
-					reloc.push_back({output_buffer.size() + tmp.size(), 0, ABS, args[imm.first - 1], std::max(s2, (short)32)});
+					reloc.emplace_back(output_buffer.size() + tmp.size(), 0, ABS, args[imm.first - 1], std::max(s2, (short)32));
 				} else if (a2.second == -3) {
 					if (reloc_table.find(text_labels[a2.first]) != reloc_table.end()) {
 						int32_t off = reloc_table.at(text_labels.at(a2.first)) - output_buffer.size() - 1 - _sizes[p.first[1][1] - 'A'] / 8;
 						if ((int8_t)off == off) {
 							a2.first = off;
 						} else {
-							reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 32});
+							reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 32);
 							a2.first = 0;
 						}
 					} else {
 						if (text_labels_instr[a2.first] - instr_cnt <= 9) {
-							reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 8});
+							reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 8);
 							a2.first = 0;
 						} else {
-							reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 32});
+							reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 32);
 							a2.first = 0;
 						}
 					}
 				} else if (a2.second == -5) {
-					reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, extern_labels[a2.first], 32});
+					reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, extern_labels[a2.first], 32);
 					a2.first = 0;
 				}
 				for (int i = 0; i < s2; i += 8)
@@ -441,7 +441,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 					tmp += sib;
 
 				if (data->reloc.second != NONE) {
-					reloc.push_back({output_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32});
+					reloc.emplace_back(output_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
 					data->offset = 0;
 				}
 
@@ -456,27 +456,27 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 					if (a1.second == -1) {
 						cerr(linenum, error);
 					} else if (a1.second == -2) {
-						reloc.push_back({output_buffer.size() + tmp.size(), 0, ABS, args[imm.first - 1], std::max(s1, (short)32)});
+						reloc.emplace_back(output_buffer.size() + tmp.size(), 0, ABS, args[imm.first - 1], std::max(s1, (short)32));
 					} else if (a1.second == -3) {
 						if (reloc_table.find(text_labels[a1.first]) != reloc_table.end()) {
 							int32_t off = reloc_table.at(text_labels.at(a1.first)) - output_buffer.size() - 1 - _sizes[p.first[1][1] - 'A'] / 8;
 							if ((int8_t)off == off) {
 								a1.first = off;
 							} else {
-								reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32});
+								reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32);
 								a1.first = 0;
 							}
 						} else {
 							if (text_labels_instr[a1.first] - instr_cnt <= 9) {
-								reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 8});
+								reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 8);
 								a1.first = 0;
 							} else {
-								reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32});
+								reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32);
 								a1.first = 0;
 							}
 						}
 					} else if (a1.second == -5) {
-						reloc.push_back({output_buffer.size() + tmp.size(), 0, REL, extern_labels[a1.first], 32});
+						reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, extern_labels[a1.first], 32);
 						a1.first = 0;
 					}
 					for (int i = 0; i < s1; i += 8)

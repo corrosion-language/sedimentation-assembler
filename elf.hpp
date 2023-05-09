@@ -4,10 +4,10 @@
 
 #include "defines.hpp"
 #include "main.hpp"
+#include <cstdint>
+#include <cstring>
 #include <fstream>
 #include <iostream>
-#include <stdint.h>
-#include <string.h>
 #include <unistd.h>
 #include <unordered_map>
 #include <unordered_set>

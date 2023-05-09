@@ -44,9 +44,9 @@ void handle_vex(std::string s, std::vector<std::string> args, const size_t linen
 	for (const std::string &arg : args) {
 		enum op_type type = get_optype(arg);
 		if (type == REG) {
-			types.push_back({REG, reg_size(arg)});
+			types.emplace_back(REG, reg_size(arg));
 		} else if (type == MEM) {
-			types.push_back({MEM, mem_size(arg)});
+			types.emplace_back(MEM, mem_size(arg));
 		} else if (type == IMM) {
 			auto tmp = parse_imm(arg);
 			if (tmp.second == -1) {
@@ -55,19 +55,19 @@ void handle_vex(std::string s, std::vector<std::string> args, const size_t linen
 				if (reloc_table.find(text_labels[tmp.first]) != reloc_table.end()) {
 					int32_t off = reloc_table.at(text_labels.at(tmp.first)) - output_buffer.size() - 3;
 					if ((int8_t)off == off) {
-						types.push_back({IMM, 8});
+						types.emplace_back(IMM, 8);
 					} else {
-						types.push_back({IMM, 32});
+						types.emplace_back(IMM, 32);
 						tmp.first = 0;
 					}
 				} else {
-					types.push_back({IMM, 32});
+					types.emplace_back(IMM, 32);
 					tmp.first = 0;
 				}
 			} else if (tmp.second == -2 || tmp.second == -4) {
-				types.push_back({IMM, 32});
+				types.emplace_back(IMM, 32);
 			} else {
-				types.push_back({IMM, tmp.second});
+				types.emplace_back(IMM, tmp.second);
 			}
 		} else {
 			cerr(linenum, "opérande invalide « " + arg + " »");
@@ -137,7 +137,7 @@ void handle_vex(std::string s, std::vector<std::string> args, const size_t linen
 				if (types[j].second == -1)
 					types[j].second = _sizes[tokens[j + 1][1] - 'A'];
 			}
-			valid.push_back({tokens, size});
+			valid.emplace_back(tokens, size);
 		}
 	}
 	if (valid.empty())
@@ -162,11 +162,11 @@ void handle_vex(std::string s, std::vector<std::string> args, const size_t linen
 		short vvvv = 0;
 		if (args.size() == 0) {
 			if ((rxb & 0b11) == 0 && mmmmm == 0 && w == 0) {
-				tmp += 0xc5;
+				tmp += (unsigned char)0xc5;
 				tmp += (l << 2) | pp;
 				tmp.back() ^= 0xf8;
 			} else {
-				tmp += 0xc4;
+				tmp += (unsigned char)0xc4;
 				tmp += mmmmm;
 				tmp.back() ^= 0xe0;
 				tmp += (w << 7) | (l << 2) | pp;
@@ -189,11 +189,11 @@ void handle_vex(std::string s, std::vector<std::string> args, const size_t linen
 				rxb = data->rex ^ 0x40;
 
 			if ((rxb & 0b11) == 0 && mmmmm == 0 && w == 0) {
-				tmp += 0xc5;
+				tmp += (unsigned char)0xc5;
 				tmp += (rxb << 5) | (l << 2) | pp;
 				tmp.back() ^= 0xf8;
 			} else {
-				tmp += 0xc4;
+				tmp += (unsigned char)0xc4;
 				tmp += (rxb << 5) | mmmmm;
 				tmp.back() ^= 0xe0;
 				tmp += (w << 7) | (l << 2) | pp;
@@ -212,7 +212,7 @@ void handle_vex(std::string s, std::vector<std::string> args, const size_t linen
 				tmp += data->sib;
 
 			if (data->reloc.second != NONE) {
-				reloc.push_back({output_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32});
+				reloc.emplace_back(output_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
 				data->offset = 0;
 			}
 
@@ -247,11 +247,11 @@ void handle_vex(std::string s, std::vector<std::string> args, const size_t linen
 			}
 
 			if ((rxb & 0b11) == 0 && mmmmm == 0 && w == 0) {
-				tmp += 0xc5;
+				tmp += (unsigned char)0xc5;
 				tmp += (rxb << 5) | (vvvv << 3) | (l << 2) | pp;
 				tmp.back() ^= 0xf8;
 			} else {
-				tmp += 0xc4;
+				tmp += (unsigned char)0xc4;
 				tmp += (rxb << 5) | mmmmm;
 				tmp.back() ^= 0xe0;
 				tmp += (w << 7) | (vvvv << 3) | (l << 2) | pp;
@@ -268,7 +268,7 @@ void handle_vex(std::string s, std::vector<std::string> args, const size_t linen
 				tmp += data->sib;
 
 			if (data->reloc.second != NONE) {
-				reloc.push_back({output_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32});
+				reloc.emplace_back(output_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
 				data->offset = 0;
 			}
 
@@ -282,11 +282,11 @@ void handle_vex(std::string s, std::vector<std::string> args, const size_t linen
 				rxb = rm >= 8;
 
 				if ((rxb & 0b11) == 0 && mmmmm == 0 && w == 0) {
-					tmp += 0xc5;
+					tmp += (unsigned char)0xc5;
 					tmp += (rxb << 5) | (vvvv << 3) | (l << 2) | pp;
 					tmp.back() ^= 0xf8;
 				} else {
-					tmp += 0xc4;
+					tmp += (unsigned char)0xc4;
 					tmp += (rxb << 5) | mmmmm;
 					tmp.back() ^= 0xe0;
 					tmp += (w << 7) | (vvvv << 3) | (l << 2) | pp;
@@ -323,11 +323,11 @@ void handle_vex(std::string s, std::vector<std::string> args, const size_t linen
 					}
 					if (!(rxb & 0b011) && !w && !mmmmm) {
 						// short form
-						tmp += 0xc5;
+						tmp += (unsigned char)0xc5;
 						tmp += (rxb << 5) | (l << 2) | pp;
 						tmp.back() ^= 0xf8;
 					} else {
-						tmp += 0xc4;
+						tmp += (unsigned char)0xc4;
 						tmp += (rxb << 5) | mmmmm;
 						tmp.back() ^= 0xe0;
 						tmp += (w << 7) | (l << 2) | pp;
@@ -340,7 +340,7 @@ void handle_vex(std::string s, std::vector<std::string> args, const size_t linen
 						tmp += data->sib;
 
 					if (data->reloc.second != NONE) {
-						reloc.push_back({output_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32});
+						reloc.emplace_back(output_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
 						data->offset = 0;
 					}
 
@@ -374,11 +374,11 @@ void handle_vex(std::string s, std::vector<std::string> args, const size_t linen
 					}
 
 					if (!(rxb & 0b11) && !mmmmm && !w) {
-						tmp += 0xc5;
+						tmp += (unsigned char)0xc5;
 						tmp += (rxb << 5) | (vvvv << 3) | (l << 2) | pp;
 						tmp.back() ^= 0xf8;
 					} else {
-						tmp += 0xc4;
+						tmp += (unsigned char)0xc4;
 						tmp += (rxb << 5) | mmmmm;
 						tmp.back() ^= 0xe0;
 						tmp += (w << 7) | (vvvv << 3) | (l << 2) | pp;
@@ -395,7 +395,7 @@ void handle_vex(std::string s, std::vector<std::string> args, const size_t linen
 						tmp += data->sib;
 
 					if (data->reloc.second != NONE) {
-						reloc.push_back({output_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32});
+						reloc.emplace_back(output_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
 						data->offset = 0;
 					}
 

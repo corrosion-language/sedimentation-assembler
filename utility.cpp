@@ -2,7 +2,7 @@
 
 std::string error;
 
-short reg_num(std::string s) {
+short reg_num(const std::string &s) {
 	auto ptr = _reg_num.find(s);
 	if (ptr == _reg_num.end())
 		return -1;
@@ -10,7 +10,7 @@ short reg_num(std::string s) {
 		return ptr->second;
 }
 
-short reg_size(std::string s) {
+short reg_size(const std::string &s) {
 	auto ptr = _reg_size.find(s);
 	if (ptr == _reg_size.end())
 		return -1;
@@ -18,7 +18,7 @@ short reg_size(std::string s) {
 		return ptr->second;
 }
 
-short mem_size(std::string s) {
+short mem_size(const std::string &s) {
 	if (s.starts_with("byte "))
 		return 8;
 	if (s.starts_with("word "))
@@ -36,12 +36,12 @@ short mem_size(std::string s) {
 	return -1;
 }
 
-op_type get_optype(std::string s) {
+op_type get_optype(const std::string &s) {
 	// if in register table return REG
 	if (reg_size(s) != -1)
 		return REG;
 	// in format "SIZE [...]" or "[]" return MEM or OFFSET
-	auto tmp = s.find(" ");
+	auto tmp = s.find(' ');
 	tmp = (tmp != std::string::npos) ? tmp : -1;
 	if (s[tmp + 1] == '[' || s[0] == '[') {
 		size_t l = s.find('[');
@@ -97,7 +97,7 @@ mem_output *parse_mem(std::string in, short &size) {
 	std::vector<std::string> tokens;
 	std::vector<char> ops;
 	size_t l = 0;
-	size_t r = std::min(in.find('*'), std::min(in.find("+"), in.find("-")));
+	size_t r = std::min(in.find('*'), std::min(in.find('+'), in.find('-')));
 	while (l++ != std::string::npos) {
 		tokens.push_back(in.substr(l, r - l));
 		if (l != 1)

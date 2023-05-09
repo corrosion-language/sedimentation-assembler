@@ -190,7 +190,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	}
 	sym.info = 0;
 	// write symtab
-	for (auto l : labels) {
+	for (const auto &l : labels) {
 		if (global.find(l.first) != global.end())
 			continue;
 		sym.name = i;
@@ -209,13 +209,13 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	}
 	sym.info = 0x10;
 	sym.shndx = 0;
-	for (auto s : extern_labels) {
+	for (const auto &s : extern_labels) {
 		sym.name = i;
 		i += s.size() + 1;
 		f.write((const char *)&sym, sizeof(symbol));
 		ordered_labels.push_back(s);
 	}
-	for (auto l : labels) {
+	for (const auto &l : labels) {
 		if (global.find(l.first) == global.end())
 			continue;
 		sym.name = i;
