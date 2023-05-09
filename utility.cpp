@@ -115,6 +115,14 @@ mem_output *parse_mem(std::string in, short &size) {
 		}
 	}
 
+	// move stuff from front to back if not register
+	while (tokens.size() > 1 && reg_size(tokens.front()) == -1) {
+		tokens.push_back(tokens.front());
+		ops.push_back('+');
+		tokens.erase(tokens.begin());
+		ops.erase(ops.begin());
+	}
+
 	mem_output *out = new mem_output();
 
 	// resolve labels and combine with imms if possible
