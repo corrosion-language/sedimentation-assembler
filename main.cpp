@@ -146,6 +146,76 @@ void preprocess() {
 	}
 }
 
+void parse_d(std::string instr, std::vector<std::string> args, size_t line) {
+	for (size_t i = 0; i < args.size(); i++) {
+		if (args[i][0] == '"') {
+			for (size_t j = 1; j < args[i].size() - 1; j++) {
+				if (args[i][j] == '\\') {
+					switch (args[i][j + 1]) {
+					case '0':
+						output_buffer.push_back('\0');
+						break;
+					case 'n':
+						output_buffer.push_back('\n');
+						break;
+					case 'r':
+						output_buffer.push_back('\r');
+						break;
+					case 't':
+						output_buffer.push_back('\t');
+						break;
+					case '\\':
+						output_buffer.push_back('\\');
+						break;
+					case '"':
+						output_buffer.push_back('"');
+						break;
+					case '\'':
+						output_buffer.push_back('\'');
+						break;
+					case 'x':
+						output_buffer.push_back(std::stoul(args[i].substr(j + 2, 2), nullptr, 16));
+						j += 2;
+						break;
+					}
+					j++;
+				} else
+					output_buffer.push_back(args[i][j]);
+			}
+			continue;
+		}
+		if (args[i][0] == '\'') {
+			output_buffer.push_back(args[i][1]);
+			continue;
+		}
+		if (instr == "db") {
+			output_buffer.push_back(std::stoul(args[i], nullptr, 0));
+		} else if (instr == "dw") {
+			uint16_t val = std::stoul(args[i], nullptr, 0);
+			output_buffer.push_back(val & 0xff);
+			output_buffer.push_back((val >> 8) & 0xff);
+		} else if (instr == "dd") {
+			uint32_t val = std::stoul(args[i], nullptr, 0);
+			output_buffer.push_back(val & 0xff);
+			output_buffer.push_back((val >> 8) & 0xff);
+			output_buffer.push_back((val >> 16) & 0xff);
+			output_buffer.push_back((val >> 24) & 0xff);
+		} else if (instr == "dq") {
+			uint64_t val = std::stoull(args[i], nullptr, 0);
+			output_buffer.push_back(val & 0xff);
+			output_buffer.push_back((val >> 8) & 0xff);
+			output_buffer.push_back((val >> 16) & 0xff);
+			output_buffer.push_back((val >> 24) & 0xff);
+			output_buffer.push_back((val >> 32) & 0xff);
+			output_buffer.push_back((val >> 40) & 0xff);
+			output_buffer.push_back((val >> 48) & 0xff);
+			output_buffer.push_back((val >> 56) & 0xff);
+		} else {
+			cerr(line + 1, "directive inconnue « " + instr + " »");
+		}
+	}
+}
+
 void parse_labels() {
 	sect curr_sect = UNDEF;
 	size_t instr_cnt = 0;
@@ -236,74 +306,44 @@ void parse_labels() {
 					pos = next;
 				}
 				size_t tmp = output_buffer.size();
-				for (size_t i = 0; i < args.size(); i++) {
-					if (args[i][0] == '"') {
-						for (size_t j = 1; j < args[i].size() - 1; j++) {
-							if (args[i][j] == '\\') {
-								switch (args[i][j + 1]) {
-								case '0':
-									output_buffer.push_back('\0');
-									break;
-								case 'n':
-									output_buffer.push_back('\n');
-									break;
-								case 'r':
-									output_buffer.push_back('\r');
-									break;
-								case 't':
-									output_buffer.push_back('\t');
-									break;
-								case '\\':
-									output_buffer.push_back('\\');
-									break;
-								case '"':
-									output_buffer.push_back('"');
-									break;
-								case '\'':
-									output_buffer.push_back('\'');
-									break;
-								case 'x':
-									output_buffer.push_back(std::stoul(args[i].substr(j + 2, 2), nullptr, 16));
-									j += 2;
-									break;
-								}
-								j++;
-							} else
-								output_buffer.push_back(args[i][j]);
-						}
-						continue;
-					}
-					if (instr == "db") {
-						output_buffer.push_back(std::stoul(args[i], nullptr, 0));
-					} else if (instr == "dw") {
-						uint16_t val = std::stoul(args[i], nullptr, 0);
-						output_buffer.push_back(val & 0xff);
-						output_buffer.push_back((val >> 8) & 0xff);
-					} else if (instr == "dd") {
-						uint32_t val = std::stoul(args[i], nullptr, 0);
-						output_buffer.push_back(val & 0xff);
-						output_buffer.push_back((val >> 8) & 0xff);
-						output_buffer.push_back((val >> 16) & 0xff);
-						output_buffer.push_back((val >> 24) & 0xff);
-					} else if (instr == "dq") {
-						uint64_t val = std::stoull(args[i], nullptr, 0);
-						output_buffer.push_back(val & 0xff);
-						output_buffer.push_back((val >> 8) & 0xff);
-						output_buffer.push_back((val >> 16) & 0xff);
-						output_buffer.push_back((val >> 24) & 0xff);
-						output_buffer.push_back((val >> 32) & 0xff);
-						output_buffer.push_back((val >> 40) & 0xff);
-						output_buffer.push_back((val >> 48) & 0xff);
-						output_buffer.push_back((val >> 56) & 0xff);
-					} else {
-						cerr(i + 1, "directive inconnue « " + instr + " »");
-					}
-				}
+				parse_d(instr, args, i);
 				data_size += output_buffer.size() - tmp;
 				data_labels[label] = tmp;
 			}
-		} else if (curr_sect == TEXT && !line.starts_with("global ") && !line.starts_with("extern "))
-			instr_cnt++;
+		} else if (curr_sect == TEXT && !line.starts_with("global ") && !line.starts_with("extern ")) {
+			if (line[0] != 'd' || line[2] != ' ') {
+				instr_cnt++;
+				continue;
+			}
+			std::vector<std::string> args;
+			size_t pos = line.find(' ');
+			while (pos != std::string::npos) {
+				size_t next = line.find(',', pos + 1);
+				if (next == std::string::npos) {
+					next = line.size();
+					args.push_back(line.substr(pos + 1, next - pos - 1));
+					break;
+				}
+				args.push_back(line.substr(pos + 1, next - pos - 1));
+				pos = next;
+			}
+			size_t delta = 0;
+			if (line[1] == 'b') {
+				for (const auto &arg : args) {
+					if (arg[0] == '"')
+						delta += arg.size() - 2;
+					else
+						delta++;
+				}
+			} else if (line[1] == 'w') {
+				delta += args.size() * 2;
+			} else if (line[1] == 'd') {
+				delta += args.size() * 4;
+			} else {
+				delta += args.size() * 8;
+			}
+			instr_cnt += delta / 15 + !!(delta % 15);
+		}
 	}
 }
 
@@ -368,7 +408,11 @@ void process_instructions() {
 					args.push_back(line.substr(pos + 1, next - pos - 1));
 					pos = next;
 				}
-				handle(instr, args, i + 1, instr_cnt);
+				if (instr[0] == 'd' && instr.size() == 2) {
+					parse_d(instr, args, i);
+				} else {
+					handle(instr, args, i + 1, instr_cnt);
+				}
 				instr_cnt++;
 			}
 		}
