@@ -72,7 +72,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 			if (tmp.second == -1) {
 				cerr(linenum, error);
 			} else if (tmp.second == -3) {
-				if (reloc_table.find(text_labels[tmp.first]) != reloc_table.end()) {
+				if (reloc_table.count(text_labels[tmp.first])) {
 					int32_t off = reloc_table.at(text_labels.at(tmp.first)) - output_buffer.size() - 5;
 					if ((int8_t)off == off) {
 						types.emplace_back(IMM, 8);
@@ -304,7 +304,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 				} else if (a1.second == -2) {
 					reloc.emplace_back(output_buffer.size() + tmp.size(), 0, ABS, args[0], 32);
 				} else if (a1.second == -3) {
-					if (reloc_table.find(text_labels[a1.first]) != reloc_table.end()) {
+					if (reloc_table.count(text_labels[a1.first])) {
 						int32_t off = reloc_table.at(text_labels.at(a1.first)) - output_buffer.size() - 1 - _sizes[p.first[1][1] - 'A'] / 8;
 						if ((int8_t)off == off) {
 							a1.first = off;
@@ -369,7 +369,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 				} else if (a2.second == -2) {
 					reloc.emplace_back(output_buffer.size() + tmp.size(), 0, ABS, args[imm.first - 1], std::max(s2, (short)32));
 				} else if (a2.second == -3) {
-					if (reloc_table.find(text_labels[a2.first]) != reloc_table.end()) {
+					if (reloc_table.count(text_labels[a2.first])) {
 						int32_t off = reloc_table.at(text_labels.at(a2.first)) - output_buffer.size() - 1 - _sizes[p.first[1][1] - 'A'] / 8;
 						if ((int8_t)off == off) {
 							a2.first = off;
@@ -458,7 +458,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 					} else if (a1.second == -2) {
 						reloc.emplace_back(output_buffer.size() + tmp.size(), 0, ABS, args[imm.first - 1], std::max(s1, (short)32));
 					} else if (a1.second == -3) {
-						if (reloc_table.find(text_labels[a1.first]) != reloc_table.end()) {
+						if (reloc_table.count(text_labels[a1.first])) {
 							int32_t off = reloc_table.at(text_labels.at(a1.first)) - output_buffer.size() - 1 - _sizes[p.first[1][1] - 'A'] / 8;
 							if ((int8_t)off == off) {
 								a1.first = off;

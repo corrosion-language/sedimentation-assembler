@@ -52,7 +52,7 @@ void handle_vex(std::string s, std::vector<std::string> args, const size_t linen
 			if (tmp.second == -1) {
 				cerr(linenum, error);
 			} else if (tmp.second == -3) {
-				if (reloc_table.find(text_labels[tmp.first]) != reloc_table.end()) {
+				if (reloc_table.count(text_labels[tmp.first])) {
 					int32_t off = reloc_table.at(text_labels.at(tmp.first)) - output_buffer.size() - 3;
 					if ((int8_t)off == off) {
 						types.emplace_back(IMM, 8);

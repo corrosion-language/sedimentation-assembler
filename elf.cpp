@@ -191,7 +191,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	sym.info = 0;
 	// write symtab
 	for (const auto &l : labels) {
-		if (global.find(l.first) != global.end())
+		if (global.count(l.first))
 			continue;
 		sym.name = i;
 		i += l.first.size() + 1;
@@ -216,7 +216,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 		ordered_labels.push_back(s);
 	}
 	for (const auto &l : labels) {
-		if (global.find(l.first) == global.end())
+		if (global.count(l.first))
 			continue;
 		sym.name = i;
 		i += l.first.size() + 1;

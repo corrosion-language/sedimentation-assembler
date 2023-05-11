@@ -126,8 +126,7 @@ mem_output *parse_mem(std::string in, short &size) {
 	mem_output *out = new mem_output();
 
 	// resolve labels and combine with imms if possible
-	if (tokens.size() > 1 &&
-		(data_labels.find(tokens[tokens.size() - 2]) != data_labels.end() || bss_labels.find(tokens[tokens.size() - 2]) != bss_labels.end())) {
+	if (tokens.size() > 1 && (data_labels.count(tokens[tokens.size() - 2]) || bss_labels.count(tokens[tokens.size() - 2]))) {
 		out->reloc.first = tokens[tokens.size() - 2];
 		out->reloc.second = ABS;
 		if (ops.back() != '+')
@@ -135,13 +134,13 @@ mem_output *parse_mem(std::string in, short &size) {
 		tokens.erase(tokens.end() - 2);
 		ops.pop_back();
 	} else {
-		if (data_labels.find(tokens.front()) != data_labels.end() || bss_labels.find(tokens.front()) != bss_labels.end()) {
+		if (data_labels.count(tokens.front()) || bss_labels.count(tokens.front())) {
 			tokens.push_back(tokens.front());
 			ops.push_back('+');
 			tokens.erase(tokens.begin());
 			ops.erase(ops.begin());
 		}
-		if (data_labels.find(tokens.back()) != data_labels.end() || bss_labels.find(tokens.back()) != bss_labels.end()) {
+		if (data_labels.count(tokens.back()) || bss_labels.count(tokens.back())) {
 			out->reloc.first = tokens.back();
 			out->reloc.second = ABS;
 			tokens.back() = "0";
@@ -312,11 +311,11 @@ std::pair<unsigned long long, short> parse_imm(std::string s) {
 		s = prev_label + s;
 	if (s.ends_with("wrt ..plt"))
 		return {0, -4};
-	if (text_labels_map.find(s) != text_labels_map.end())
+	if (text_labels_map.count(s))
 		return {text_labels_map.at(s), -3};
-	if (extern_labels_map.find(s) != extern_labels_map.end())
+	if (extern_labels_map.count(s))
 		return {extern_labels_map.at(s), -5};
-	if (labels.find(s) != labels.end())
+	if (labels.count(s))
 		return {0, -2};
 	// if character, return character
 	if (s[0] == '\'') {
