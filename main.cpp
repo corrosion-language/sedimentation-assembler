@@ -146,7 +146,7 @@ void preprocess() {
 	}
 }
 
-void parse_d(std::string instr, std::vector<std::string> args, size_t line) {
+void parse_d(std::string &instr, std::vector<std::string> &args, size_t line) {
 	for (size_t i = 0; i < args.size(); i++) {
 		if (args[i][0] == '"') {
 			for (size_t j = 1; j < args[i].size() - 1; j++) {

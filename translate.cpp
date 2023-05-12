@@ -56,7 +56,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 	r = std::find(l + 1, map + map_size, '\n');
 	std::vector<std::string> matches;
 	while (*l != '\n' && r != map + map_size) {
-		matches.push_back(std::string(l, r));
+		matches.emplace_back(std::string(l, r));
 		l = r + 1;
 		r = std::find(l, map + map_size, '\n');
 	}

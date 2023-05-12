@@ -1,7 +1,7 @@
 #include "vex.dat"
 #include "vex.hpp"
 
-void handle_vex(std::string s, std::vector<std::string> args, const size_t linenum, const bool prefix) {
+void handle_vex(std::string &s, std::vector<std::string> &args, const size_t linenum, const bool prefix) {
 	error = "";
 	char *l = vex_map;
 	char *r = vex_map + vex_map_size - 1;
@@ -36,7 +36,7 @@ void handle_vex(std::string s, std::vector<std::string> args, const size_t linen
 	r = std::find(l + 1, vex_map + vex_map_size, '\n');
 	std::vector<std::string> matches;
 	while (*l != '\n' && r != vex_map + vex_map_size) {
-		matches.push_back(std::string(l, r));
+		matches.emplace_back(std::string(l, r));
 		l = r + 1;
 		r = std::find(l, vex_map + vex_map_size, '\n');
 	}
