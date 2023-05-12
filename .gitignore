@@ -7,3 +7,5 @@ callgrind*
 in
 test/test
 test/test2
+html/
+!html/thing.ipynb
