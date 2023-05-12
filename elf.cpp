@@ -116,7 +116,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	shdr.flags = 0;
 	shdr.addr = 0;
 	shdr.offset = shdr.offset + shdr.size;
-	shdr.size = (labels.size() + extern_labels.size() + !!data_size + !!bss_size + 1) * sizeof(symbol);
+	shdr.size = (labels.size() + extern_labels.size() + 1) * sizeof(symbol);
 	shdr.link = ehdr.shnum - 1 - !!relocations.size(); // strtab
 	shdr.info = shdr.size / sizeof(symbol) - global.size() - extern_labels.size(); // index of last local symbol + 1
 	shdr.addralign = 8;
@@ -173,19 +173,6 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	// null symbol
 	bzero(&sym, sizeof(symbol));
 	f.write((const char *)&sym, sizeof(symbol));
-	// sections
-	if (data_size) {
-		sym.name = 0;
-		sym.info = 0x3; // section
-		sym.shndx = 2; // data
-		f.write((const char *)&sym, sizeof(symbol));
-	}
-	if (bss_size) {
-		sym.name = 0;
-		sym.info = 0x3; // section
-		sym.shndx = 2 + !!data_size; // bss
-		f.write((const char *)&sym, sizeof(symbol));
-	}
 	sym.info = 0;
 	// write symtab
 	for (const auto &l : labels) {
