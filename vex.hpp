@@ -17,6 +17,6 @@ extern std::vector<reloc_entry> relocations;
 extern std::unordered_map<std::string, uint64_t> reloc_table;
 extern std::string error;
 
-void handle_vex(std::string, std::vector<std::string>, const size_t, const bool);
+void handle_vex(std::string &, std::vector<std::string> &, const size_t, const bool);
 
 #endif
