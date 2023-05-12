@@ -179,14 +179,12 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 		sym.info = 0x3; // section
 		sym.shndx = 2; // data
 		f.write((const char *)&sym, sizeof(symbol));
-		ordered_labels.push_back("");
 	}
 	if (bss_size) {
 		sym.name = 0;
 		sym.info = 0x3; // section
 		sym.shndx = 2 + !!data_size; // bss
 		f.write((const char *)&sym, sizeof(symbol));
-		ordered_labels.push_back("");
 	}
 	sym.info = 0;
 	// write symtab
@@ -216,7 +214,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 		ordered_labels.push_back(s);
 	}
 	for (const auto &l : labels) {
-		if (global.count(l.first))
+		if (!global.count(l.first))
 			continue;
 		sym.name = i;
 		i += l.first.size() + 1;
