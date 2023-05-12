@@ -36,7 +36,7 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 	r = std::find(l + 1, vex_map + vex_map_size, '\n');
 	std::vector<std::string> matches;
 	while (*l != '\n' && r != vex_map + vex_map_size) {
-		matches.emplace_back(std::string(l, r));
+		matches.emplace_back(l, r);
 		l = r + 1;
 		r = std::find(l, vex_map + vex_map_size, '\n');
 	}
