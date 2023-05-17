@@ -6,7 +6,7 @@ void rand_bytes(char *buf, size_t len) {
 	f.close();
 }
 
-void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_t data_size, uint64_t bss_size) {
+void generate_elf(std::ofstream &f, uint64_t bss_size) {
 	// structure:
 	//  ELF header
 	//  section headers
@@ -25,6 +25,8 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 		strtab_size += s.size() + 1;
 	for (auto &s : labels)
 		strtab_size += s.first.size() + 1;
+
+	const size_t data_size = data_buffer.size();
 
 	// ELF header
 	elf_header ehdr;
@@ -56,7 +58,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	shdr.flags = 0x2 | 0x4; // alloc, execinstr
 	shdr.addr = 0;
 	shdr.offset = ehdr.shoff + ehdr.shentsize * ehdr.shnum;
-	shdr.size = output_buffer.size() - data_size;
+	shdr.size = text_buffer.size();
 	shdr.link = 0;
 	shdr.info = 0;
 	shdr.addralign = 16;
@@ -152,13 +154,13 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	}
 
 	// write text
-	f.write((const char *)output_buffer.data() + data_size, output_buffer.size() - data_size);
+	f.write((const char *)text_buffer.data(), text_buffer.size());
 
 	// seek to multiple of 16
 	f.seekp((f.tellp() + (std::streamoff)15) & ~15);
 
 	// write data
-	f.write((const char *)output_buffer.data(), data_size);
+	f.write((const char *)data_buffer.data(), data_size);
 
 	// seek to multiple of 4
 	f.seekp((f.tellp() + (std::streamoff)3) & ~3);
@@ -227,7 +229,7 @@ void generate_elf(std::ofstream &f, std::vector<uint8_t> &output_buffer, uint64_
 	relocation reloc;
 	// write rela.text
 	for (auto &r : relocations) {
-		reloc.offset = r.offset - data_size;
+		reloc.offset = r.offset;
 		uint64_t index = std::find(ordered_labels.begin(), ordered_labels.end(), r.symbol) - ordered_labels.begin();
 		reloc.info = (index + 1) << 32;
 		if (r.type == ABS) {

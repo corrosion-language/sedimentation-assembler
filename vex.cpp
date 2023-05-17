@@ -53,7 +53,7 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 				cerr(linenum, error);
 			} else if (tmp.second == -3) {
 				if (reloc_table.count(text_labels[tmp.first])) {
-					int32_t off = reloc_table.at(text_labels.at(tmp.first)) - output_buffer.size() - 3;
+					int32_t off = reloc_table.at(text_labels.at(tmp.first)) - text_buffer.size() - 3;
 					if ((int8_t)off == off) {
 						types.emplace_back(IMM, 8);
 					} else {
@@ -212,7 +212,7 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 				tmp += data->sib;
 
 			if (data->reloc.second != NONE) {
-				reloc.emplace_back(output_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
+				reloc.emplace_back(text_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
 				data->offset = 0;
 			}
 
@@ -268,7 +268,7 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 				tmp += data->sib;
 
 			if (data->reloc.second != NONE) {
-				reloc.emplace_back(output_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
+				reloc.emplace_back(text_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
 				data->offset = 0;
 			}
 
@@ -340,7 +340,7 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 						tmp += data->sib;
 
 					if (data->reloc.second != NONE) {
-						reloc.emplace_back(output_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
+						reloc.emplace_back(text_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
 						data->offset = 0;
 					}
 
@@ -395,7 +395,7 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 						tmp += data->sib;
 
 					if (data->reloc.second != NONE) {
-						reloc.emplace_back(output_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
+						reloc.emplace_back(text_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
 						data->offset = 0;
 					}
 
@@ -424,9 +424,9 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 	}
 	for (auto reloc : bestreloc) {
 		if (reloc.type != ABS)
-			reloc.addend -= best.size() - (reloc.offset - output_buffer.size());
+			reloc.addend -= best.size() - (reloc.offset - text_buffer.size());
 		relocations.push_back(reloc);
 	}
 	for (size_t i = 0; i < best.size(); i++)
-		output_buffer.push_back(best[i]);
+		text_buffer.push_back(best[i]);
 }

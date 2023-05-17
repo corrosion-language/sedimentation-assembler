@@ -24,8 +24,8 @@ std::unordered_map<std::string, std::pair<sect, size_t>> labels;
 // symbol table (name, offset)
 std::unordered_map<std::string, uint64_t> reloc_table;
 // output buffer
-std::vector<uint8_t> output_buffer;
-uint64_t data_size = 0;
+std::vector<uint8_t> text_buffer;
+std::vector<uint8_t> data_buffer;
 uint64_t bss_size = 0;
 // last label that was not a dot
 std::string prev_label;
@@ -146,7 +146,7 @@ void preprocess() {
 	}
 }
 
-void parse_d(std::string &instr, std::vector<std::string> &args, size_t line) {
+void parse_d(std::string &instr, std::vector<std::string> &args, size_t line, std::vector<uint8_t> &output_buffer) {
 	for (size_t i = 0; i < args.size(); i++) {
 		if (args[i][0] == '"') {
 			for (size_t j = 1; j < args[i].size() - 1; j++) {
@@ -305,9 +305,8 @@ void parse_labels() {
 					args.push_back(line.substr(pos + 1, next - pos - 1));
 					pos = next;
 				}
-				size_t tmp = output_buffer.size();
-				parse_d(instr, args, i);
-				data_size += output_buffer.size() - tmp;
+				size_t tmp = data_buffer.size();
+				parse_d(instr, args, i, data_buffer);
 				data_labels[label] = tmp;
 			}
 		} else if (curr_sect == TEXT && !line.starts_with("global ") && !line.starts_with("extern ")) {
@@ -374,7 +373,7 @@ void process_instructions() {
 						prev_label = instr.substr(0, instr.find('.'));
 					else
 						instr = prev_label + instr;
-					reloc_table[instr] = output_buffer.size();
+					reloc_table[instr] = text_buffer.size();
 					continue;
 				} else {
 					for (size_t i = 0; i < instr.size(); i++)
@@ -409,7 +408,7 @@ void process_instructions() {
 					pos = next;
 				}
 				if (instr[0] == 'd' && instr.size() == 2) {
-					parse_d(instr, args, i);
+					parse_d(instr, args, i, text_buffer);
 				} else {
 					handle(instr, args, i + 1, instr_cnt);
 				}
@@ -464,9 +463,9 @@ int main(int argc, char *argv[]) {
 	process_instructions();
 
 	for (const auto &l : reloc_table)
-		labels[l.first] = {TEXT, l.second - data_size};
+		labels[l.first] = {TEXT, l.second};
 
-	generate_elf(output, output_buffer, data_size, bss_size);
+	generate_elf(output, bss_size);
 
 	return 0;
 }

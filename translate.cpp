@@ -9,13 +9,13 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 	// handle prefixes (lock, repne, repe)
 	while (true) {
 		if (s == "lock") {
-			output_buffer.push_back(0xf0);
+			text_buffer.push_back(0xf0);
 			prefix = true;
 		} else if (s == "repne" || s == "repnz" || s == "bnd") {
-			output_buffer.push_back(0xf2);
+			text_buffer.push_back(0xf2);
 			prefix = true;
 		} else if (s == "rep" || s == "repe" || s == "repz") {
-			output_buffer.push_back(0xf3);
+			text_buffer.push_back(0xf3);
 			prefix = true;
 		} else
 			break;
@@ -73,7 +73,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 				cerr(linenum, error);
 			} else if (tmp.second == -3) {
 				if (reloc_table.count(text_labels[tmp.first])) {
-					int32_t off = reloc_table.at(text_labels.at(tmp.first)) - output_buffer.size() - 5;
+					int32_t off = reloc_table.at(text_labels.at(tmp.first)) - text_buffer.size() - 5;
 					if ((int8_t)off == off) {
 						types.emplace_back(IMM, 8);
 					} else {
@@ -279,7 +279,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 					tmp += data->sib;
 
 				if (data->reloc.second != NONE) {
-					reloc.emplace_back(output_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
+					reloc.emplace_back(text_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
 					data->offset = 0;
 				}
 
@@ -302,29 +302,29 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 				if (a1.second == -1) {
 					cerr(linenum, error);
 				} else if (a1.second == -2) {
-					reloc.emplace_back(output_buffer.size() + tmp.size(), 0, ABS, args[0], 32);
+					reloc.emplace_back(text_buffer.size() + tmp.size(), 0, ABS, args[0], 32);
 				} else if (a1.second == -3) {
 					if (reloc_table.count(text_labels[a1.first])) {
-						int32_t off = reloc_table.at(text_labels.at(a1.first)) - output_buffer.size() - 1 - _sizes[p.first[1][1] - 'A'] / 8;
+						int32_t off = reloc_table.at(text_labels.at(a1.first)) - text_buffer.size() - 1 - _sizes[p.first[1][1] - 'A'] / 8;
 						if ((int8_t)off == off) {
 							a1.first = off;
 						} else {
-							reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32);
+							reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32);
 							a1.first = 0;
 						}
 					} else {
 						if (text_labels_instr[a1.first] - instr_cnt <= 9) {
-							reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 8);
+							reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 8);
 							a1.first = 0;
 						} else {
-							reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32);
+							reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32);
 							a1.first = 0;
 						}
 					}
 				} else if (a1.second == -4) {
-					reloc.emplace_back(output_buffer.size() + tmp.size(), 0, PLT, args[0].substr(0, args[0].size() - 10), 32);
+					reloc.emplace_back(text_buffer.size() + tmp.size(), 0, PLT, args[0].substr(0, args[0].size() - 10), 32);
 				} else if (a1.second == -5) {
-					reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, extern_labels[a1.first], 32);
+					reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, extern_labels[a1.first], 32);
 					a1.first = 0;
 				}
 				for (int i = 0; i < _sizes[p.first[1][1] - 'A']; i += 8)
@@ -367,27 +367,27 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 				if (a2.second == -1) {
 					cerr(linenum, error);
 				} else if (a2.second == -2) {
-					reloc.emplace_back(output_buffer.size() + tmp.size(), 0, ABS, args[imm.first - 1], std::max(s2, (short)32));
+					reloc.emplace_back(text_buffer.size() + tmp.size(), 0, ABS, args[imm.first - 1], std::max(s2, (short)32));
 				} else if (a2.second == -3) {
 					if (reloc_table.count(text_labels[a2.first])) {
-						int32_t off = reloc_table.at(text_labels.at(a2.first)) - output_buffer.size() - 1 - _sizes[p.first[1][1] - 'A'] / 8;
+						int32_t off = reloc_table.at(text_labels.at(a2.first)) - text_buffer.size() - 1 - _sizes[p.first[1][1] - 'A'] / 8;
 						if ((int8_t)off == off) {
 							a2.first = off;
 						} else {
-							reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 32);
+							reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 32);
 							a2.first = 0;
 						}
 					} else {
 						if (text_labels_instr[a2.first] - instr_cnt <= 9) {
-							reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 8);
+							reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 8);
 							a2.first = 0;
 						} else {
-							reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 32);
+							reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 32);
 							a2.first = 0;
 						}
 					}
 				} else if (a2.second == -5) {
-					reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, extern_labels[a2.first], 32);
+					reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, extern_labels[a2.first], 32);
 					a2.first = 0;
 				}
 				for (int i = 0; i < s2; i += 8)
@@ -441,7 +441,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 					tmp += sib;
 
 				if (data->reloc.second != NONE) {
-					reloc.emplace_back(output_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
+					reloc.emplace_back(text_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
 					data->offset = 0;
 				}
 
@@ -456,27 +456,27 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 					if (a1.second == -1) {
 						cerr(linenum, error);
 					} else if (a1.second == -2) {
-						reloc.emplace_back(output_buffer.size() + tmp.size(), 0, ABS, args[imm.first - 1], std::max(s1, (short)32));
+						reloc.emplace_back(text_buffer.size() + tmp.size(), 0, ABS, args[imm.first - 1], std::max(s1, (short)32));
 					} else if (a1.second == -3) {
 						if (reloc_table.count(text_labels[a1.first])) {
-							int32_t off = reloc_table.at(text_labels.at(a1.first)) - output_buffer.size() - 1 - _sizes[p.first[1][1] - 'A'] / 8;
+							int32_t off = reloc_table.at(text_labels.at(a1.first)) - text_buffer.size() - 1 - _sizes[p.first[1][1] - 'A'] / 8;
 							if ((int8_t)off == off) {
 								a1.first = off;
 							} else {
-								reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32);
+								reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32);
 								a1.first = 0;
 							}
 						} else {
 							if (text_labels_instr[a1.first] - instr_cnt <= 9) {
-								reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 8);
+								reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 8);
 								a1.first = 0;
 							} else {
-								reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32);
+								reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32);
 								a1.first = 0;
 							}
 						}
 					} else if (a1.second == -5) {
-						reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, extern_labels[a1.first], 32);
+						reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, extern_labels[a1.first], 32);
 						a1.first = 0;
 					}
 					for (int i = 0; i < s1; i += 8)
@@ -494,9 +494,9 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 	}
 	for (auto reloc : bestreloc) {
 		if (reloc.type != ABS)
-			reloc.addend -= best.size() - (reloc.offset - output_buffer.size());
+			reloc.addend -= best.size() - (reloc.offset - text_buffer.size());
 		relocations.push_back(reloc);
 	}
 	for (size_t i = 0; i < best.size(); i++)
-		output_buffer.push_back(best[i]);
+		text_buffer.push_back(best[i]);
 }

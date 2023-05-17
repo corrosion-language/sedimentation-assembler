@@ -17,6 +17,8 @@ extern std::vector<std::string> extern_labels;
 extern std::unordered_set<std::string> global;
 extern std::vector<struct reloc_entry> relocations;
 extern std::unordered_map<std::string, std::pair<sect, size_t>> labels;
+extern std::vector<uint8_t> text_buffer;
+extern std::vector<uint8_t> data_buffer;
 
 struct elf_header {
 	uint8_t ident[16];
@@ -51,6 +53,6 @@ struct relocation {
 	int64_t addend;
 };
 
-void generate_elf(std::ofstream &, std::vector<uint8_t> &, uint64_t, uint64_t);
+void generate_elf(std::ofstream &, uint64_t);
 
 #endif
