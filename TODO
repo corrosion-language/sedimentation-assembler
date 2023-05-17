@@ -1,4 +1,5 @@
 Things to do (in order):
+- Add support for other executable formats (PE, Mach-O)
 - Add support for other architectures (aarch64)
 - Add VSIB support (currently the instructions are not supported)
 - Start working on a standard library implementation (for the upstream corrosion project (will be a huge pain to implement in corrosion so implementing in asm for now))
