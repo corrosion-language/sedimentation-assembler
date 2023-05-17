@@ -27,6 +27,7 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 		strtab_size += s.first.size() + 1;
 
 	const size_t data_size = data_buffer.size();
+	const size_t rodata_size = rodata_buffer.size();
 
 	// ELF header
 	elf_header ehdr;
@@ -42,8 +43,8 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 	ehdr.phentsize = 0;
 	ehdr.phnum = 0;
 	ehdr.shentsize = sizeof(section_header);
-	ehdr.shnum = 5 + !!data_size + !!bss_size + !!relocations.size(); // 5 for null, text, symtab, strtab, shstrtab
-	ehdr.shstrndx = 2 + !!data_size + !!bss_size; // first metadata section for shstrtab
+	ehdr.shnum = 5 + !!data_size + !!rodata_size + !!bss_size + !!relocations.size(); // 5 for null, text, symtab, strtab, shstrtab
+	ehdr.shstrndx = 2 + !!data_size + !!rodata_size + !!bss_size; // first metadata section for shstrtab
 	f.write((const char *)&ehdr, sizeof(elf_header));
 
 	// section headers
@@ -84,9 +85,25 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 		next_offset = (shdr.offset + shdr.size + 3) & ~3;
 	}
 
+	if (rodata_size) {
+		shdr.name = 13;
+		shdr.type = 1; // progbits
+		shdr.flags = 0x2; // alloc
+		shdr.addr = 0;
+		shdr.offset = next_offset;
+		shdr.size = rodata_size;
+		shdr.link = 0;
+		shdr.info = 0;
+		shdr.addralign = 4;
+		shdr.entsize = 0;
+		f.write((const char *)&shdr, sizeof(section_header));
+
+		next_offset += shdr.size;
+	}
+
 	// bss section
 	if (bss_size) {
-		shdr.name = 13;
+		shdr.name = 21;
 		shdr.type = 8; // nobits
 		shdr.flags = 0x2 | 0x1; // alloc, write
 		shdr.addr = 0;
@@ -100,12 +117,12 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 	}
 
 	// shstrtab section
-	shdr.name = 18;
+	shdr.name = 26;
 	shdr.type = 3; // strtab
 	shdr.flags = 0;
 	shdr.addr = 0;
 	shdr.offset = next_offset;
-	shdr.size = 55;
+	shdr.size = 63;
 	shdr.link = 0;
 	shdr.info = 0;
 	shdr.addralign = 1;
@@ -113,7 +130,7 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 	f.write((const char *)&shdr, sizeof(section_header));
 
 	// symbol table
-	shdr.name = 28;
+	shdr.name = 36;
 	shdr.type = 2; // symtab
 	shdr.flags = 0;
 	shdr.addr = 0;
@@ -126,7 +143,7 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 	f.write((const char *)&shdr, sizeof(section_header));
 
 	// strtab section
-	shdr.name = 36;
+	shdr.name = 44;
 	shdr.type = 3; // strtab
 	shdr.flags = 0;
 	shdr.addr = 0;
@@ -140,7 +157,7 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 
 	// relocation table
 	if (relocations.size()) {
-		shdr.name = 44;
+		shdr.name = 52;
 		shdr.type = 4; // rela
 		shdr.flags = 0;
 		shdr.addr = 0;
@@ -165,8 +182,11 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 	// seek to multiple of 4
 	f.seekp((f.tellp() + (std::streamoff)3) & ~3);
 
+	// write rodata
+	f.write((const char *)rodata_buffer.data(), rodata_size);
+
 	// write shstrtab
-	f.write("\0.text\0.data\0.bss\0.shstrtab\0.symtab\0.strtab\0.rela.text", 55);
+	f.write("\0.text\0.data\0.rodata\0.bss\0.shstrtab\0.symtab\0.strtab\0.rela.text", 63);
 
 	std::vector<std::string> ordered_labels;
 
@@ -187,8 +207,10 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 			sym.shndx = 1; // text
 		else if (l.second.first == DATA)
 			sym.shndx = 2; // data
+		else if (l.second.first == RODATA)
+			sym.shndx = 2 + !!data_size;
 		else
-			sym.shndx = 2 + !!data_size; // bss
+			sym.shndx = 2 + !!data_size + !!rodata_size; // bss
 		sym.value = l.second.second;
 		sym.size = 0;
 		f.write((const char *)&sym, sizeof(symbol));
@@ -212,8 +234,10 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 			sym.shndx = 1; // text
 		else if (l.second.first == DATA)
 			sym.shndx = 2; // data
+		else if (l.second.first == RODATA)
+			sym.shndx = 2 + !!data_size;
 		else
-			sym.shndx = 2 + !!data_size; // bss
+			sym.shndx = 2 + !!data_size + !!rodata_size; // bss
 		sym.value = l.second.second;
 		sym.size = 0;
 		f.write((const char *)&sym, sizeof(symbol));

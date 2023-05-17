@@ -3,7 +3,6 @@
 #define ELF_HPP
 
 #include "defines.hpp"
-#include "main.hpp"
 #include <cstdint>
 #include <cstring>
 #include <fstream>
@@ -17,8 +16,9 @@ extern std::vector<std::string> extern_labels;
 extern std::unordered_set<std::string> global;
 extern std::vector<struct reloc_entry> relocations;
 extern std::unordered_map<std::string, std::pair<sect, size_t>> labels;
-extern std::vector<uint8_t> text_buffer;
 extern std::vector<uint8_t> data_buffer;
+extern std::vector<uint8_t> rodata_buffer;
+extern std::vector<uint8_t> text_buffer;
 
 struct elf_header {
 	uint8_t ident[16];

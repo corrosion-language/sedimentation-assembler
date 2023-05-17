@@ -1,3 +1,5 @@
+SHELL=/bin/bash
+
 CC=g++
 CFLAGS=-Wall -Wextra -Wpedantic -std=c++20 -g
 SRCS=$(wildcard *.cpp)
@@ -23,4 +25,4 @@ vex.o: vex.cpp vex.dat
 
 clean:
 	rm -f $(OBJS) sedimentation test/test
-	rm -f test/*.o test/test test/test2
+	rm -f test/{a.out,*.o}

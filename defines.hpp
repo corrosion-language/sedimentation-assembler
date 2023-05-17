@@ -6,7 +6,7 @@
 #include <string>
 #include <unordered_map>
 
-enum sect { UNDEF, TEXT, DATA, BSS };
+enum sect { UNDEF, TEXT, DATA, RODATA, BSS };
 
 enum op_type { INVALID, REG, MEM, IMM };
 

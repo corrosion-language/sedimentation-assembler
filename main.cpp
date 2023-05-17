@@ -12,6 +12,7 @@ char *output_name;
 std::vector<std::string> lines;
 // labels in data section (name, offset)
 std::unordered_map<std::string, uint64_t> data_labels;
+std::unordered_map<std::string, uint64_t> rodata_labels;
 std::unordered_map<std::string, uint64_t> bss_labels;
 std::vector<std::string> text_labels;
 std::vector<std::string> extern_labels;
@@ -26,6 +27,7 @@ std::unordered_map<std::string, uint64_t> reloc_table;
 // output buffer
 std::vector<uint8_t> text_buffer;
 std::vector<uint8_t> data_buffer;
+std::vector<uint8_t> rodata_buffer;
 uint64_t bss_size = 0;
 // last label that was not a dot
 std::string prev_label;
@@ -230,6 +232,8 @@ void parse_labels() {
 				curr_sect = TEXT;
 			} else if (line == "section .data") {
 				curr_sect = DATA;
+			} else if (line == "section .rodata") {
+				curr_sect = RODATA;
 			} else if (line == "section .bss") {
 				curr_sect = BSS;
 			} else {
@@ -277,7 +281,8 @@ void parse_labels() {
 				} else {
 					cerr(i + 1, "directive inconnue « " + instr + " »");
 				}
-			} else if (curr_sect == DATA) {
+			} else if (curr_sect == DATA || curr_sect == RODATA) {
+				std::vector<uint8_t> &output_buffer = curr_sect == DATA ? data_buffer : rodata_buffer;
 				if (line.starts_with("global ")) {
 					std::string label = line.substr(7);
 					if (label[0] == '.')
@@ -305,8 +310,8 @@ void parse_labels() {
 					args.push_back(line.substr(pos + 1, next - pos - 1));
 					pos = next;
 				}
-				size_t tmp = data_buffer.size();
-				parse_d(instr, args, i, data_buffer);
+				size_t tmp = output_buffer.size();
+				parse_d(instr, args, i, output_buffer);
 				data_labels[label] = tmp;
 			}
 		} else if (curr_sect == TEXT && !line.starts_with("global ") && !line.starts_with("extern ")) {
