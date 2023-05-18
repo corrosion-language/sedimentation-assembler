@@ -29,14 +29,12 @@ void generate_coff(std::ofstream &f, uint64_t bss_size) {
 	shdr.vsize = text_buffer.size();
 	shdr.size = text_buffer.size();
 	shdr.offset = chdr.symtab_off + chdr.num_symbols * sizeof(coff_symbol) + strtab_size;
-	shdr.offset = (shdr.offset + 15) & ~15;
 	shdr.reloc_off = shdr.offset + shdr.size;
 	shdr.num_relocs = relocations.size();
 	shdr.flags = 0x60500020; // code, execute, read, align 16
 	f.write((const char *)&shdr, sizeof(shdr));
 
 	size_t next_offset = (shdr.offset + shdr.size + shdr.num_relocs * sizeof(coff_relocation));
-	next_offset = (next_offset + 15) & ~15;
 
 	// data section
 	if (data_size) {
@@ -49,7 +47,7 @@ void generate_coff(std::ofstream &f, uint64_t bss_size) {
 		shdr.flags = 0xc0500040; // initialized data, read, write, align 16
 		f.write((const char *)&shdr, sizeof(shdr));
 
-		next_offset = (shdr.offset + shdr.size + 15) & ~15;
+		next_offset = shdr.offset + shdr.size;
 	}
 
 	// rodata section
@@ -63,7 +61,7 @@ void generate_coff(std::ofstream &f, uint64_t bss_size) {
 		shdr.flags = 0x40500040; // initialized data, read, align 16
 		f.write((const char *)&shdr, sizeof(shdr));
 
-		next_offset = (shdr.offset + shdr.size + 15) & ~15;
+		next_offset = shdr.offset + shdr.size;
 	}
 
 	// bss section
@@ -140,7 +138,6 @@ void generate_coff(std::ofstream &f, uint64_t bss_size) {
 	}
 
 	// text
-	f.seekp((f.tellp() + (std::streamoff)15) & ~15);
 	f.write((const char *)text_buffer.data(), text_buffer.size());
 
 	// relocation table
@@ -160,11 +157,9 @@ void generate_coff(std::ofstream &f, uint64_t bss_size) {
 	}
 
 	// data
-	f.seekp((f.tellp() + (std::streamoff)15) & ~15);
 	f.write((const char *)data_buffer.data(), data_size);
 
 	// rodata
-	f.seekp((f.tellp() + (std::streamoff)15) & ~15);
 	f.write((const char *)rodata_buffer.data(), rodata_size);
 
 	f.close();
