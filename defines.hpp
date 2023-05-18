@@ -14,6 +14,8 @@ enum op_type { INVALID, REG, MEM, IMM };
 // R_AMD64_32, R_AMD64_PC32/8, R_AMD64_PLT32
 enum reloc_type { NONE, ABS, REL, PLT };
 
+enum format { ELF, COFF, MACHO };
+
 static const std::unordered_map<std::string, short> _reg_size{
 	{"rax", 64},	{"rbx", 64},	{"rcx", 64},	{"rdx", 64},   {"eax", 32},	   {"ebx", 32},	   {"ecx", 32},	   {"edx", 32},	   {"ax", 16},
 	{"bx", 16},		{"cx", 16},		{"dx", 16},		{"al", 8},	   {"bl", 8},	   {"cl", 8},	   {"dl", 8},	   {"ah", 8},	   {"bh", 8},

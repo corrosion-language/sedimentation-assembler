@@ -2,6 +2,7 @@ a.out
 sedimentation
 test.asm
 *.o
+*.obj
 callgrind*
 .vscode/
 in

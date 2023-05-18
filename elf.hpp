@@ -29,26 +29,26 @@ struct elf_header {
 	uint16_t ehsize, phentsize, phnum, shentsize, shnum, shstrndx;
 };
 
-struct program_header {
+struct elf_program_header {
 	uint32_t type, flags;
 	uint64_t offset, vaddr, paddr, filesz, memsz, align;
 };
 
-struct section_header {
+struct elf_section_header {
 	uint32_t name, type;
 	uint64_t flags, addr, offset, size;
 	uint32_t link, info;
 	uint64_t addralign, entsize;
 };
 
-struct symbol {
+struct elf_symbol {
 	uint32_t name;
 	uint8_t info, other;
 	uint16_t shndx;
 	uint64_t value, size;
 };
 
-struct relocation {
+struct elf_relocation {
 	uint64_t offset, info;
 	int64_t addend;
 };

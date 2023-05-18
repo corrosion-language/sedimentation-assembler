@@ -33,6 +33,8 @@ uint64_t bss_size = 0;
 std::string prev_label;
 // global symbols
 std::unordered_set<std::string> global;
+// output format
+format output_format = ELF;
 
 void print_help(const char *name) {
 	std::cout << "Usage : " << name << " [options] fichier\n";
@@ -40,6 +42,7 @@ void print_help(const char *name) {
 	std::cout << "-h, --help\t\tAfficher cette aide\n";
 	std::cout << "-v, --version\t\tAfficher la version\n";
 	std::cout << "-o, --output\t\tFichier de sortie\n";
+	std::cout << "-f, --format\t\tFormat de sortie (elf, pe, macho)\n";
 }
 
 void cerr(const int i, const std::string &msg) {
@@ -82,6 +85,22 @@ int parse_args(int argc, char *argv[]) {
 					i++;
 				} else {
 					std::cerr << "Erreur : Aucun fichier de sortie spécifié" << std::endl;
+					return 1;
+				}
+			} else if (strcmp(argv[i], "-f") == 0 || strcmp(argv[i], "--format") == 0) {
+				if (i + 1 < argc) {
+					if (strcmp(argv[i + 1], "elf") == 0) {
+						output_format = ELF;
+					} else if (strcmp(argv[i + 1], "coff") == 0) {
+						output_format = COFF;
+					} else if (strcmp(argv[i + 1], "macho") == 0) {
+						output_format = MACHO;
+					} else {
+						std::cerr << "Erreur : Format de sortie inconnu « " << argv[i + 1] << " »" << std::endl;
+					}
+					i++;
+				} else {
+					std::cerr << "Erreur : Aucun format de sortie spécifié" << std::endl;
 					return 1;
 				}
 			} else {
@@ -435,7 +454,11 @@ int main(int argc, char *argv[]) {
 	}
 	if (!output.is_open()) {
 		std::string tmp = std::string(input_name);
-		tmp = tmp.substr(0, tmp.find_last_of('.')) + ".o";
+		tmp = tmp.substr(0, tmp.find_last_of('.'));
+		if (output_format == ELF || output_format == MACHO)
+			tmp += ".o";
+		else if (output_format == COFF)
+			tmp += ".obj";
 		output_name = new char[tmp.size() + 1];
 		memcpy(output_name, tmp.c_str(), tmp.size() + 1);
 		output_name[tmp.size()] = '\0';
@@ -470,7 +493,10 @@ int main(int argc, char *argv[]) {
 	for (const auto &l : reloc_table)
 		labels[l.first] = {TEXT, l.second};
 
-	generate_elf(output, bss_size);
+	if (output_format == ELF)
+		generate_elf(output, bss_size);
+	else if (output_format == COFF)
+		generate_coff(output, bss_size);
 
 	return 0;
 }

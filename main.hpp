@@ -2,6 +2,7 @@
 #ifndef MAIN_HPP
 #define MAIN_HPP
 
+#include "coff.hpp"
 #include "elf.hpp"
 #include "translate.hpp"
 #include <chrono>

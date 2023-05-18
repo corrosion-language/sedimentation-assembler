@@ -1,11 +1,5 @@
 #include "elf.hpp"
 
-void rand_bytes(char *buf, size_t len) {
-	std::ifstream f("/dev/urandom", std::ios::binary);
-	f.read(buf, len);
-	f.close();
-}
-
 void generate_elf(std::ofstream &f, uint64_t bss_size) {
 	// structure:
 	//  ELF header
@@ -37,21 +31,21 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 	ehdr.version = 1; // current
 	ehdr.entry = 0;
 	ehdr.phoff = 0;
-	ehdr.shoff = sizeof(elf_header);
+	ehdr.shoff = sizeof(ehdr);
 	ehdr.flags = 0;
-	ehdr.ehsize = sizeof(elf_header);
+	ehdr.ehsize = sizeof(ehdr);
 	ehdr.phentsize = 0;
 	ehdr.phnum = 0;
-	ehdr.shentsize = sizeof(section_header);
+	ehdr.shentsize = sizeof(elf_section_header);
 	ehdr.shnum = 5 + !!data_size + !!rodata_size + !!bss_size + !!relocations.size(); // 5 for null, text, symtab, strtab, shstrtab
 	ehdr.shstrndx = 2 + !!data_size + !!rodata_size + !!bss_size; // first metadata section for shstrtab
-	f.write((const char *)&ehdr, sizeof(elf_header));
+	f.write((const char *)&ehdr, sizeof(ehdr));
 
 	// section headers
-	section_header shdr;
+	elf_section_header shdr;
 	// null section
-	bzero(&shdr, sizeof(section_header));
-	f.write((const char *)&shdr, sizeof(section_header));
+	bzero(&shdr, sizeof(shdr));
+	f.write((const char *)&shdr, sizeof(shdr));
 
 	// text section
 	shdr.name = 1;
@@ -64,7 +58,7 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 	shdr.info = 0;
 	shdr.addralign = 16;
 	shdr.entsize = 0;
-	f.write((const char *)&shdr, sizeof(section_header));
+	f.write((const char *)&shdr, sizeof(shdr));
 
 	size_t next_offset = (shdr.offset + shdr.size + 15) & ~15;
 
@@ -80,7 +74,7 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 		shdr.info = 0;
 		shdr.addralign = 4;
 		shdr.entsize = 0;
-		f.write((const char *)&shdr, sizeof(section_header));
+		f.write((const char *)&shdr, sizeof(shdr));
 
 		next_offset = (shdr.offset + shdr.size + 3) & ~3;
 	}
@@ -96,7 +90,7 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 		shdr.info = 0;
 		shdr.addralign = 4;
 		shdr.entsize = 0;
-		f.write((const char *)&shdr, sizeof(section_header));
+		f.write((const char *)&shdr, sizeof(shdr));
 
 		next_offset += shdr.size;
 	}
@@ -113,7 +107,7 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 		shdr.info = 0;
 		shdr.addralign = 1;
 		shdr.entsize = 0;
-		f.write((const char *)&shdr, sizeof(section_header));
+		f.write((const char *)&shdr, sizeof(shdr));
 	}
 
 	// shstrtab section
@@ -127,7 +121,7 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 	shdr.info = 0;
 	shdr.addralign = 1;
 	shdr.entsize = 0;
-	f.write((const char *)&shdr, sizeof(section_header));
+	f.write((const char *)&shdr, sizeof(shdr));
 
 	// symbol table
 	shdr.name = 36;
@@ -135,12 +129,12 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 	shdr.flags = 0;
 	shdr.addr = 0;
 	shdr.offset = shdr.offset + shdr.size;
-	shdr.size = (labels.size() + extern_labels.size() + 1) * sizeof(symbol);
+	shdr.size = (labels.size() + extern_labels.size() + 1) * sizeof(elf_symbol);
 	shdr.link = ehdr.shnum - 1 - !!relocations.size(); // strtab
-	shdr.info = shdr.size / sizeof(symbol) - global.size() - extern_labels.size(); // index of last local symbol + 1
+	shdr.info = shdr.size / sizeof(elf_symbol) - global.size() - extern_labels.size(); // index of last local symbol + 1
 	shdr.addralign = 8;
-	shdr.entsize = sizeof(symbol);
-	f.write((const char *)&shdr, sizeof(section_header));
+	shdr.entsize = sizeof(elf_symbol);
+	f.write((const char *)&shdr, sizeof(shdr));
 
 	// strtab section
 	shdr.name = 44;
@@ -153,7 +147,7 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 	shdr.info = 0;
 	shdr.addralign = 1;
 	shdr.entsize = 0;
-	f.write((const char *)&shdr, sizeof(section_header));
+	f.write((const char *)&shdr, sizeof(shdr));
 
 	// relocation table
 	if (relocations.size()) {
@@ -162,12 +156,12 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 		shdr.flags = 0;
 		shdr.addr = 0;
 		shdr.offset = shdr.offset + shdr.size;
-		shdr.size = relocations.size() * sizeof(relocation);
+		shdr.size = relocations.size() * sizeof(elf_relocation);
 		shdr.link = ehdr.shnum - 3; // symtab
 		shdr.info = 1; // text section
 		shdr.addralign = 8;
-		shdr.entsize = sizeof(relocation);
-		f.write((const char *)&shdr, sizeof(section_header));
+		shdr.entsize = sizeof(elf_relocation);
+		f.write((const char *)&shdr, sizeof(shdr));
 	}
 
 	// write text
@@ -191,10 +185,10 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 	std::vector<std::string> ordered_labels;
 
 	uint64_t i = 1;
-	symbol sym;
+	elf_symbol sym;
 	// null symbol
-	bzero(&sym, sizeof(symbol));
-	f.write((const char *)&sym, sizeof(symbol));
+	bzero(&sym, sizeof(sym));
+	f.write((const char *)&sym, sizeof(sym));
 	sym.info = 0;
 	// write symtab
 	for (const auto &l : labels) {
@@ -213,7 +207,7 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 			sym.shndx = 2 + !!data_size + !!rodata_size; // bss
 		sym.value = l.second.second;
 		sym.size = 0;
-		f.write((const char *)&sym, sizeof(symbol));
+		f.write((const char *)&sym, sizeof(sym));
 		ordered_labels.push_back(l.first);
 	}
 	sym.info = 0x10;
@@ -221,7 +215,7 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 	for (const auto &s : extern_labels) {
 		sym.name = i;
 		i += s.size() + 1;
-		f.write((const char *)&sym, sizeof(symbol));
+		f.write((const char *)&sym, sizeof(sym));
 		ordered_labels.push_back(s);
 	}
 	for (const auto &l : labels) {
@@ -240,7 +234,7 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 			sym.shndx = 2 + !!data_size + !!rodata_size; // bss
 		sym.value = l.second.second;
 		sym.size = 0;
-		f.write((const char *)&sym, sizeof(symbol));
+		f.write((const char *)&sym, sizeof(sym));
 		ordered_labels.push_back(l.first);
 	}
 
@@ -250,7 +244,7 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 		if (l.size())
 			f.write(l.c_str(), l.size() + 1);
 
-	relocation reloc;
+	elf_relocation reloc;
 	// write rela.text
 	for (auto &r : relocations) {
 		reloc.offset = r.offset;
@@ -266,7 +260,7 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 		else
 			reloc.info |= 4;
 		reloc.addend = r.addend;
-		f.write((const char *)&reloc, sizeof(relocation));
+		f.write((const char *)&reloc, sizeof(reloc));
 	}
 
 	// close file
