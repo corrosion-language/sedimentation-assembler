@@ -49,24 +49,24 @@ jobs:
             - name: Test normal assembling
               run: |
                   cd test
-                  ../sedimentation testfile.asm -o test.o
-                  ld test.o -o test
+                  ../sedimentation testfile.asm -o test.obj -f coff
+                  ld test.obj -o test
                   ./test | diff - testfile.out
             - name: Test assembling with external symbols
               run: |
                   cd test
-                  ../sedimentation testc.asm -o testc.o
-                  gcc -nostartfiles testc.o -o testc
+                  ../sedimentation testc.asm -o testc.obj -f coff
+                  gcc -nostartfiles testc.obj -o testc
                   ./testc | diff - testc.out
             - name: Test SSE instructions
               run: |
                   cd test
-                  ../sedimentation testsse.asm -o testsse.o
-                  gcc -nostartfiles testsse.o -o testsse
+                  ../sedimentation testsse.asm -o testsse.obj -f coff
+                  gcc -nostartfiles testsse.obj -o testsse
                   ./testsse | diff - testsse.out
             - name: Test AVX instructions
               run: |
                   cd test
-                  ../sedimentation testavx.asm -o testavx.o
-                  gcc -nostartfiles testavx.o -o testavx
+                  ../sedimentation testavx.asm -o testavx.obj -f coff
+                  gcc -nostartfiles testavx.obj -o testavx
                   ./testavx | diff - testavx.out
