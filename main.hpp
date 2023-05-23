@@ -5,16 +5,6 @@
 #include "coff.hpp"
 #include "elf.hpp"
 #include "translate.hpp"
-#include <chrono>
-#include <cstring>
-#include <fstream>
-#include <iomanip>
-#include <iostream>
-#include <regex>
-#include <set>
-#include <sys/stat.h>
-#include <unordered_map>
-#include <vector>
 
 /*#define profile(e) \
 	{                                                                                                                                                          \

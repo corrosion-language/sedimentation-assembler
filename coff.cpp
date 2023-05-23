@@ -29,7 +29,7 @@ void generate_coff(std::ofstream &f, uint64_t bss_size) {
 	shdr.vsize = text_buffer.size();
 	shdr.size = text_buffer.size();
 	shdr.offset = chdr.symtab_off + chdr.num_symbols * sizeof(coff_symbol) + strtab_size;
-	shdr.reloc_off = shdr.offset + shdr.size;
+	shdr.reloc_off = relocations.size() ? shdr.offset + shdr.size : 0;
 	shdr.num_relocs = relocations.size();
 	shdr.flags = 0x60500020; // code, execute, read, align 16
 	f.write((const char *)&shdr, sizeof(shdr));
@@ -44,7 +44,7 @@ void generate_coff(std::ofstream &f, uint64_t bss_size) {
 		shdr.offset = next_offset;
 		shdr.reloc_off = 0;
 		shdr.num_relocs = 0;
-		shdr.flags = 0xc0500040; // initialized data, read, write, align 16
+		shdr.flags = 0xc0300040; // initialized data, read, write, align 4
 		f.write((const char *)&shdr, sizeof(shdr));
 
 		next_offset = shdr.offset + shdr.size;
@@ -58,7 +58,7 @@ void generate_coff(std::ofstream &f, uint64_t bss_size) {
 		shdr.offset = next_offset;
 		shdr.reloc_off = 0;
 		shdr.num_relocs = 0;
-		shdr.flags = 0x40500040; // initialized data, read, align 16
+		shdr.flags = 0x40300040; // initialized data, read, align 4
 		f.write((const char *)&shdr, sizeof(shdr));
 
 		next_offset = shdr.offset + shdr.size;
@@ -90,6 +90,11 @@ void generate_coff(std::ofstream &f, uint64_t bss_size) {
 			i += l.first.size() + 1;
 		}
 		sym.val = l.second.second;
+		if (l.second.first == TEXT)
+			sym.storage_class = 2; // external
+		else
+			sym.storage_class = 3; // static
+
 		if (l.second.first == TEXT)
 			sym.section = 1;
 		else if (l.second.first == DATA)
@@ -126,6 +131,9 @@ void generate_coff(std::ofstream &f, uint64_t bss_size) {
 
 	// relocation addends
 	for (auto &r : relocations) {
+		if (r.type == REL)
+			r.addend += 4;
+
 		if (r.size == 8) {
 			text_buffer[r.offset] = r.addend;
 		} else if (r.size == 16) {
@@ -146,11 +154,12 @@ void generate_coff(std::ofstream &f, uint64_t bss_size) {
 		rel.vaddr = r.offset;
 		rel.sym = find(ordered_syms.begin(), ordered_syms.end(), r.symbol) - ordered_syms.begin();
 		if (r.type == ABS) {
+			std::cerr << "avertissement : les rédressages absolus peuvent être tronqués pendant le linkage" << std::endl;
 			rel.type = 2;
 		} else if (r.type == REL) {
 			rel.type = 4;
 		} else {
-			std::cerr << "warning: cannot create relocation against PLT in a COFF file, leaving untouched" << std::endl;
+			std::cerr << "avertissement : impossible de créer un réadressage vers PLT dans un fichier COFF" << std::endl;
 			rel.type = 0;
 		}
 		f.write((const char *)&rel, sizeof(rel));

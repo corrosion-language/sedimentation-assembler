@@ -90,7 +90,21 @@ mem_output *parse_mem(std::string in, short &size) {
 		out->rm = 0x05;
 		out->offsize = 32;
 		out->reloc.second = REL;
-		out->reloc.first = in.substr(5, in.size() - 6);
+		in = in.substr(5, in.size() - 6);
+		size_t op = in.find('+');
+		if (op != std::string::npos) {
+			out->offset = std::stoi(in.substr(op + 1), 0, 0);
+			in = in.substr(0, op);
+		} else {
+			op = in.find('-');
+			if (op != std::string::npos) {
+				out->offset = -std::stoi(in.substr(op + 1), 0, 0);
+				in = in.substr(0, op);
+			} else {
+				out->offset = 0;
+			}
+		}
+		out->reloc.first = in;
 		return out;
 	}
 	in = in.substr(0, in.size() - 1);

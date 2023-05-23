@@ -2,9 +2,18 @@
 #ifndef DEFINES_HPP
 #define DEFINES_HPP
 
+#include <chrono>
 #include <cstdint>
+#include <cstring>
+#include <fstream>
+#include <iomanip>
+#include <iostream>
+#include <regex>
+#include <set>
 #include <string>
 #include <unordered_map>
+#include <vector>
+#include <unordered_set>
 
 enum sect { UNDEF, TEXT, DATA, RODATA, BSS };
 

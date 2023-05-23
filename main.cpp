@@ -34,7 +34,13 @@ std::string prev_label;
 // global symbols
 std::unordered_set<std::string> global;
 // output format
+#ifdef WINDOWS
+format output_format = COFF;
+#elif defined(MACOS)
+format output_format = MACHO;
+#else
 format output_format = ELF;
+#endif
 
 void print_help(const char *name) {
 	std::cout << "Usage : " << name << " [options] fichier\n";
@@ -47,9 +53,10 @@ void print_help(const char *name) {
 
 void cerr(const int i, const std::string &msg) {
 	std::cerr << input_name << ":" << i << ": erreur : " << msg << std::endl;
-	if (output.is_open())
+	if (output.is_open()) {
 		output.close();
-	unlink(output_name);
+		remove(output_name);
+	}
 	exit(1);
 }
 
@@ -464,7 +471,7 @@ int main(int argc, char *argv[]) {
 		output_name[tmp.size()] = '\0';
 		output.open(output_name);
 		if (!output.is_open()) {
-			std::cerr << "Erreur : impossible d'ouvrir le fichier de sortie « a.out »" << std::endl;
+			std::cerr << "Erreur : impossible d'ouvrir le fichier de sortie « " << output_name << " »" << std::endl;
 			return 1;
 		}
 	}

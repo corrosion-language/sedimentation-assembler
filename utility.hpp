@@ -1,7 +1,8 @@
+#pragma once
+#ifndef UTILITY_HPP
+#define UTILITY_HPP
+
 #include "defines.hpp"
-#include <regex>
-#include <string>
-#include <unordered_map>
 
 extern std::string prev_label;
 extern std::unordered_map<std::string, uint64_t> data_labels;
@@ -16,3 +17,5 @@ short mem_size(const std::string &);
 op_type get_optype(const std::string &);
 mem_output *parse_mem(std::string, short &);
 std::pair<unsigned long long, short> parse_imm(std::string);
+
+#endif

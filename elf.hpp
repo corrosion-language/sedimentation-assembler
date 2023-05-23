@@ -3,14 +3,6 @@
 #define ELF_HPP
 
 #include "defines.hpp"
-#include <cstdint>
-#include <cstring>
-#include <fstream>
-#include <iostream>
-#include <unistd.h>
-#include <unordered_map>
-#include <unordered_set>
-#include <vector>
 
 extern std::vector<std::string> extern_labels;
 extern std::unordered_set<std::string> global;

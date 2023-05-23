@@ -4,9 +4,6 @@
 
 #include "defines.hpp"
 #include "utility.hpp"
-#include <iostream>
-#include <string>
-#include <vector>
 
 extern void cerr(const int i, const std::string &s);
 
