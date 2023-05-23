@@ -1,5 +1,11 @@
 SHELL=/bin/bash
 
+ifeq ($(OS),Windows_NT)
+	OUTFILE=sedimentation.exe
+else
+	OUTFILE=sedimentation
+endif
+
 CC=g++
 CFLAGS=-Wall -Wextra -Wpedantic -std=c++20 -g
 SRCS=$(wildcard *.cpp)
@@ -12,7 +18,7 @@ debug: sedimentation
 
 release: CFLAGS += -O2
 release: sedimentation
-	strip -s $(wildcard sedimentation*)
+	strip -s $(OUTFILE)
 
 sedimentation: $(OBJS)
 	$(CC) $(CFLAGS) -o sedimentation $(OBJS)
