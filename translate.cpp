@@ -199,7 +199,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 		}
 	} else {
 		for (size_t i = 0; i < args.size(); i++) {
-			if (types[i].first == MEM)
+			if (types[i].first == MEM && types[i].second == -1)
 				types[i].second = _sizes[valid[0].first[i + 1][1] - 'A'];
 		}
 	}

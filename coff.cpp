@@ -154,7 +154,6 @@ void generate_coff(std::ofstream &f, uint64_t bss_size) {
 		rel.vaddr = r.offset;
 		rel.sym = find(ordered_syms.begin(), ordered_syms.end(), r.symbol) - ordered_syms.begin();
 		if (r.type == ABS) {
-			std::cerr << "avertissement : les rédressages absolus peuvent être tronqués pendant le linkage" << std::endl;
 			rel.type = 2;
 		} else if (r.type == REL) {
 			rel.type = 4;
