@@ -1,7 +1,6 @@
 #include "translate.hpp"
 #include "instr.dat"
 #include "vex.hpp"
-#include <sys/mman.h>
 
 void handle(std::string s, std::vector<std::string> args, const size_t linenum, size_t instr_cnt) {
 	error = "";
