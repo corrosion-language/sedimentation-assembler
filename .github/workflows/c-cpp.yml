@@ -51,22 +51,22 @@ jobs:
                   cd test
                   ../sedimentation testfile.asm -o test.obj -f coff
                   ld test.obj -o test
-                  ./test | diff - testfile.out
+                  test.exe > test.out.1 | fc /B testfile.out.1 testfile.out
             - name: Test assembling with external symbols
               run: |
                   cd test
                   ../sedimentation testc.asm -o testc.obj -f coff
                   gcc -nostartfiles testc.obj -o testc
-                  ./testc | diff - testc.out
+                  testc.exe > testc.out.1 | fc /B testc.out.1 testc.out
             - name: Test SSE instructions
               run: |
                   cd test
                   ../sedimentation testsse.asm -o testsse.obj -f coff
                   gcc -nostartfiles testsse.obj -o testsse
-                  ./testsse | diff - testsse.out
+                  testsse.exe > testsse.out.1 | fc /B testsse.out.1 testsse.out
             - name: Test AVX instructions
               run: |
                   cd test
                   ../sedimentation testavx.asm -o testavx.obj -f coff
                   gcc -nostartfiles testavx.obj -o testavx
-                  ./testavx | diff - testavx.out
+                  testavx.exe > testavx.out.1 | fc /B testavx.out.1 testavx.out
