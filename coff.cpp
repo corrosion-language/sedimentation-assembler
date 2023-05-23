@@ -69,10 +69,10 @@ void generate_coff(std::ofstream &f, uint64_t bss_size) {
 		memcpy(shdr.name, ".bss\0\0\0", 8);
 		shdr.vsize = bss_size;
 		shdr.size = 0;
-		shdr.offset = next_offset;
+		shdr.offset = 0;
 		shdr.reloc_off = 0;
 		shdr.num_relocs = 0;
-		shdr.flags = 0xc0500080; // uninitialized data, read, write, align 4
+		shdr.flags = 0xc0300080; // uninitialized data, read, write, align 4
 		f.write((const char *)&shdr, sizeof(shdr));
 	}
 

@@ -19,7 +19,7 @@ struct coff_header {
 	uint32_t symtab_off;
 	uint32_t num_symbols;
 	uint16_t opt_header_size = 0;
-	uint16_t flags = 0x220;
+	uint16_t flags = 0;
 };
 
 struct coff_section_header {
