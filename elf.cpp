@@ -44,7 +44,7 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 	// section headers
 	elf_section_header shdr;
 	// null section
-	bzero(&shdr, sizeof(shdr));
+	memset(&shdr, 0, sizeof(shdr));
 	f.write((const char *)&shdr, sizeof(shdr));
 
 	// text section
@@ -187,7 +187,7 @@ void generate_elf(std::ofstream &f, uint64_t bss_size) {
 	uint64_t i = 1;
 	elf_symbol sym;
 	// null symbol
-	bzero(&sym, sizeof(sym));
+	memset(&sym, 0, sizeof(sym));
 	f.write((const char *)&sym, sizeof(sym));
 	sym.info = 0;
 	// write symtab
