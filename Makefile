@@ -12,7 +12,7 @@ debug: sedimentation
 
 release: CFLAGS += -O2
 release: sedimentation
-	strip -s sedimentation
+	strip -s $(wildcard sedimentation*)
 
 sedimentation: $(OBJS)
 	$(CC) $(CFLAGS) -o sedimentation $(OBJS)
