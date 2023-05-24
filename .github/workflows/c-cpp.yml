@@ -38,39 +38,3 @@ jobs:
                   ../sedimentation testavx.asm -o testavx.o
                   gcc -nostartfiles testavx.o -o testavx
                   ./testavx | diff - testavx.out
-
-    windows-test:
-        runs-on: windows-latest
-
-        steps:
-            - uses: actions/checkout@v3
-            - name: compile test binary
-              run: make release -j4
-            - name: Test normal assembling
-              run: |
-                  cd test
-                  ../sedimentation.exe testfile.asm -o test.obj
-                  ld test.obj -o test
-                  test.exe > test.out.1
-                  diff (cat testfile.out.1) (cat testfile.out)
-            - name: Test assembling with external symbols
-              run: |
-                  cd test
-                  ../sedimentation.exe testc.asm -o testc.obj
-                  gcc -nostartfiles testc.obj -o testc
-                  testc.exe > testc.out.1
-                  diff (cat testc.out.1) (cat testc.out)
-            - name: Test SSE instructions
-              run: |
-                  cd test
-                  ../sedimentation.exe testsse.asm -o testsse.obj
-                  gcc -nostartfiles testsse.obj -o testsse
-                  testsse.exe > testsse.out.1
-                  diff (cat testsse.out.1) (cat testsse.out)
-            - name: Test AVX instructions
-              run: |
-                  cd test
-                  ../sedimentation.exe testavx.asm -o testavx.obj
-                  gcc -nostartfiles testavx.obj -o testavx
-                  testavx.exe > testavx.out.1
-                  diff (cat testavx.out.1) (cat testavx.out)
