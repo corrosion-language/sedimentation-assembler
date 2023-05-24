@@ -83,7 +83,7 @@ int parse_args(int argc, char *argv[]) {
 				exit(0);
 			} else if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--output") == 0) {
 				if (i + 1 < argc) {
-					output.open(argv[i + 1]);
+					output.open(argv[i + 1], std::ios::binary);
 					output_name = argv[i + 1];
 					if (!output.is_open()) {
 						std::cerr << "Erreur : Impossible d'ouvrir le fichier de sortie " << argv[i + 1] << std::endl;
@@ -469,7 +469,7 @@ int main(int argc, char *argv[]) {
 		output_name = new char[tmp.size() + 1];
 		memcpy(output_name, tmp.c_str(), tmp.size() + 1);
 		output_name[tmp.size()] = '\0';
-		output.open(output_name);
+		output.open(output_name, std::ios::binary);
 		if (!output.is_open()) {
 			std::cerr << "Erreur : impossible d'ouvrir le fichier de sortie « " << output_name << " »" << std::endl;
 			return 1;
