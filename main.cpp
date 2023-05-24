@@ -46,9 +46,8 @@ void print_help(const char *name) {
 	std::cout << "Usage : " << name << " [options] fichier\n";
 	std::cout << "Options :\n";
 	std::cout << "-h, --help\t\tAfficher cette aide\n";
-	std::cout << "-v, --version\t\tAfficher la version\n";
 	std::cout << "-o, --output\t\tFichier de sortie\n";
-	std::cout << "-f, --format\t\tFormat de sortie (elf, pe, macho)\n";
+	std::cout << "-f, --format\t\tFormat de sortie (elf, coff, macho)\n";
 }
 
 void cerr(const int i, const std::string &msg) {
@@ -77,9 +76,6 @@ int parse_args(int argc, char *argv[]) {
 		} else {
 			if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
 				print_help(argv[0]);
-				exit(0);
-			} else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--version") == 0) {
-				printf("Version 0.0.1\n");
 				exit(0);
 			} else if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--output") == 0) {
 				if (i + 1 < argc) {
