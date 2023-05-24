@@ -450,6 +450,8 @@ void process_instructions() {
 }
 
 int main(int argc, char *argv[]) {
+	std::cerr << "testcerr" << std::endl;
+	std::cout << "testcout" << std::endl;
 	if (parse_args(argc, argv))
 		return 1;
 
