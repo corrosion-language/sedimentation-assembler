@@ -1457,13 +1457,13 @@ rdpkru 0f01ee
 
 rdpmc 0f33
 
-; rdrand RD 0fc7/6
-; rdrand RQ w0fc7/6
-; rdrand RW 0fc7/6
+rdrand MD 0fc7/6
+rdrand MQ w0fc7/6
+rdrand MW 0fc7/6
 
-; rdseed RD 0fc7/7
-; rdseed RQ w0fc7/7
-; rdseed RW 0fc7/7
+rdseed MD 0fc7/7
+rdseed MQ w0fc7/7
+rdseed MW 0fc7/7
 
 rdtsc 0f31
 
