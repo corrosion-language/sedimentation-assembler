@@ -2,7 +2,7 @@ name: C/C++ CI
 
 on:
     push:
-        branches: ["main", "dev"]
+        branches: ["main", "testing"]
     pull_request:
         branches: ["main"]
 
@@ -50,6 +50,7 @@ jobs:
               run: |
                   cd test
                   ../sedimentation testfile.asm -o test.obj -f coff
+                  ls
                   ld test.obj -o test
                   test.exe > test.out.1
                   diff (cat testfile.out.1) (cat testfile.out)
