@@ -436,6 +436,10 @@ void process_instructions() {
 				}
 				if (instr[0] == 'd' && instr.size() == 2) {
 					parse_d(instr, args, i, text_buffer);
+				} else if (instr == ".align") {
+					int align = std::stoi(args[0]);
+					while (text_buffer.size() % align)
+						text_buffer.push_back(0x90);
 				} else {
 					handle(instr, args, i + 1, instr_cnt);
 				}
