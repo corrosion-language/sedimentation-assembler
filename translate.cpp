@@ -19,6 +19,10 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 		} else
 			break;
 		size_t i = args.front().find(' ');
+		if (i == std::string::npos) {
+			s = args.front();
+			args.erase(args.begin());
+		}
 		s = args.front().substr(0, i);
 		args.front() = args.front().substr(i + 1);
 	}
