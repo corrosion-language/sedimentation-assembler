@@ -323,8 +323,13 @@ std::pair<unsigned long long, short> parse_imm(std::string s) {
 	// if label, return label
 	if (s[0] == '.')
 		s = prev_label + s;
-	if (s.ends_with("wrt ..plt"))
+	if (s.ends_with(" wrt ..plt")) {
+		if (!extern_labels_map.count(s.substr(0, s.size() - 10))) {
+			error = "symbole « " + s.substr(0, s.size() - 10) + " » non défini";
+			return {0, -1};
+		}
 		return {0, -4};
+	}
 	if (text_labels_map.count(s))
 		return {text_labels_map.at(s), -3};
 	if (extern_labels_map.count(s))
