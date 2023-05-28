@@ -3,6 +3,7 @@ sedimentation
 test.asm
 *.o
 *.obj
+*.gch
 callgrind*
 .vscode/
 in

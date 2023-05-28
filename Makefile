@@ -4,6 +4,7 @@ CC=g++
 CFLAGS=-Wall -Wextra -Wpedantic -std=c++20 -g
 SRCS=$(wildcard *.cpp)
 HDRS=$(wildcard *.hpp)
+PCHS=$(HDRS:.hpp=.hpp.gch)
 OBJS=$(SRCS:.cpp=.o)
 
 ifeq ($(OS),Windows_NT)
@@ -26,13 +27,16 @@ release: CFLAGS += -O2
 release: sedimentation
 	strip -s $(OUTFILE)
 
-sedimentation: $(OBJS)
+sedimentation: $(PCHS) $(OBJS)
 	$(CC) $(CFLAGS) -o sedimentation $(OBJS)
 
 translate.o: translate.cpp instr.dat
 vex.o: vex.cpp vex.dat
 
-%.o: %.cpp %.hpp Makefile
+%.hpp.gch: %.hpp Makefile
+	$(CC) $(CFLAGS) -c $< -o $@
+
+%.o: %.cpp $(PCHS) Makefile
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
