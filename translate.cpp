@@ -8,13 +8,13 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 	// handle prefixes (lock, repne, repe)
 	while (true) {
 		if (s == "lock") {
-			text_buffer.push_back(0xf0);
+			text_buffer += '\xf0';
 			prefix = true;
 		} else if (s == "repne" || s == "repnz" || s == "bnd") {
-			text_buffer.push_back(0xf2);
+			text_buffer += '\xf2';
 			prefix = true;
 		} else if (s == "rep" || s == "repe" || s == "repz") {
-			text_buffer.push_back(0xf3);
+			text_buffer += '\xf3';
 			prefix = true;
 		} else
 			break;

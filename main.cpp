@@ -25,9 +25,9 @@ std::unordered_map<std::string, std::pair<sect, size_t>> labels;
 // symbol table (name, offset)
 std::unordered_map<std::string, uint64_t> reloc_table;
 // output buffer
-std::vector<uint8_t> text_buffer;
-std::vector<uint8_t> data_buffer;
-std::vector<uint8_t> rodata_buffer;
+std::string text_buffer;
+std::string data_buffer;
+std::string rodata_buffer;
 uint64_t bss_size = 0;
 // last label that was not a dot
 std::string prev_label;
@@ -170,74 +170,103 @@ void preprocess() {
 	}
 }
 
-void parse_d(std::string &instr, std::vector<std::string> &args, size_t line, std::vector<uint8_t> &output_buffer) {
+void parse_d(std::string &instr, std::vector<std::string> &args, size_t line, std::string &output_buffer) {
 	for (size_t i = 0; i < args.size(); i++) {
 		if (args[i][0] == '"') {
 			for (size_t j = 1; j < args[i].size() - 1; j++) {
 				if (args[i][j] == '\\') {
 					switch (args[i][j + 1]) {
 					case '0':
-						output_buffer.push_back('\0');
+						output_buffer += '\0';
 						break;
 					case 'n':
-						output_buffer.push_back('\n');
+						output_buffer += '\n';
 						break;
 					case 'r':
-						output_buffer.push_back('\r');
+						output_buffer += '\r';
 						break;
 					case 't':
-						output_buffer.push_back('\t');
+						output_buffer += '\t';
 						break;
 					case '\\':
-						output_buffer.push_back('\\');
+						output_buffer += '\\';
 						break;
 					case '"':
-						output_buffer.push_back('"');
+						output_buffer += '"';
 						break;
 					case '\'':
-						output_buffer.push_back('\'');
+						output_buffer += '\'';
 						break;
 					case 'x':
-						output_buffer.push_back(std::stoul(args[i].substr(j + 2, 2), nullptr, 16));
+						output_buffer += std::stoul(args[i].substr(j + 2, 2), nullptr, 16);
 						j += 2;
 						break;
 					}
 					j++;
 				} else
-					output_buffer.push_back(args[i][j]);
+					output_buffer += args[i][j];
 			}
 			continue;
 		}
 		if (args[i][0] == '\'') {
 			output_buffer.push_back(args[i][1]);
-			continue;
-		}
-		if (instr == "db") {
-			output_buffer.push_back(std::stoul(args[i], nullptr, 0));
+		} else if (instr == "db") {
+			output_buffer += std::stoul(args[i], nullptr, 0);
 		} else if (instr == "dw") {
 			uint16_t val = std::stoul(args[i], nullptr, 0);
-			output_buffer.push_back(val & 0xff);
-			output_buffer.push_back((val >> 8) & 0xff);
+			output_buffer += val & 0xff;
+			output_buffer += (val >> 8) & 0xff;
 		} else if (instr == "dd") {
 			uint32_t val = std::stoul(args[i], nullptr, 0);
-			output_buffer.push_back(val & 0xff);
-			output_buffer.push_back((val >> 8) & 0xff);
-			output_buffer.push_back((val >> 16) & 0xff);
-			output_buffer.push_back((val >> 24) & 0xff);
+			output_buffer += val & 0xff;
+			output_buffer += (val >> 8) & 0xff;
+			output_buffer += (val >> 16) & 0xff;
+			output_buffer += (val >> 24) & 0xff;
 		} else if (instr == "dq") {
 			uint64_t val = std::stoull(args[i], nullptr, 0);
-			output_buffer.push_back(val & 0xff);
-			output_buffer.push_back((val >> 8) & 0xff);
-			output_buffer.push_back((val >> 16) & 0xff);
-			output_buffer.push_back((val >> 24) & 0xff);
-			output_buffer.push_back((val >> 32) & 0xff);
-			output_buffer.push_back((val >> 40) & 0xff);
-			output_buffer.push_back((val >> 48) & 0xff);
-			output_buffer.push_back((val >> 56) & 0xff);
+			output_buffer += val & 0xff;
+			output_buffer += (val >> 8) & 0xff;
+			output_buffer += (val >> 16) & 0xff;
+			output_buffer += (val >> 24) & 0xff;
+			output_buffer += (val >> 32) & 0xff;
+			output_buffer += (val >> 40) & 0xff;
+			output_buffer += (val >> 48) & 0xff;
+			output_buffer += (val >> 56) & 0xff;
 		} else {
 			cerr(line + 1, "directive inconnue « " + instr + " »");
 		}
 	}
+}
+
+void pad(int align, std::string &output_buffer) {
+	int pad = output_buffer.size() % align;
+	if (!pad)
+		return;
+	pad = align - pad;
+	while (pad >= 11) {
+		output_buffer += "\x66\x66\x66\x0f\x1f\x84\x90\x90\x90\x90\x90";
+		pad -= 11;
+	}
+	if (pad == 1)
+		output_buffer += '\x90';
+	else if (pad == 2)
+		output_buffer += "\x66\x90";
+	else if (pad == 3)
+		output_buffer += "\x0f\x1f\xc0";
+	else if (pad == 4)
+		output_buffer += "\x0f\x1f\x40\x90";
+	else if (pad == 5)
+		output_buffer += "\x0f\x1f\x44\x90\x90";
+	else if (pad == 6)
+		output_buffer += "\x66\x0f\x1f\x44\x90\x90";
+	else if (pad == 7)
+		output_buffer += "\x0f\x1f\x80\x90\x90\x90\x90";
+	else if (pad == 8)
+		output_buffer += "\x0f\x1f\x84\x90\x90\x90\x90\x90";
+	else if (pad == 9)
+		output_buffer += "\x66\x0f\x1f\x84\x90\x90\x90\x90\x90";
+	else if (pad == 10)
+		output_buffer += "\x66\x66\x0f\x1f\x84\x90\x90\x90\x90\x90";
 }
 
 void parse_labels() {
@@ -304,7 +333,7 @@ void parse_labels() {
 					cerr(i + 1, "directive inconnue « " + instr + " »");
 				}
 			} else if (curr_sect == DATA || curr_sect == RODATA) {
-				std::vector<uint8_t> &output_buffer = curr_sect == DATA ? data_buffer : rodata_buffer;
+				std::string &output_buffer = curr_sect == DATA ? data_buffer : rodata_buffer;
 				if (line.starts_with("global ")) {
 					std::string label = line.substr(7);
 					if (label[0] == '.')
@@ -336,7 +365,7 @@ void parse_labels() {
 				parse_d(instr, args, i, output_buffer);
 				data_labels[label] = tmp;
 			}
-		} else if (curr_sect == TEXT && !line.starts_with("global ") && !line.starts_with("extern ")) {
+		} else if (curr_sect == TEXT && !line.starts_with("global ") && !line.starts_with("extern ") && !line.starts_with(".align")) {
 			if (line[0] != 'd' || line[2] != ' ') {
 				instr_cnt++;
 				continue;
@@ -369,6 +398,13 @@ void parse_labels() {
 				delta += args.size() * 8;
 			}
 			instr_cnt += delta / 15 + !!(delta % 15);
+		} else if (line.starts_with(".align ")) {
+			int align = std::stoi(line.substr(7));
+			if (curr_sect == TEXT) {
+				instr_cnt += (align + 14) / 15;
+				continue;
+			}
+			pad(align, curr_sect == DATA ? data_buffer : rodata_buffer);
 		}
 	}
 }
@@ -396,10 +432,12 @@ void process_instructions() {
 				std::string instr = line.substr(0, line.find(' '));
 				if (instr.ends_with(':')) {
 					instr = instr.substr(0, instr.size() - 1);
-					if (instr[0] != '.')
+					if (instr[0] != '.') {
 						prev_label = instr.substr(0, instr.find('.'));
-					else
+						pad(16, text_buffer);
+					} else {
 						instr = prev_label + instr;
+					}
 					reloc_table[instr] = text_buffer.size();
 					continue;
 				} else {
@@ -437,9 +475,7 @@ void process_instructions() {
 				if (instr[0] == 'd' && instr.size() == 2) {
 					parse_d(instr, args, i, text_buffer);
 				} else if (instr == ".align") {
-					int align = std::stoi(args[0]);
-					while (text_buffer.size() % align)
-						text_buffer.push_back(0x90);
+					pad(std::stoi(args[0]), text_buffer);
 				} else {
 					handle(instr, args, i + 1, instr_cnt);
 				}

@@ -40,5 +40,5 @@ vex.o: vex.cpp vex.dat
 	$(CC) $(CFLAGS) -c $< -o $@
 
 clean:
-	rm -f $(OBJS) sedimentation test/test
+	rm -f $(OBJS) $(PCHS) sedimentation test/test
 	rm -f test/{a.out,*.o}

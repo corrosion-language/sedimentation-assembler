@@ -1,5 +1,5 @@
-#include "vex.dat"
 #include "vex.hpp"
+#include "vex.dat"
 
 void handle_vex(std::string &s, std::vector<std::string> &args, const size_t linenum, const bool prefix) {
 	error = "";
