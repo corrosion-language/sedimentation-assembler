@@ -346,6 +346,8 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 				else if (p.first[i][0] == 'I')
 					imm = {i, types[i - 1].second};
 			}
+			if (p.first[1][1] == 'W' || p.first[2][1] == 'W')
+				tmp += 0x66;
 			if (mem.first == -1) {
 				short a1 = reg_num(args[reg.first - 1]);
 				size_t i = p.first.back()[0] == 'w';
