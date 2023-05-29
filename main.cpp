@@ -363,7 +363,7 @@ void parse_labels() {
 				}
 				size_t tmp = output_buffer.size();
 				parse_d(instr, args, i, output_buffer);
-				data_labels[label] = tmp;
+				(curr_sect == DATA ? data_labels : rodata_labels)[label] = tmp;
 			}
 		} else if (curr_sect == TEXT && !line.starts_with("global ") && !line.starts_with("extern ") && !line.starts_with(".align")) {
 			if (line[0] != 'd' || line[2] != ' ') {
@@ -523,6 +523,9 @@ int main(int argc, char *argv[]) {
 	// put all labels into a map
 	for (const auto &l : data_labels) {
 		labels[l.first] = {DATA, l.second};
+	}
+	for (const auto &l : rodata_labels) {
+		labels[l.first] = {RODATA, l.second};
 	}
 	for (const auto &l : bss_labels) {
 		labels[l.first] = {BSS, l.second};
