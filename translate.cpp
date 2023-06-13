@@ -209,8 +209,10 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 	}
 	if (types.size() == 2 && types[0].first == REG && types[1].first == REG) {
 		types[1].first = MEM;
-		for (auto &p : valid)
-			p.first[2].front() = 'M';
+		for (auto &p : valid) {
+			if (p.first[1].front() != 'M')
+				p.first[2].front() = 'M';
+		}
 	}
 	std::string best = "";
 	size_t bestlen = -1;
