@@ -91,6 +91,10 @@ mem_output *parse_mem(std::string in, short &size) {
 		out->offsize = 32;
 		out->reloc.second = REL;
 		in = in.substr(5, in.size() - 6);
+		if (!labels.count(in)) {
+			error = "symbole « " + in + " » non défini";
+			return nullptr;
+		}
 		size_t op = in.find('+');
 		if (op != std::string::npos) {
 			out->offset = std::stoi(in.substr(op + 1), 0, 0);
