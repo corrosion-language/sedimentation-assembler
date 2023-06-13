@@ -365,7 +365,7 @@ void parse_labels() {
 				parse_d(instr, args, i, output_buffer);
 				(curr_sect == DATA ? data_labels : rodata_labels)[label] = tmp;
 			}
-		} else if (curr_sect == TEXT && !line.starts_with("global ") && !line.starts_with("extern ") && !line.starts_with(".align")) {
+		} else if (curr_sect == TEXT && !line.starts_with("global ") && !line.starts_with("extern ") && !line.starts_with("align")) {
 			if (line[0] != 'd' || line[2] != ' ') {
 				instr_cnt++;
 				continue;
@@ -474,7 +474,7 @@ void process_instructions() {
 				}
 				if (instr[0] == 'd' && instr.size() == 2) {
 					parse_d(instr, args, i, text_buffer);
-				} else if (instr == ".align") {
+				} else if (instr == "align") {
 					pad(std::stoi(args[0]), text_buffer);
 				} else {
 					handle(instr, args, i + 1, instr_cnt);
