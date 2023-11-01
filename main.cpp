@@ -7,7 +7,10 @@ int main() {
 	// Create a section
 	Section section;
 	section.name = ".text";
-	section.data = {0x48, 0x89, 0xf8, 0x48, 0x83, 0xc0, 0x01, 0xc3};
+	section.data = {'H', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd', '!'};
+	sections.push_back(section);
+	section.name = ".data";
+	section.data = {'d', 'a', 't', 'a'};
 	sections.push_back(section);
 
 	// Create a symbol

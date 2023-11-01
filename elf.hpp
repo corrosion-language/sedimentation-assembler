@@ -1,9 +1,11 @@
+#include <elf.h>
 #include <string>
 #include <vector>
 
 struct Section {
 	std::vector<uint8_t> data;
 	std::string name;
+	size_t size = 0; // Optional
 };
 
 struct Symbol {

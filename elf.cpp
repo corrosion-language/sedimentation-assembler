@@ -1,6 +1,6 @@
 #include "elf.hpp"
 
-#include <elf.h>
+#include <algorithm>
 #include <fstream>
 
 void ELF_Write(std::vector<Section> sections, std::vector<Symbol> symbols, std::string filename) {
@@ -37,25 +37,44 @@ void ELF_Write(std::vector<Section> sections, std::vector<Symbol> symbols, std::
 	f.write((char *)zero, sizeof(Elf64_Shdr));
 
 	// Offset for section data
-	Elf64_Off dataoff = 0;
+	Elf64_Off dataoff = 0x1000;
 
 	std::string shstrtab;
 	shstrtab.push_back(0); // null section name
 	// Write the section header table
 	for (auto section : sections) {
-		/// TODO: Take into account special sections (e.g. .bss)
+		Elf64_Word type;
+		Elf64_Xword flags;
+		// Special section handling
+		if (section.name == ".text") {
+			type = SHT_PROGBITS;
+			flags = SHF_EXECINSTR | SHF_ALLOC;
+		} else if (section.name == ".data") {
+			type = SHT_PROGBITS;
+			flags = SHF_ALLOC | SHF_WRITE;
+		} else if (section.name == ".rodata") {
+			type = SHT_PROGBITS;
+			flags = SHF_ALLOC;
+		} else if (section.name == ".bss") {
+			type = SHT_NOBITS;
+			flags = SHF_ALLOC | SHF_WRITE;
+		} else {
+			type = SHT_PROGBITS;
+			flags = SHF_ALLOC | SHF_EXECINSTR;
+		}
+
 		Elf64_Shdr shdr;
 		shdr.sh_name = shstrtab.size(); // name offset in section name string table
 		shstrtab += section.name + '\0'; // add section name to section name string table
-		shdr.sh_type = SHT_PROGBITS; // section type
-		shdr.sh_flags = 0; // no flags
+		shdr.sh_type = type; // section type
+		shdr.sh_flags = flags; // no flags
 		shdr.sh_addr = 0; // no address
 		shdr.sh_offset = dataoff; // section offset
 		shdr.sh_size = section.data.size(); // section size
-		dataoff += (section.data.size() + 0xfff) & ~0xfff;
+		dataoff += (shdr.sh_size + 0xfff) & ~0xfff;
 		shdr.sh_link = 0; // no link
 		shdr.sh_info = 0; // no info
-		shdr.sh_addralign = 1; // no alignment
+		shdr.sh_addralign = 16; // no alignment
 		shdr.sh_entsize = 0; // no entry size
 		f.write((char *)&shdr, sizeof(Elf64_Shdr));
 	}
@@ -90,7 +109,7 @@ void ELF_Write(std::vector<Section> sections, std::vector<Symbol> symbols, std::
 	shdr.sh_addr = 0; // no address
 	shdr.sh_offset = metaoff; // no offset
 	shdr.sh_size = symtab.size(); // section size
-	metaoff += symtab.size();
+	metaoff += shdr.sh_size;
 	shdr.sh_link = sections.size() + 2; // link to string table
 	shdr.sh_info = symbols.size(); // number of symbols
 	shdr.sh_addralign = 8; // alignment
@@ -106,7 +125,7 @@ void ELF_Write(std::vector<Section> sections, std::vector<Symbol> symbols, std::
 	shdr.sh_addr = 0; // no address
 	shdr.sh_offset = metaoff; // no offset
 	shdr.sh_size = strtab.size(); // section size
-	metaoff += strtab.size();
+	metaoff += shdr.sh_size;
 	shdr.sh_link = 0; // no link
 	shdr.sh_info = 0; // no info
 	shdr.sh_addralign = 1; // no alignment
@@ -122,7 +141,7 @@ void ELF_Write(std::vector<Section> sections, std::vector<Symbol> symbols, std::
 	shdr.sh_addr = 0; // no address
 	shdr.sh_offset = metaoff; // no offset
 	shdr.sh_size = shstrtab.size(); // section size
-	metaoff += shstrtab.size();
+	metaoff += shdr.sh_size;
 	shdr.sh_link = 0; // no link
 	shdr.sh_info = 0; // no info
 	shdr.sh_addralign = 1; // no alignment
@@ -135,8 +154,8 @@ void ELF_Write(std::vector<Section> sections, std::vector<Symbol> symbols, std::
 
 	// Write the section data
 	for (auto section : sections) {
-		f.seekp((f.tellp() + (std::streampos)0x1000) & ~0xfff, std::ios::beg);
+		f.seekp((f.tellp() + (std::streampos)0xfff) & ~0xfff, std::ios::beg);
 		f.write((char *)section.data.data(), section.data.size());
 	}
-	f.seekp((f.tellp() + (std::streampos)0x1000) & ~0xfff, std::ios::beg);
+	f.seekp((f.tellp() + (std::streampos)0xfff) & ~0xfff, std::ios::beg);
 }
