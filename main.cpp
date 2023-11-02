@@ -65,8 +65,10 @@ bool preprocess(std::string &line) {
 		size_t pos = i;
 		while (line[pos] == ' ' || line[pos] == '\t')
 			pos++;
-		if (pos > i + 1)
+		if (pos != i) {
 			line.erase(i, pos - i - 1);
+			line[i] = ' ';
+		}
 	}
 
 	return true;
@@ -89,8 +91,30 @@ int main(int argc, char **argv) {
 		if (!preprocess(line))
 			continue;
 
-		std::cout << line << std::endl;
+		// Figure out if it's a label or not
+		if (line.back() == ':') {
+			// Label
+			/// TODO: Figure out how to handle labels
+		} else {
+			// Split line into opcodes and operands
+			std::string opcode;
+			std::vector<std::string> operands;
+			size_t t = line.find_first_of(" ");
+			opcode = line.substr(0, t);
+			std::string operandlist = line.substr(t + 1);
+			t = operandlist.find_first_of(",");
+			while (t != std::string::npos) {
+				operands.push_back(operandlist.substr(0, t));
+				operandlist = operandlist.substr(t + 1);
+				t = operandlist.find_first_of(",");
+			}
+			if (operandlist.size())
+				operands.push_back(operandlist);
+			/// TODO: Figure out what to do here
+		}
+		/// TODO: Figure out what to do here
 	}
+	/// TODO: Figure out what to do here
 
 	return 0;
 }
