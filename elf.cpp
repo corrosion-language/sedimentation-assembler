@@ -1,6 +1,7 @@
 #include "elf.hpp"
 
 #include <algorithm>
+#include <elf.h>
 #include <fstream>
 
 void ELF_Write(std::vector<Section> sections, std::vector<Symbol> symbols, std::string filename) {
@@ -36,7 +37,8 @@ void ELF_Write(std::vector<Section> sections, std::vector<Symbol> symbols, std::
 	// Write the null section header
 	f.write((char *)zero, sizeof(Elf64_Shdr));
 
-	// Offset for section data
+	// Offset for section data, will accumulate as we write sections and will always be page-aligned
+	/// TODO: This is currently assuming we don't pass 4096 bytes for headers, if this happens then the elf will be invalid
 	Elf64_Off dataoff = 0x1000;
 
 	std::string shstrtab;
@@ -71,7 +73,7 @@ void ELF_Write(std::vector<Section> sections, std::vector<Symbol> symbols, std::
 		shdr.sh_addr = 0; // no address
 		shdr.sh_offset = dataoff; // section offset
 		shdr.sh_size = section.data.size(); // section size
-		dataoff += (shdr.sh_size + 0xfff) & ~0xfff;
+		dataoff += (shdr.sh_size + 0xfff) & ~0xfff; // align next section data to page size
 		shdr.sh_link = 0; // no link
 		shdr.sh_info = 0; // no info
 		shdr.sh_addralign = 16; // no alignment
@@ -79,16 +81,34 @@ void ELF_Write(std::vector<Section> sections, std::vector<Symbol> symbols, std::
 		f.write((char *)&shdr, sizeof(Elf64_Shdr));
 	}
 
-	std::string strtab;
-	strtab.push_back(0); // null symbol name
+	std::string strtab; // it's more convenient to make it a string even though it's binary
+	strtab.push_back(0); // first character of stringtable is always null
 	std::vector<uint8_t> symtab;
+	int local_sym_count = 0;
 	// Write the symbol table
+	// We have to do this in 2 passes to put local symbols first
 	for (auto sym : symbols) {
+		if (sym.global)
+			continue;
 		Elf64_Sym esym;
 		esym.st_name = strtab.size(); // name offset in string table
 		strtab += sym.name + '\0'; // add name to string table
-		esym.st_info =
-			ELF64_ST_INFO(sym.global ? STB_GLOBAL : STB_LOCAL, sym.type); // symbol binding and type
+		esym.st_info = ELF64_ST_INFO(sym.global ? STB_GLOBAL : STB_LOCAL, sym.type); // symbol binding and type
+		esym.st_other = 0; // no other
+		esym.st_shndx = 1; // section index
+		esym.st_value = sym.value; // symbol value
+		esym.st_size = 0; // no size
+		symtab.insert(symtab.end(), (uint8_t *)&esym, (uint8_t *)&esym + sizeof(Elf64_Sym));
+		local_sym_count++;
+	}
+	// Now local symbols
+	for (auto sym : symbols) {
+		if (!sym.global)
+			continue;
+		Elf64_Sym esym;
+		esym.st_name = strtab.size(); // name offset in string table
+		strtab += sym.name + '\0'; // add name to string table
+		esym.st_info = ELF64_ST_INFO(sym.global ? STB_GLOBAL : STB_LOCAL, sym.type); // symbol binding and type
 		esym.st_other = 0; // no other
 		esym.st_shndx = 1; // section index
 		esym.st_value = sym.value; // symbol value
@@ -111,7 +131,7 @@ void ELF_Write(std::vector<Section> sections, std::vector<Symbol> symbols, std::
 	shdr.sh_size = symtab.size(); // section size
 	metaoff += shdr.sh_size;
 	shdr.sh_link = sections.size() + 2; // link to string table
-	shdr.sh_info = symbols.size(); // number of symbols
+	shdr.sh_info = local_sym_count; // "one bigger than the index of the last local symbol"
 	shdr.sh_addralign = 8; // alignment
 	shdr.sh_entsize = sizeof(Elf64_Sym); // entry size
 	f.write((char *)&shdr, sizeof(Elf64_Shdr));
@@ -154,7 +174,7 @@ void ELF_Write(std::vector<Section> sections, std::vector<Symbol> symbols, std::
 
 	// Write the section data
 	for (auto section : sections) {
-		f.seekp((f.tellp() + (std::streampos)0xfff) & ~0xfff, std::ios::beg);
+		f.seekp((f.tellp() + (std::streampos)0xfff) & ~0xfff, std::ios::beg); // align to page size
 		f.write((char *)section.data.data(), section.data.size());
 	}
 	f.seekp((f.tellp() + (std::streampos)0xfff) & ~0xfff, std::ios::beg);

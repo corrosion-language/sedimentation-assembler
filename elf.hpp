@@ -1,4 +1,3 @@
-#include <elf.h>
 #include <string>
 #include <vector>
 
