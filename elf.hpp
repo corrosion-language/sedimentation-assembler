@@ -14,4 +14,4 @@ struct Symbol {
 	bool global;
 };
 
-void ELF_Write(std::vector<Section> sections, std::vector<Symbol> symbols, std::string filename);
+void ELF_Write(const std::vector<Section> &sections, const std::vector<Symbol> &symbols, const std::string &filename);

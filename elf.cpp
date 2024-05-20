@@ -4,7 +4,7 @@
 #include <elf.h>
 #include <fstream>
 
-void ELF_Write(std::vector<Section> sections, std::vector<Symbol> symbols, std::string filename) {
+void ELF_Write(const std::vector<Section> &sections, const std::vector<Symbol> &symbols, const std::string &filename) {
 	// Open file
 	std::ofstream f(filename, std::ios::binary);
 	uint8_t zero[64] = {0};
@@ -44,7 +44,7 @@ void ELF_Write(std::vector<Section> sections, std::vector<Symbol> symbols, std::
 	std::string shstrtab;
 	shstrtab.push_back(0); // null section name
 	// Write the section header table
-	for (auto section : sections) {
+	for (const auto &section : sections) {
 		Elf64_Word type;
 		Elf64_Xword flags;
 		// Special section handling
@@ -87,7 +87,7 @@ void ELF_Write(std::vector<Section> sections, std::vector<Symbol> symbols, std::
 	int local_sym_count = 0;
 	// Write the symbol table
 	// We have to do this in 2 passes to put local symbols first
-	for (auto sym : symbols) {
+	for (const auto &sym : symbols) {
 		if (sym.global)
 			continue;
 		Elf64_Sym esym;
@@ -102,7 +102,7 @@ void ELF_Write(std::vector<Section> sections, std::vector<Symbol> symbols, std::
 		local_sym_count++;
 	}
 	// Now local symbols
-	for (auto sym : symbols) {
+	for (const auto &sym : symbols) {
 		if (!sym.global)
 			continue;
 		Elf64_Sym esym;
