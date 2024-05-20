@@ -7,8 +7,10 @@
 std::string input, output;
 std::ifstream in;
 
-std::regex extraneous_whitespace("(?: |\\t)+");
+std::regex extraneous_whitespace("(?: |\\t)+b"); // one or more spaces or tabs in a row
+std::regex label("([a-zA-Z_.][a-zA-Z0-9_.]*):"); // letter, underscore, or dot followed by letters, numbers, underscores, or dots, ending with a colon
 
+/// TODO: Fix argument parsing, this is just a placeholder
 int parse_args(int argc, char **argv) {
 	if (argc < 2) {
 		std::cout << "Usage: " << argv[0] << " <input> [output]" << std::endl;
@@ -26,10 +28,10 @@ int parse_args(int argc, char **argv) {
 	return 0;
 }
 
-bool preprocess(std::string &line) {
+void preprocess(std::string &line) {
 	// Remove comments
 	bool in_string = false;
-	for (int i = 0; i < line.size(); i++) {
+	for (size_t i = 0; i < line.size(); i++) {
 		if (line[i] == '"' && (i == 0 || line[i - 1] != '\\')) {
 			in_string = !in_string;
 			continue;
@@ -49,12 +51,13 @@ bool preprocess(std::string &line) {
 	size_t r = line.find_last_not_of(" \t");
 	if (l == std::string::npos || r == std::string::npos) {
 		line = "";
-		return false;
+		return;
 	}
 	line = line.substr(l, r - l + 1);
 
 	// Remove extraneous whitespace
-	for (int i = 0; i < line.size(); i++) {
+	/// TODO: See if this is necessary or if it can be done in the lexer
+	for (size_t i = 0; i < line.size(); i++) {
 		if (line[i] == '"' && (i == 0 || line[i - 1] != '\\')) {
 			in_string = !in_string;
 			continue;
@@ -70,8 +73,6 @@ bool preprocess(std::string &line) {
 			line[i] = ' ';
 		}
 	}
-
-	return true;
 }
 
 int main(int argc, char **argv) {
@@ -83,38 +84,19 @@ int main(int argc, char **argv) {
 		return 1;
 	}
 
+	// Load the input file into an array of lines
 	in.open(input, std::ios::binary);
-	std::string line;
-	// Line by line parsing
-	while (std::getline(in, line)) {
-		// Preprocessing
-		if (!preprocess(line))
-			continue;
-
-		// Figure out if it's a label or not
-		if (line.back() == ':') {
-			// Label
-			/// TODO: Figure out how to handle labels
-		} else {
-			// Split line into opcodes and operands
-			std::string opcode;
-			std::vector<std::string> operands;
-			size_t t = line.find_first_of(" ");
-			opcode = line.substr(0, t);
-			std::string operandlist = line.substr(t + 1);
-			t = operandlist.find_first_of(",");
-			while (t != std::string::npos) {
-				operands.push_back(operandlist.substr(0, t));
-				operandlist = operandlist.substr(t + 1);
-				t = operandlist.find_first_of(",");
-			}
-			if (operandlist.size())
-				operands.push_back(operandlist);
-			/// TODO: Figure out what to do here
-		}
-		/// TODO: Figure out what to do here
+	if (!in.is_open()) {
+		std::cerr << "impossible d'ouvrir le fichier d'entrée '" << input << '\'' << std::endl;
+		return 1;
 	}
-	/// TODO: Figure out what to do here
+	std::vector<std::string> lines;
+	std::string line;
+	while (std::getline(in, line)) {
+		preprocess(line);
+		lines.push_back(line);
+	}
+	in.close();
 
 	return 0;
 }
