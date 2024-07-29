@@ -1,5 +1,15 @@
-#include <stdexcept>
+#include "error.hpp"
+
 #include <string>
 #include <vector>
 
-void translate(const std::vector<std::string> &prefixes, const std::string &instr, const std::vector<std::string> &args, std::vector<uint8_t> &out);
+/**
+ * @brief Translate an instruction into machine code, handles VEX coded instructions
+ * @throws std::runtime_error containing an error message intended to be displayed to the user
+ *
+ * @param prefixes Prefixes
+ * @param instr Instruction
+ * @param args Arguments
+ * @param out Output buffer
+ */
+void translate(const std::vector<std::string> &, const std::string &, const std::vector<std::string> &, std::vector<uint8_t> &);
