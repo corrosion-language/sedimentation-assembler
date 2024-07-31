@@ -1,4 +1,6 @@
 Things to do (in order):
+- Refactor the codebase:
+  - Figure out what to refactor
 - Add support for other executable formats (PE, Mach-O)
 - Add support for other architectures (aarch64)
 - Add VSIB support (currently the instructions are not supported)

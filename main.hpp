@@ -5,6 +5,7 @@
 #include "coff.hpp"
 #include "elf.hpp"
 #include "translate.hpp"
+#include <argp.h>
 
 /*#define profile(e) \
 	{                                                                                                                                                          \

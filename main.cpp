@@ -1,13 +1,75 @@
 #include "main.hpp"
 
+// ARGUMENT PARSING
+const char *input_name;
+char *output_name;
+#ifdef WINDOWS
+format output_format = COFF;
+#elif defined(MACOS)
+format output_format = MACHO;
+#else
+format output_format = ELF;
+#endif
+
+// https://www.gnu.org/software/libc/manual/html_node/Argp-Parser-Functions.html
+error_t parse_opt(int key, char *arg, struct argp_state *state) {
+	switch (key) {
+	case 'o':
+		if (output_name != nullptr)
+			argp_usage(state);
+		output_name = arg;
+		break;
+	case 'f':
+		if (strcmp(arg, "elf") == 0 || strcmp(arg, "elf64") == 0) {
+			output_format = ELF;
+		} else if (strcmp(arg, "coff") == 0) {
+			output_format = COFF;
+		} else if (strcmp(arg, "macho") == 0) {
+			output_format = MACHO;
+		} else {
+			argp_usage(state);
+		}
+		break;
+	case ARGP_KEY_ARG:
+		if (input_name != nullptr)
+			argp_usage(state);
+		input_name = arg;
+		break;
+	case ARGP_KEY_END:
+		if (input_name == nullptr)
+			argp_usage(state);
+		break;
+	default:
+		return ARGP_ERR_UNKNOWN;
+	}
+	return 0;
+}
+
+const char *argp_program_version = "sedimentation 1.0.1";
+const char *argp_program_bug_address = "<wdotmathree+sedimentation@gmail.com>";
+static char doc[] = "Assembler for x86-64 (PZAssembler)";
+
+// https://www.gnu.org/software/libc/manual/html_node/Argp-Option-Vectors.html
+static struct argp_option options[] = {
+	{"output", 'o', "FILE", 0, "Output file", 0},
+	{"format", 'f', "FORMAT", 0, "Output format (elf, coff, macho)", 0},
+	{},
+};
+// https://www.gnu.org/software/libc/manual/html_node/Argp-Parsers.html
+static struct argp argp = {
+	.options = options,
+	.parser = parse_opt,
+	.args_doc = "filename",
+	.doc = doc,
+	.children = nullptr,
+	.help_filter = nullptr,
+	.argp_domain = nullptr,
+};
+
 // input file
 std::ifstream input;
-// input file name
-const char *input_name;
 // output file
 std::ofstream output;
-// output file name
-char *output_name;
 // lines of input file
 std::vector<std::string> lines;
 // labels in data section (name, offset)
@@ -33,22 +95,14 @@ uint64_t bss_size = 0;
 std::string prev_label;
 // global symbols
 std::unordered_set<std::string> global;
-// output format
-#ifdef WINDOWS
-format output_format = COFF;
-#elif defined(MACOS)
-format output_format = MACHO;
-#else
-format output_format = ELF;
-#endif
 
-void print_help(const char *name) {
-	std::cout << "Usage : " << name << " [options] fichier\n";
-	std::cout << "Options :\n";
-	std::cout << "-h, --help\t\tAfficher cette aide\n";
-	std::cout << "-o, --output\t\tFichier de sortie\n";
-	std::cout << "-f, --format\t\tFormat de sortie (elf, coff, macho)\n";
-}
+// void print_help(const char *name) {
+// 	std::cout << "Usage : " << name << " [options] fichier\n";
+// 	std::cout << "Options :\n";
+// 	std::cout << "-h, --help\t\tAfficher cette aide\n";
+// 	std::cout << "-o, --output\t\tFichier de sortie\n";
+// 	std::cout << "-f, --format\t\tFormat de sortie (elf, coff, macho)\n";
+// }
 
 void cerr(const int i, const std::string &msg) {
 	std::cerr << input_name << ":" << i << ": erreur : " << msg << std::endl;
@@ -57,62 +111,6 @@ void cerr(const int i, const std::string &msg) {
 		remove(output_name);
 	}
 	exit(1);
-}
-
-int parse_args(int argc, char *argv[]) {
-	if (argc < 2) {
-		print_help(argv[0]);
-		return 1;
-	}
-	for (int i = 1; i < argc; i++) {
-		if (argv[i][0] != '-' || argv[i][1] == '\0') {
-			input_name = argv[i];
-			input.open(input_name);
-			if (!input.is_open()) {
-				std::cerr << "Erreur : Impossible d'ouvrir le fichier d'entrée " << input_name << std::endl;
-				return 1;
-			}
-			continue;
-		} else {
-			if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
-				print_help(argv[0]);
-				exit(0);
-			} else if (strcmp(argv[i], "-o") == 0 || strcmp(argv[i], "--output") == 0) {
-				if (i + 1 < argc) {
-					output.open(argv[i + 1], std::ios::binary);
-					output_name = argv[i + 1];
-					if (!output.is_open()) {
-						std::cerr << "Erreur : Impossible d'ouvrir le fichier de sortie " << argv[i + 1] << std::endl;
-						return 1;
-					}
-					i++;
-				} else {
-					std::cerr << "Erreur : Aucun fichier de sortie spécifié" << std::endl;
-					return 1;
-				}
-			} else if (strcmp(argv[i], "-f") == 0 || strcmp(argv[i], "--format") == 0) {
-				if (i + 1 < argc) {
-					if (strcmp(argv[i + 1], "elf") == 0) {
-						output_format = ELF;
-					} else if (strcmp(argv[i + 1], "coff") == 0) {
-						output_format = COFF;
-					} else if (strcmp(argv[i + 1], "macho") == 0) {
-						output_format = MACHO;
-					} else {
-						std::cerr << "Erreur : Format de sortie inconnu « " << argv[i + 1] << " »" << std::endl;
-					}
-					i++;
-				} else {
-					std::cerr << "Erreur : Aucun format de sortie spécifié" << std::endl;
-					return 1;
-				}
-			} else {
-				fprintf(stderr, "Erreur : Option inconnue %s\n", argv[i]);
-				return 1;
-			}
-		}
-	}
-	return 0;
 }
 
 const std::regex lead_trail(R"(^\s*(.*?)\s*$)"), between(R"(\s*([,+\-*\/:\\"])\s*)");
@@ -486,16 +484,19 @@ void process_instructions() {
 }
 
 int main(int argc, char *argv[]) {
-	if (parse_args(argc, argv))
+	if (argp_parse(&argp, argc, argv, 0, NULL, NULL))
 		return 1;
 
-	// if the file could not be opened it would have been caught earlier
-	// so that means there was no attempt to open a file at all
-	if (!input.is_open()) {
-		std::cerr << "Erreur : aucun fichier d'entrée specifié" << std::endl;
+	if (input_name == nullptr) {
+		std::cerr << "Error: No input file specified" << std::endl;
 		return 1;
 	}
-	if (!output.is_open()) {
+	input.open(input_name);
+	if (!input.is_open()) {
+		std::cerr << "Error: Couldn't open input file" << std::endl;
+		return 1;
+	}
+	if (output_name == nullptr) {
 		std::string tmp = std::string(input_name);
 		tmp = tmp.substr(0, tmp.find_last_of('.'));
 		if (output_format == ELF || output_format == MACHO)
@@ -506,10 +507,13 @@ int main(int argc, char *argv[]) {
 		memcpy(output_name, tmp.c_str(), tmp.size() + 1);
 		output_name[tmp.size()] = '\0';
 		output.open(output_name, std::ios::binary);
-		if (!output.is_open()) {
-			std::cerr << "Erreur : impossible d'ouvrir le fichier de sortie « " << output_name << " »" << std::endl;
-			return 1;
-		}
+		delete[] output_name;
+	} else {
+		output.open(output_name, std::ios::binary);
+	}
+	if (!output.is_open()) {
+		std::cerr << "Error: Couldn't open output file \"" << output_name << '"' << std::endl;
+		return 1;
 	}
 	// load lines into vector
 	std::string line;
