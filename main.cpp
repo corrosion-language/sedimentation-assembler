@@ -96,43 +96,36 @@ std::string prev_label;
 // global symbols
 std::unordered_set<std::string> global;
 
-// void print_help(const char *name) {
-// 	std::cout << "Usage : " << name << " [options] fichier\n";
-// 	std::cout << "Options :\n";
-// 	std::cout << "-h, --help\t\tAfficher cette aide\n";
-// 	std::cout << "-o, --output\t\tFichier de sortie\n";
-// 	std::cout << "-f, --format\t\tFormat de sortie (elf, coff, macho)\n";
-// }
-
 void cerr(const int i, const std::string &msg) {
-	std::cerr << input_name << ":" << i << ": erreur : " << msg << std::endl;
+	std::cerr << input_name << ":" << i << ": error: " << msg << std::endl;
 	if (output.is_open()) {
 		output.close();
 		remove(output_name);
 	}
-	exit(1);
+	exit(EXIT_FAILURE);
 }
 
+// Regex patterns for preprocessing (removing whitespace)
 const std::regex lead_trail(R"(^\s*(.*?)\s*$)"), between(R"(\s*([,+\-*\/:\\"])\s*)");
 
 void preprocess() {
 	for (size_t i = 0; i < lines.size(); i++) {
 		std::string &line = lines[i];
-		// remove comments
+		// Remove comments
 		bool in_string = false;
-		for (size_t i = 0; i < line.size(); i++) {
-			if (line[i] == '"' && (i == 0 || line[i - 1] != '\\'))
+		for (size_t j = 0; j < line.size(); j++) {
+			if (line[j] == '"' && (j == 0 || line[j - 1] != '\\'))
 				in_string = !in_string;
-			if (line[i] == ';' && !in_string) {
-				line = line.substr(0, i);
+			if (line[j] == ';' && !in_string) {
+				line = line.substr(0, j);
 				break;
 			}
 		}
 		if (in_string)
-			cerr(i + 1, "chaîne de caractères non terminée");
-		// remove leading and trailing whitespace
+			cerr(i + 1, "unterminated string");
+		// Remove leading and trailing whitespace
 		line = std::regex_replace(line, lead_trail, "$1");
-		// remove whitespace between tokens
+		// Remove whitespace between tokens
 		size_t l = 0;
 		size_t r = line.find('"', l);
 		while (r != 0 && r != std::string::npos) {
@@ -148,14 +141,13 @@ void preprocess() {
 					line = std::regex_replace(line.substr(l, r - l), between, "$1") + line.substr(r);
 				else
 					line = line.substr(0, l) + std::regex_replace(line.substr(l, r - l - 1), between, "$1") + line.substr(r);
-				l = r + 1;
-				r = line.find('"', l);
-				while (r != 0 && r != std::string::npos) {
-					if (line[r - 1] != '\\')
+				l = line.find('"', r + 1);
+				while (l != 0 && l != std::string::npos) {
+					if (line[l - 1] != '\\')
 						break;
-					r = line.find('"', r + 1);
+					l = line.find('"', l + 1);
 				}
-				l = r + 1;
+				l++;
 				r = line.find('"', l);
 				while (r != 0 && r != std::string::npos) {
 					if (line[r - 1] != '\\')
@@ -485,16 +477,16 @@ void process_instructions() {
 
 int main(int argc, char *argv[]) {
 	if (argp_parse(&argp, argc, argv, 0, NULL, NULL))
-		return 1;
+		return EXIT_FAILURE;
 
 	if (input_name == nullptr) {
 		std::cerr << "Error: No input file specified" << std::endl;
-		return 1;
+		return EXIT_FAILURE;
 	}
-	input.open(input_name);
+	input.open(input_name, std::ios::in);
 	if (!input.is_open()) {
 		std::cerr << "Error: Couldn't open input file" << std::endl;
-		return 1;
+		return EXIT_FAILURE;
 	}
 	if (output_name == nullptr) {
 		std::string tmp = std::string(input_name);
@@ -513,9 +505,10 @@ int main(int argc, char *argv[]) {
 	}
 	if (!output.is_open()) {
 		std::cerr << "Error: Couldn't open output file \"" << output_name << '"' << std::endl;
-		return 1;
+		return EXIT_FAILURE;
 	}
-	// load lines into vector
+
+	// Load lines into vector
 	std::string line;
 	while (std::getline(input, line))
 		lines.push_back(line);
@@ -548,5 +541,5 @@ int main(int argc, char *argv[]) {
 	else if (output_format == COFF)
 		generate_coff(output, bss_size);
 
-	return 0;
+	return EXIT_SUCCESS;
 }
