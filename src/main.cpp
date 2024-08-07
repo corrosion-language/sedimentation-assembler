@@ -70,8 +70,6 @@ static struct argp argp = {
 std::ifstream input_file;
 // output file
 std::ofstream output;
-// lines of input file
-std::vector<std::string> lines;
 // labels in data section (name, offset)
 std::unordered_map<std::string, uint64_t> data_labels;
 std::unordered_map<std::string, uint64_t> rodata_labels;
@@ -105,59 +103,82 @@ void fatal(const int linenum, const std::string &msg) {
 	exit(EXIT_FAILURE);
 }
 
-// Regex patterns for preprocessing (removing whitespace)
-const std::regex lead_trail(R"(^\s*(.*?)\s*$)"), between(R"(\s*([,+\-*\/:\\"])\s*)");
-
-void preprocess() {
-	for (size_t i = 0; i < lines.size(); i++) {
-		std::string &line = lines[i];
-		// Remove comments
-		bool in_string = false;
-		for (size_t j = 0; j < line.size(); j++) {
-			if (line[j] == '"' && (j == 0 || line[j - 1] != '\\'))
-				in_string = !in_string;
-			if (line[j] == ';' && !in_string) {
-				line = line.substr(0, j);
-				break;
-			}
-		}
-		if (in_string)
-			cerr(i + 1, "unterminated string");
-		// Remove leading and trailing whitespace
-		line = std::regex_replace(line, lead_trail, "$1");
-		// Remove whitespace between tokens
-		size_t l = 0;
-		size_t r = line.find('"', l);
-		while (r != 0 && r != std::string::npos) {
-			if (line[r - 1] != '\\')
-				break;
-			r = line.find('"', r + 1);
-		}
-		if (r == std::string::npos) {
-			line = std::regex_replace(line, between, "$1");
-		} else {
-			while (r != std::string::npos) {
-				if (l == 0)
-					line = std::regex_replace(line.substr(l, r - l), between, "$1") + line.substr(r);
+// https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl01.html
+void lex(std::vector<Token> &tokens) {
+	int linenum = 1;
+	char c = input_file.get();
+	tokens.push_back({NEWLINE, "", -1});
+	while (!input_file.eof()) {
+		while (isspace(c)) {
+			if (c == '\n') {
+				linenum++;
+				if (tokens.size() >= 2 && tokens.rbegin()[1].type == NEWLINE)
+					tokens.back().linenum++;
 				else
-					line = line.substr(0, l) + std::regex_replace(line.substr(l, r - l - 1), between, "$1") + line.substr(r);
-				l = line.find('"', r + 1);
-				while (l != 0 && l != std::string::npos) {
-					if (line[l - 1] != '\\')
-						break;
-					l = line.find('"', l + 1);
-				}
-				l++;
-				r = line.find('"', l);
-				while (r != 0 && r != std::string::npos) {
-					if (line[r - 1] != '\\')
-						break;
-					r = line.find('"', r + 1);
-				}
+					tokens.push_back({NEWLINE, "", linenum});
 			}
-			line = line.substr(0, l) + std::regex_replace(line.substr(l, line.size() - l), between, "$1");
+			c = input_file.get();
+		}
+
+		if (c == ';') {
+			// Comment
+			while (c != '\n' && !input_file.eof())
+				c = input_file.get();
+		} else if (c == '"') {
+			// String
+			char last = 0;
+			c = input_file.get();
+			while (c != '"' && last != '\\' && c != '\n' && !input_file.eof()) {
+				tokens.back().text += c;
+				last = c;
+				c = input_file.get();
+			}
+			if (c == '\n' || input_file.eof())
+				fatal(linenum, "unterminated string");
+			tokens.back().type = STRING;
+			tokens.back().linenum = linenum;
+			tokens.push_back({NEWLINE, "", linenum});
+			c = input_file.get();
+		} else if (c == '[') {
+			// Memory reference (need this seperately because of the ':')
+			while (c != ']' && c != '\n' && !input_file.eof()) {
+				tokens.back().text += c;
+				c = input_file.get();
+			}
+			if (c == '\n' || input_file.eof())
+				fatal(linenum, "invalid memory reference");
+			tokens.back().text += c;
+			tokens.back().type = MEMORY;
+			tokens.back().linenum = linenum;
+			tokens.push_back({NEWLINE, "", linenum});
+			c = input_file.get();
+		} else {
+			// Label/other
+			while (!isspace(c) && c != ';' && c != ':' && c != ',' && !input_file.eof()) {
+				tokens.back().text += c;
+				c = input_file.get();
+			}
+			if (c == ',' && tokens.back().text.size() == 0) {
+				c = input_file.get();
+				continue;
+			}
+			if (c == ':') {
+				// Label
+				tokens.back().type = LABEL;
+				tokens.back().linenum = linenum;
+				tokens.push_back({NEWLINE, "", linenum});
+				c = input_file.get();
+			} else {
+				// Other
+				tokens.back().type = OTHER;
+				tokens.back().linenum = linenum;
+				tokens.push_back({NEWLINE, "", linenum});
+			}
 		}
 	}
+	tokens.pop_back();
+	if (tokens.rbegin()[1].type == NEWLINE)
+		tokens.pop_back();
 }
 
 void parse_d(std::string &instr, std::vector<std::string> &args, size_t line, std::string &output_buffer) {
@@ -508,12 +529,9 @@ int main(int argc, char *argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	// Load lines into vector
-	std::string line;
-	while (std::getline(input, line))
-		lines.push_back(line);
-
-	preprocess();
+	// Lex the input file
+	std::vector<Token> tokens;
+	lex(tokens);
 
 	parse_labels();
 
