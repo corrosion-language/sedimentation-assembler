@@ -36,7 +36,7 @@ short mem_size(const std::string &s) {
 	return -1;
 }
 
-op_type get_optype(const std::string &s) {
+OperandType get_optype(const std::string &s) {
 	// if in register table return REG
 	if (reg_size(s) != -1)
 		return REG;
@@ -55,9 +55,9 @@ op_type get_optype(const std::string &s) {
 }
 
 // this function will NOT handle invalid input properly
-mem_output *parse_mem(std::string in, short &size) {
+MemOutput *parse_mem(std::string in, short &size) {
 	if (reg_size(in) != -1) {
-		mem_output *out = new mem_output();
+		MemOutput *out = new MemOutput();
 		short s1 = reg_size(in);
 		short a1 = reg_num(in);
 		if (s1 == 16)
@@ -86,7 +86,7 @@ mem_output *parse_mem(std::string in, short &size) {
 		in = in.substr(5 + (tmp >= 32));
 	}
 	if (in.starts_with("[rel ")) {
-		mem_output *out = new mem_output();
+		MemOutput *out = new MemOutput();
 		out->rm = 0x05;
 		out->offsize = 32;
 		out->reloc.second = REL;
@@ -141,7 +141,7 @@ mem_output *parse_mem(std::string in, short &size) {
 		ops.erase(ops.begin());
 	}
 
-	mem_output *out = new mem_output();
+	MemOutput *out = new MemOutput();
 
 	// resolve labels and combine with imms if possible
 	if (tokens.size() > 1 && (data_labels.count(tokens[tokens.size() - 2]) || bss_labels.count(tokens[tokens.size() - 2]))) {

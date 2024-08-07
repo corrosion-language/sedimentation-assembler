@@ -63,9 +63,9 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 		l = r + 1;
 		r = std::find(l, map + map_size, '\n');
 	}
-	std::vector<std::pair<enum op_type, short>> types;
+	std::vector<std::pair<enum OperandType, short>> types;
 	for (const std::string &arg : args) {
-		enum op_type type = get_optype(arg);
+		enum OperandType type = get_optype(arg);
 		if (type == REG) {
 			types.emplace_back(REG, reg_size(arg));
 		} else if (type == MEM) {
@@ -73,7 +73,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 		} else if (type == IMM) {
 			auto tmp = parse_imm(arg);
 			if (tmp.second == -1) {
-				cerr(linenum, error);
+				fatal(linenum, error);
 			} else if (tmp.second == -3) {
 				if (reloc_table.count(text_labels[tmp.first])) {
 					int32_t off = reloc_table.at(text_labels.at(tmp.first)) - text_buffer.size() - 5;
@@ -97,7 +97,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 				types.emplace_back(IMM, tmp.second);
 			}
 		} else {
-			cerr(linenum, "opérande invalide « " + arg + " »");
+			fatal(linenum, "opérande invalide « " + arg + " »");
 		}
 	}
 	std::vector<std::pair<std::vector<std::string>, short>> valid;
@@ -195,11 +195,11 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 		}
 	}
 	if (valid.empty())
-		cerr(linenum, "combination d'opcode et des opérandes invalide");
+		fatal(linenum, "combination d'opcode et des opérandes invalide");
 	if (valid.size() > 1) {
 		for (size_t i = 0; i < args.size(); i++) {
 			if (types[i].second == -1)
-				cerr(linenum, "taille d'opération non spécifiée");
+				fatal(linenum, "taille d'opération non spécifiée");
 		}
 	} else {
 		for (size_t i = 0; i < args.size(); i++) {
@@ -216,9 +216,9 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 	}
 	std::string best = "";
 	size_t bestlen = -1;
-	std::vector<reloc_entry> bestreloc;
+	std::vector<RelocEntry> bestreloc;
 	for (auto &p : valid) {
-		std::vector<reloc_entry> reloc;
+		std::vector<RelocEntry> reloc;
 		std::string tmp = "";
 		if (p.first.back()[0] == 'p') {
 			tmp += std::stoi(p.first.back().substr(1, 2), nullptr, 16);
@@ -239,7 +239,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 				a1 += (args[0][1] == 'h') * 4;
 				size_t i = p.first.back()[0] == 'w';
 				if (args[0][1] == 'h' && i)
-					cerr(linenum, "impossible d'utiliser un haut-demi registre avec une prefixe REX");
+					fatal(linenum, "impossible d'utiliser un haut-demi registre avec une prefixe REX");
 				if ((i && s != "push" && s != "pop") || (types[0].second == 8 && args[0][1] != 'h' && a1 >= 4) || a1 >= 8)
 					tmp += 0x40 | (i << 3) | (a1 >= 8);
 				short reg = 0;
@@ -259,11 +259,11 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 			} else if (p.first[1][0] == 'M') {
 				short s1 = _sizes[p.first[1][1] - 'A'];
 				size_t w = p.first.back()[0] == 'w';
-				mem_output *data = parse_mem(args[0], s1);
+				MemOutput *data = parse_mem(args[0], s1);
 				if (data == nullptr) {
 					if (error.empty())
 						error = "mode d'adressage invalide";
-					cerr(linenum, error);
+					fatal(linenum, error);
 				}
 				if (data->prefix)
 					tmp += data->prefix;
@@ -305,7 +305,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
 				}
 				if (a1.second == -1) {
-					cerr(linenum, error);
+					fatal(linenum, error);
 				} else if (a1.second == -2) {
 					reloc.emplace_back(text_buffer.size() + tmp.size(), 0, ABS, args[0], 32);
 				} else if (a1.second == -3) {
@@ -354,7 +354,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 				short a1 = reg_num(args[reg.first - 1]);
 				size_t i = p.first.back()[0] == 'w';
 				if (args[reg.first - 1][1] == 'h' && i)
-					cerr(linenum, "impossible d'utiliser un haut-demi registre avec une prefixe REX");
+					fatal(linenum, "impossible d'utiliser un haut-demi registre avec une prefixe REX");
 				if (i || (a1 & 8))
 					tmp += 0x40 | (i << 3) | (a1 >= 8);
 				int reg = 0x7fff;
@@ -372,7 +372,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 				auto a2 = parse_imm(args[imm.first - 1]);
 				short s2 = _sizes[p.first[imm.first][1] - 'A'];
 				if (a2.second == -1) {
-					cerr(linenum, error);
+					fatal(linenum, error);
 				} else if (a2.second == -2) {
 					reloc.emplace_back(text_buffer.size() + tmp.size(), 0, ABS, args[imm.first - 1], std::max(s2, (short)32));
 				} else if (a2.second == -3) {
@@ -403,14 +403,14 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 				short rex = 0;
 				short rm = 0x7fff;
 				short sib = 0x7fff;
-				mem_output *data;
+				MemOutput *data;
 				if (mem.first != -1) {
 					short s1 = mem.second;
 					data = parse_mem(args[mem.first - 1], s1);
 					if (data == nullptr) {
 						if (error.empty())
 							error = "mode d'adressage invalide";
-						cerr(linenum, error);
+						fatal(linenum, error);
 					}
 					if (data->prefix)
 						tmp += data->prefix;
@@ -432,7 +432,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 				if (rex != 0) {
 					if (reg.first != -1)
 						if (args[reg.first - 1][1] == 'h')
-							cerr(linenum, "impossible d'utiliser un haut-demi registre avec une prefixe REX");
+							fatal(linenum, "impossible d'utiliser un haut-demi registre avec une prefixe REX");
 					tmp += rex;
 				}
 				for (size_t i = p.first.back()[0] == 'w'; i < p.first.back().size(); i += 2) {
@@ -461,7 +461,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 					auto a1 = parse_imm(args[imm.first - 1]);
 					short s1 = _sizes[p.first[imm.first][1] - 'A'];
 					if (a1.second == -1) {
-						cerr(linenum, error);
+						fatal(linenum, error);
 					} else if (a1.second == -2) {
 						reloc.emplace_back(text_buffer.size() + tmp.size(), 0, ABS, args[imm.first - 1], std::max(s1, (short)32));
 					} else if (a1.second == -3) {

@@ -15,15 +15,17 @@
 #include <vector>
 #include <unordered_set>
 
-enum sect { UNDEF, TEXT, DATA, RODATA, BSS };
+enum Section { UNDEF, TEXT, DATA, RODATA, BSS };
 
-enum op_type { INVALID, REG, MEM, IMM };
+enum OperandType { INVALID, REG, MEM, IMM };
 
 // absolute address, rip relative, plt entry
 // R_AMD64_32, R_AMD64_PC32/8, R_AMD64_PLT32
-enum reloc_type { NONE, ABS, REL, PLT };
+enum RelocType { NONE, ABS, REL, PLT };
 
-enum format { ELF, COFF, MACHO };
+enum OutputFormat { ELF, COFF, MACHO };
+
+enum TokenType { NEWLINE, STRING, MEMORY, LABEL, OTHER };
 
 static const std::unordered_map<std::string, short> _reg_size{
 	{"rax", 64},	{"rbx", 64},	{"rcx", 64},	{"rdx", 64},   {"eax", 32},	   {"ebx", 32},	   {"ecx", 32},	   {"edx", 32},	   {"ax", 16},
@@ -56,22 +58,28 @@ static const std::unordered_map<std::string, short> _reg_num{
 
 static const short _sizes[] = {-1, 8, -1, 32, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 64, -1, -1, 80, -1, -1, 16, 128, 256, 512};
 
-struct reloc_entry {
+struct RelocEntry {
 	uint64_t offset = 0;
 	int64_t addend = 0;
-	reloc_type type = NONE;
+	RelocType type = NONE;
 	std::string symbol = nullptr;
 	short size = 0;
 };
 
-struct mem_output {
-	std::pair<std::string, enum reloc_type> reloc = {"", NONE};
+struct MemOutput {
+	std::pair<std::string, enum RelocType> reloc = {"", NONE};
 	uint8_t prefix = 0;
 	uint8_t rex = 0;
 	uint16_t rm = 0x7fff;
 	uint16_t sib = 0x7fff;
 	uint8_t offsize = 0;
 	int32_t offset;
+};
+
+struct Token {
+	enum TokenType type;
+	std::string text;
+	int linenum;
 };
 
 #endif

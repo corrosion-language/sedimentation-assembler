@@ -4,11 +4,11 @@
 const char *input_name;
 char *output_name;
 #ifdef WINDOWS
-format output_format = COFF;
+OutputFormat output_format = COFF;
 #elif defined(MACOS)
-format output_format = MACHO;
+OutputFormat output_format = MACHO;
 #else
-format output_format = ELF;
+OutputFormat output_format = ELF;
 #endif
 
 // https://www.gnu.org/software/libc/manual/html_node/Argp-Parser-Functions.html
@@ -67,7 +67,7 @@ static struct argp argp = {
 };
 
 // input file
-std::ifstream input;
+std::ifstream input_file;
 // output file
 std::ofstream output;
 // lines of input file
@@ -82,8 +82,8 @@ std::unordered_map<std::string, size_t> text_labels_map;
 std::unordered_map<std::string, size_t> extern_labels_map;
 std::vector<size_t> text_labels_instr;
 // symbols (positions)
-std::vector<reloc_entry> relocations;
-std::unordered_map<std::string, std::pair<sect, size_t>> labels;
+std::vector<RelocEntry> relocations;
+std::unordered_map<std::string, std::pair<Section, size_t>> labels;
 // symbol table (name, offset)
 std::unordered_map<std::string, uint64_t> reloc_table;
 // output buffer
@@ -96,8 +96,8 @@ std::string prev_label;
 // global symbols
 std::unordered_set<std::string> global;
 
-void cerr(const int i, const std::string &msg) {
-	std::cerr << input_name << ":" << i << ": error: " << msg << std::endl;
+void fatal(const int linenum, const std::string &msg) {
+	std::cerr << input_name << ":" << linenum << ": error: " << msg << std::endl;
 	if (output.is_open()) {
 		output.close();
 		remove(output_name);
@@ -223,7 +223,7 @@ void parse_d(std::string &instr, std::vector<std::string> &args, size_t line, st
 			output_buffer += (val >> 48) & 0xff;
 			output_buffer += (val >> 56) & 0xff;
 		} else {
-			cerr(line + 1, "directive inconnue « " + instr + " »");
+			fatal(line + 1, "directive inconnue « " + instr + " »");
 		}
 	}
 }
@@ -483,8 +483,8 @@ int main(int argc, char *argv[]) {
 		std::cerr << "Error: No input file specified" << std::endl;
 		return EXIT_FAILURE;
 	}
-	input.open(input_name, std::ios::in);
-	if (!input.is_open()) {
+	input_file.open(input_name, std::ios::in);
+	if (!input_file.is_open()) {
 		std::cerr << "Error: Couldn't open input file" << std::endl;
 		return EXIT_FAILURE;
 	}

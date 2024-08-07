@@ -6,8 +6,8 @@
 
 extern std::vector<std::string> extern_labels;
 extern std::unordered_set<std::string> global;
-extern std::vector<struct reloc_entry> relocations;
-extern std::unordered_map<std::string, std::pair<sect, size_t>> labels;
+extern std::vector<struct RelocEntry> relocations;
+extern std::unordered_map<std::string, std::pair<Section, size_t>> labels;
 extern std::string text_buffer;
 extern std::string data_buffer;
 extern std::string rodata_buffer;

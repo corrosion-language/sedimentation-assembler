@@ -30,9 +30,9 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 	while ((strncmp(l, s.c_str(), s.size()) != 0 || l[s.size()] != ' ') && l < vex_map + vex_map_size)
 		l++;
 	if (l >= vex_map + vex_map_size - 1 || *(l - 1) != '\n')
-		cerr(linenum, "instruction inconnue « " + s + " »");
+		fatal(linenum, "instruction inconnue « " + s + " »");
 	if (prefix)
-		cerr(linenum, "impossible d'utiliser un préfixe avec une instruction VEX");
+		fatal(linenum, "impossible d'utiliser un préfixe avec une instruction VEX");
 	r = std::find(l + 1, vex_map + vex_map_size, '\n');
 	std::vector<std::string> matches;
 	while (*l != '\n' && r != vex_map + vex_map_size) {
@@ -40,9 +40,9 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 		l = r + 1;
 		r = std::find(l, vex_map + vex_map_size, '\n');
 	}
-	std::vector<std::pair<enum op_type, short>> types;
+	std::vector<std::pair<enum OperandType, short>> types;
 	for (const std::string &arg : args) {
-		enum op_type type = get_optype(arg);
+		enum OperandType type = get_optype(arg);
 		if (type == REG) {
 			types.emplace_back(REG, reg_size(arg));
 		} else if (type == MEM) {
@@ -50,7 +50,7 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 		} else if (type == IMM) {
 			auto tmp = parse_imm(arg);
 			if (tmp.second == -1) {
-				cerr(linenum, error);
+				fatal(linenum, error);
 			} else if (tmp.second == -3) {
 				if (reloc_table.count(text_labels[tmp.first])) {
 					int32_t off = reloc_table.at(text_labels.at(tmp.first)) - text_buffer.size() - 3;
@@ -70,7 +70,7 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 				types.emplace_back(IMM, tmp.second);
 			}
 		} else {
-			cerr(linenum, "opérande invalide « " + arg + " »");
+			fatal(linenum, "opérande invalide « " + arg + " »");
 		}
 	}
 	std::vector<std::pair<std::vector<std::string>, short>> valid;
@@ -141,16 +141,16 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 		}
 	}
 	if (valid.empty())
-		cerr(linenum, "combination d'opcode et des opérandes invalide");
+		fatal(linenum, "combination d'opcode et des opérandes invalide");
 	for (size_t i = 1; i < valid.size(); i++) {
 		if (valid[i].second != valid[i - 1].second)
-			cerr(linenum, "taille d'opération non spécifiée");
+			fatal(linenum, "taille d'opération non spécifiée");
 	}
 	std::string best = "";
 	size_t bestlen = -1;
-	std::vector<reloc_entry> bestreloc;
+	std::vector<RelocEntry> bestreloc;
 	for (auto &p : valid) {
-		std::vector<reloc_entry> reloc;
+		std::vector<RelocEntry> reloc;
 		std::string tmp = "";
 		// parse vex prefix
 		std::string vex = p.first.back();
@@ -177,11 +177,11 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 		}
 		if (args.size() == 1) {
 			short s1 = _sizes[p.first[1][1] - 'A'];
-			mem_output *data = parse_mem(args[0], s1);
+			MemOutput *data = parse_mem(args[0], s1);
 			if (data == nullptr) {
 				if (error.empty())
 					error = "mode d'adressage invalide";
-				cerr(linenum, error);
+				fatal(linenum, error);
 			}
 			if (data->prefix)
 				tmp += data->prefix;
@@ -223,11 +223,11 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 			short mem_i = p.first[1][0] == 'M' ? 1 : 2;
 			short reg_i = mem_i == 1 ? 2 : 1;
 			short s1 = _sizes[p.first[mem_i][1] - 'A'];
-			mem_output *data = parse_mem(args[mem_i - 1], s1);
+			MemOutput *data = parse_mem(args[mem_i - 1], s1);
 			if (data == nullptr) {
 				if (error.empty())
 					error = "mode d'adressage invalide";
-				cerr(linenum, error);
+				fatal(linenum, error);
 			}
 			if (data->prefix)
 				tmp += data->prefix;
@@ -308,11 +308,11 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 					// reg, rm, imm
 					short reg = reg_num(args[0]);
 					short s1 = _sizes[p.first[2][1] - 'A'];
-					mem_output *data = parse_mem(args[1], s1);
+					MemOutput *data = parse_mem(args[1], s1);
 					if (data == nullptr) {
 						if (error.empty())
 							error = "mode d'addressage invalide";
-						cerr(linenum, error);
+						fatal(linenum, error);
 					}
 					if (data->prefix)
 						tmp += data->prefix;
@@ -355,11 +355,11 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 					short mem_i = p.first[1][0] == 'M' ? 1 : 3;
 					short reg_i = mem_i == 1 ? 3 : 1;
 					short s1 = _sizes[p.first[mem_i][1] - 'A'];
-					mem_output *data = parse_mem(args[mem_i - 1], s1);
+					MemOutput *data = parse_mem(args[mem_i - 1], s1);
 					if (data == nullptr) {
 						if (error.empty())
 							error = "mode d'adressage invalide";
-						cerr(linenum, error);
+						fatal(linenum, error);
 					}
 					if (data->prefix)
 						tmp += data->prefix;

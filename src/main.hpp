@@ -3,6 +3,7 @@
 #define MAIN_HPP
 
 #include "coff.hpp"
+#include "defines.hpp"
 #include "elf.hpp"
 #include "translate.hpp"
 #include <argp.h>
@@ -16,6 +17,6 @@
 		num++;                                                                                                                                                 \
 	}*/
 
-void cerr(const int i, const std::string &s);
+void fatal(const int i, const std::string &s);
 
 #endif
