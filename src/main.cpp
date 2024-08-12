@@ -90,6 +90,7 @@ void fatal(const int linenum, const std::string &msg) {
 void lex(std::vector<Token> &tokens) {
 	int linenum = 1;
 	char c = input_file.get();
+	// Uses tokens.back() as a buffer to accumulate characters until a token is complete
 	tokens.push_back({NEWLINE, "", -1});
 	while (!input_file.eof()) {
 		while (isspace(c)) {
@@ -270,7 +271,7 @@ void parse_labels(const std::vector<Token> &tokens) {
 		Token curr_token = tokens[i];
 		if (curr_token.type == OTHER) {
 			if (curr_token.text == ".section") {
-				curr_sect = tokens[++i].text;
+				curr_sect = std::move(tokens[++i].text);
 				if (!section_map.contains(curr_sect)) {
 					section_map[curr_sect] = sections.size();
 					sections.push_back({curr_sect, {}});
@@ -295,7 +296,7 @@ void parse_labels(const std::vector<Token> &tokens) {
 			if (curr_token.text.starts_with('.')) {
 				if (prev_label.empty())
 					fatal(curr_token.linenum, "local label in global scope");
-				symbols[curr_token.text] = {prev_label + curr_token.text, 0, false};
+				symbols[curr_token.text] = {std::move(prev_label + curr_token.text), 0, false};
 			} else {
 				prev_label = curr_token.text;
 				symbols[curr_token.text] = {std::move(curr_token.text), 0, false};
@@ -417,14 +418,18 @@ int main(int argc, char *argv[]) {
 	std::vector<Token> tokens;
 	lex(tokens);
 
-	parse_labels();
+	parse_labels(tokens);
 
 	process_instructions();
 
+	std::vector<Symbol> symbols_vec;
+	for (auto &sym : symbols)
+		symbols_vec.emplace_back(sym.second);
+
 	if (output_format == ELF)
-		ELF_write(sections, symbols, output_name);
-	else if (output_format == COFF)
-		generate_coff(output, bss_size);
+		ELF_write(sections, symbols_vec, output_name);
+	// else if (output_format == COFF)
+	// 	generate_coff(output, bss_size);
 
 	return EXIT_SUCCESS;
 }
