@@ -67,20 +67,20 @@ static struct argp argp = {
 };
 
 std::ifstream input_file;
-std::ofstream output;
+std::ofstream output_file;
 // Rough position of the labels in the text section (for optimizing jumps)
 std::vector<size_t> text_labels_instr;
 std::vector<RelocEntry> relocations;
 std::vector<Section> sections;
-std::unordered_map<std::string, size_t> section_map;
+std::unordered_map<std::string, uint16_t> section_map;
 std::unordered_map<std::string, Symbol> symbols;
 // Last label that was not a dot
 std::string prev_label;
 
-void fatal(const int linenum, const std::string &msg) {
+[[noreturn]] void fatal(const int linenum, const std::string &msg) {
 	std::cerr << input_name << ":" << linenum << ": error: " << msg << std::endl;
-	if (output.is_open()) {
-		output.close();
+	if (output_file.is_open()) {
+		output_file.close();
 		remove(output_name);
 	}
 	exit(EXIT_FAILURE);
@@ -270,36 +270,42 @@ void parse_labels(const std::vector<Token> &tokens) {
 	for (int i = 0; i < tokens.size(); i++) {
 		Token curr_token = tokens[i];
 		if (curr_token.type == OTHER) {
-			if (curr_token.text == ".section") {
+			if (curr_token.text == "section") {
 				curr_sect = std::move(tokens[++i].text);
-				if (!section_map.contains(curr_sect)) {
+				if (!section_map.count(curr_sect)) {
 					section_map[curr_sect] = sections.size();
 					sections.push_back({curr_sect, {}});
 				}
 			} else if (curr_token.text == "global") {
 				const std::string &label = tokens[++i].text;
-				if (label.starts_with('.'))
+				if (label[0] == '.')
 					fatal(curr_token.linenum, "local label in global directive");
-				if (!symbols.contains(label))
-					symbols[label] = {std::move(label), 0, true};
+				if (!symbols.count(label))
+					symbols[std::move(label)] = (Symbol){label, true, SYMTYPE_NONE, 0, -2};
 				else
 					symbols[label].global = true;
 			} else if (curr_token.text == "extern") {
 				const std::string &label = tokens[++i].text;
-				if (label.starts_with('.'))
+				if (label[0] == '.')
 					fatal(curr_token.linenum, "local label in extern directive");
-				if (symbols.contains(label))
-					fatal(curr_token.linenum, "duplicate definition of label '" + label + "`");
-				symbols[label] = {std::move(label), 0, true};
+				if (symbols.count(label) && symbols[label].value != -2)
+					fatal(curr_token.linenum, "duplicate definition of label `" + label + "'");
+				symbols[std::move(label)] = (Symbol){label, false, SYMTYPE_NONE, section_map[curr_sect] + 1, 0};
 			}
 		} else if (curr_token.type == LABEL) {
-			if (curr_token.text.starts_with('.')) {
+			if (curr_token.text[0] == '.') {
 				if (prev_label.empty())
 					fatal(curr_token.linenum, "local label in global scope");
-				symbols[curr_token.text] = {std::move(prev_label + curr_token.text), 0, false};
+				symbols[prev_label + curr_token.text] = (Symbol){prev_label + curr_token.text, false, SYMTYPE_NONE, section_map[curr_sect] + 1, -1};
 			} else {
+				if (symbols.count(curr_token.text)) {
+					if (symbols[curr_token.text].value != -2)
+						fatal(curr_token.linenum, "duplicate definition of label `" + curr_token.text + "'");
+					symbols[curr_token.text].shndx = section_map[curr_sect] + 1;
+				} else {
+					symbols[std::move(curr_token.text)] = (Symbol){curr_token.text, false, SYMTYPE_NONE, section_map[curr_sect] + 1, -1};
+				}
 				prev_label = curr_token.text;
-				symbols[curr_token.text] = {std::move(curr_token.text), 0, false};
 			}
 		}
 	}
@@ -404,12 +410,12 @@ int main(int argc, char *argv[]) {
 		output_name = new char[tmp.size() + 1];
 		memcpy(output_name, tmp.c_str(), tmp.size() + 1);
 		output_name[tmp.size()] = '\0';
-		output.open(output_name, std::ios::binary);
+		output_file.open(output_name, std::ios::binary);
 		delete[] output_name;
 	} else {
-		output.open(output_name, std::ios::binary);
+		output_file.open(output_name, std::ios::binary);
 	}
-	if (!output.is_open()) {
+	if (!output_file.is_open()) {
 		std::cerr << "Error: Couldn't open output file \"" << output_name << '"' << std::endl;
 		return EXIT_FAILURE;
 	}
@@ -427,9 +433,9 @@ int main(int argc, char *argv[]) {
 		symbols_vec.emplace_back(sym.second);
 
 	if (output_format == ELF)
-		ELF_write(sections, symbols_vec, output_name);
+		ELF_write(sections, symbols_vec, output_file);
 	// else if (output_format == COFF)
-	// 	generate_coff(output, bss_size);
+	// 	generate_coff(output_file, bss_size);
 
 	return EXIT_SUCCESS;
 }

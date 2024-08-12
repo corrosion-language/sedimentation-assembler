@@ -12,6 +12,6 @@ extern std::string text_buffer;
 extern std::string data_buffer;
 extern std::string rodata_buffer;
 
-void ELF_write(const std::vector<Section> &sections, const std::vector<Symbol> &symbols, const std::string &filename);
+void ELF_write(const std::vector<Section> &, const std::vector<Symbol> &, std::ofstream &);
 
 #endif

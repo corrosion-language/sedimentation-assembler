@@ -5,8 +5,6 @@
 #include "defines.hpp"
 #include "utility.hpp"
 
-extern void fatal(const int i, const std::string &s);
-
 extern std::vector<RelocEntry> relocations;
 extern std::string error;
 

@@ -25,6 +25,8 @@ enum TokenType { NEWLINE, STRING, MEMORY, LABEL, OTHER };
 // https://docs.oracle.com/cd/E19120-01/open.solaris/819-0690/chapter7-2/index.html
 enum RelocType { NONE, ABS, REL, PLT };
 
+enum SymbolType { SYMTYPE_NONE };
+
 struct RelocEntry {
 	uint64_t offset = 0;
 	int64_t addend = 0;
@@ -40,9 +42,10 @@ struct Section {
 
 struct Symbol {
 	std::string name;
-	uint64_t value;
-	uint8_t type;
 	bool global;
+	SymbolType type;
+	uint16_t shndx;
+	ssize_t value;
 };
 
 struct MemOperand {
@@ -92,5 +95,7 @@ static const std::unordered_map<std::string, short> _reg_num{
 
 // [b, w, d, q, x, y, z, t]: [8, 16, 32, 64, 128, 256, 512, 80]
 static const short _sizes[] = {-1, 8, -1, 32, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 64, -1, -1, 80, -1, -1, 16, 128, 256, 512};
+
+[[noreturn]] void fatal(const int i, const std::string &s);
 
 #endif

@@ -6,9 +6,8 @@
 #include <elf.h>
 #include <fstream>
 
-void ELF_Write(const std::vector<Section> &sections, const std::vector<Symbol> &symbols, const std::string &filename) {
+void ELF_write(const std::vector<Section> &sections, const std::vector<Symbol> &symbols, std::ofstream &f) {
 	// Open file
-	std::ofstream f(filename, std::ios::binary);
 	uint8_t zero[64] = {0};
 
 	// Write the ELF header
@@ -63,6 +62,7 @@ void ELF_Write(const std::vector<Section> &sections, const std::vector<Symbol> &
 			type = SHT_NOBITS;
 			flags = SHF_ALLOC | SHF_WRITE;
 		} else {
+			// Default section properties
 			type = SHT_PROGBITS;
 			flags = SHF_ALLOC | SHF_EXECINSTR;
 		}
@@ -97,7 +97,7 @@ void ELF_Write(const std::vector<Section> &sections, const std::vector<Symbol> &
 		strtab += sym.name + '\0'; // add name to string table
 		esym.st_info = ELF64_ST_INFO(sym.global ? STB_GLOBAL : STB_LOCAL, sym.type); // symbol binding and type
 		esym.st_other = 0; // no other
-		esym.st_shndx = 1; // section index
+		esym.st_shndx = sym.shndx; // section index
 		esym.st_value = sym.value; // symbol value
 		esym.st_size = 0; // no size
 		symtab.insert(symtab.end(), (uint8_t *)&esym, (uint8_t *)&esym + sizeof(Elf64_Sym));
@@ -112,7 +112,7 @@ void ELF_Write(const std::vector<Section> &sections, const std::vector<Symbol> &
 		strtab += sym.name + '\0'; // add name to string table
 		esym.st_info = ELF64_ST_INFO(sym.global ? STB_GLOBAL : STB_LOCAL, sym.type); // symbol binding and type
 		esym.st_other = 0; // no other
-		esym.st_shndx = 1; // section index
+		esym.st_shndx = sym.shndx; // section index
 		esym.st_value = sym.value; // symbol value
 		esym.st_size = 0; // no size
 		symtab.insert(symtab.end(), (uint8_t *)&esym, (uint8_t *)&esym + sizeof(Elf64_Sym));

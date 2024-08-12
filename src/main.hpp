@@ -17,6 +17,4 @@
 		num++;                                                                                                                                                 \
 	}*/
 
-void fatal(const int i, const std::string &s);
-
 #endif
