@@ -1,268 +1,183 @@
 #include "elf.hpp"
 
-void generate_elf(std::ofstream &f, uint64_t bss_size) {
-	// structure:
-	//  ELF header
-	//  section headers
-	//   text
-	//   data
-	//   bss
-	//   shstrtab
-	//   symtab
-	//   strtab
-	//   rela.text
-	//  section data
+#include "elf.hpp"
 
-	// list of symbols to include
-	uint64_t strtab_size = 1;
-	for (auto &s : extern_labels)
-		strtab_size += s.size() + 1;
-	for (auto &s : labels)
-		strtab_size += s.first.size() + 1;
+#include <algorithm>
+#include <elf.h>
+#include <fstream>
 
-	const size_t data_size = data_buffer.size();
-	const size_t rodata_size = rodata_buffer.size();
+void ELF_Write(const std::vector<Section> &sections, const std::vector<Symbol> &symbols, const std::string &filename) {
+	// Open file
+	std::ofstream f(filename, std::ios::binary);
+	uint8_t zero[64] = {0};
 
-	// ELF header
-	elf_header ehdr;
-	memcpy(ehdr.ident, "\x7f\x45LF\x02\x01\x01\x00\x00\x00\x00\x00\x00\x00\x00\x00", 16);
-	ehdr.type = 1; // relocatable
-	ehdr.machine = 0x3e; // x86-64
-	ehdr.version = 1; // current
-	ehdr.entry = 0;
-	ehdr.phoff = 0;
-	ehdr.shoff = sizeof(ehdr);
-	ehdr.flags = 0;
-	ehdr.ehsize = sizeof(ehdr);
-	ehdr.phentsize = 0;
-	ehdr.phnum = 0;
-	ehdr.shentsize = sizeof(elf_section_header);
-	ehdr.shnum = 5 + !!data_size + !!rodata_size + !!bss_size + !!relocations.size(); // 5 for null, text, symtab, strtab, shstrtab
-	ehdr.shstrndx = 2 + !!data_size + !!rodata_size + !!bss_size; // first metadata section for shstrtab
-	f.write((const char *)&ehdr, sizeof(ehdr));
+	// Write the ELF header
+	Elf64_Ehdr ehdr;
+	ehdr.e_ident[EI_MAG0] = ELFMAG0; // 0x7f
+	ehdr.e_ident[EI_MAG1] = ELFMAG1; // 'E'
+	ehdr.e_ident[EI_MAG2] = ELFMAG2; // 'L'
+	ehdr.e_ident[EI_MAG3] = ELFMAG3; // 'F'
+	ehdr.e_ident[EI_CLASS] = ELFCLASS64; // 64-bit
+	ehdr.e_ident[EI_DATA] = ELFDATA2LSB; // little-endian
+	ehdr.e_ident[EI_VERSION] = EV_CURRENT; // current version
+	ehdr.e_ident[EI_OSABI] = ELFOSABI_SYSV; // UNIX System V ABI
+	ehdr.e_ident[EI_ABIVERSION] = 0; // ABI version
+	ehdr.e_type = ET_REL; // relocatable
+	ehdr.e_machine = EM_X86_64; // x86-64
+	ehdr.e_version = EV_CURRENT; // current version
+	ehdr.e_phoff = 0; // no program header table
+	ehdr.e_shoff = sizeof(Elf64_Ehdr); // section header table offset
+	ehdr.e_flags = 0; // no flags
+	ehdr.e_ehsize = sizeof(Elf64_Ehdr); // ELF header size
+	ehdr.e_phentsize = 0; // no program header table
+	ehdr.e_phnum = 0; // no program header table
+	ehdr.e_shentsize = sizeof(Elf64_Shdr); // section header size
+	ehdr.e_shnum = sections.size() + 4; // null + number of sections + symtab + strtab + shstrtab
+	ehdr.e_shstrndx = sections.size() + 3; // index of section name string table (last section)
+	f.write((char *)&ehdr, sizeof(Elf64_Ehdr));
 
-	// section headers
-	elf_section_header shdr;
-	// null section
-	memset(&shdr, 0, sizeof(shdr));
-	f.write((const char *)&shdr, sizeof(shdr));
+	// Write the null section header
+	f.write((char *)zero, sizeof(Elf64_Shdr));
 
-	// text section
-	shdr.name = 1;
-	shdr.type = 1; // progbits
-	shdr.flags = 0x2 | 0x4; // alloc, execinstr
-	shdr.addr = 0;
-	shdr.offset = ehdr.shoff + ehdr.shentsize * ehdr.shnum;
-	shdr.size = text_buffer.size();
-	shdr.link = 0;
-	shdr.info = 0;
-	shdr.addralign = 16;
-	shdr.entsize = 0;
-	f.write((const char *)&shdr, sizeof(shdr));
+	// Offset for section data, will accumulate as we write sections and will always be page-aligned
+	/// TODO: This is currently assuming we don't pass 4096 bytes for headers, if this happens then the elf will be invalid
+	Elf64_Off dataoff = 0x1000;
 
-	size_t next_offset = (shdr.offset + shdr.size + 15) & ~15;
+	std::string shstrtab;
+	shstrtab.push_back(0); // null section name
+	// Write the section header table
+	for (const auto &section : sections) {
+		Elf64_Word type;
+		Elf64_Xword flags;
+		// Special section handling
+		if (section.name == ".text") {
+			type = SHT_PROGBITS;
+			flags = SHF_EXECINSTR | SHF_ALLOC;
+		} else if (section.name == ".data") {
+			type = SHT_PROGBITS;
+			flags = SHF_ALLOC | SHF_WRITE;
+		} else if (section.name == ".rodata") {
+			type = SHT_PROGBITS;
+			flags = SHF_ALLOC;
+		} else if (section.name == ".bss") {
+			type = SHT_NOBITS;
+			flags = SHF_ALLOC | SHF_WRITE;
+		} else {
+			type = SHT_PROGBITS;
+			flags = SHF_ALLOC | SHF_EXECINSTR;
+		}
 
-	// data section
-	if (data_size) {
-		shdr.name = 7;
-		shdr.type = 1; // progbits
-		shdr.flags = 0x2 | 0x1; // alloc, write
-		shdr.addr = 0;
-		shdr.offset = next_offset;
-		shdr.size = data_size;
-		shdr.link = 0;
-		shdr.info = 0;
-		shdr.addralign = 4;
-		shdr.entsize = 0;
-		f.write((const char *)&shdr, sizeof(shdr));
-
-		next_offset = (shdr.offset + shdr.size + 3) & ~3;
+		Elf64_Shdr shdr;
+		shdr.sh_name = shstrtab.size(); // name offset in section name string table
+		shstrtab += section.name + '\0'; // add section name to section name string table
+		shdr.sh_type = type; // section type
+		shdr.sh_flags = flags; // no flags
+		shdr.sh_addr = 0; // no address
+		shdr.sh_offset = dataoff; // section offset
+		shdr.sh_size = section.data.size(); // section size
+		dataoff += (shdr.sh_size + 0xfff) & ~0xfff; // align next section data to page size
+		shdr.sh_link = 0; // no link
+		shdr.sh_info = 0; // no info
+		shdr.sh_addralign = 16; // no alignment
+		shdr.sh_entsize = 0; // no entry size
+		f.write((char *)&shdr, sizeof(Elf64_Shdr));
 	}
 
-	if (rodata_size) {
-		shdr.name = 13;
-		shdr.type = 1; // progbits
-		shdr.flags = 0x2; // alloc
-		shdr.addr = 0;
-		shdr.offset = next_offset;
-		shdr.size = rodata_size;
-		shdr.link = 0;
-		shdr.info = 0;
-		shdr.addralign = 4;
-		shdr.entsize = 0;
-		f.write((const char *)&shdr, sizeof(shdr));
-
-		next_offset += shdr.size;
-	}
-
-	// bss section
-	if (bss_size) {
-		shdr.name = 21;
-		shdr.type = 8; // nobits
-		shdr.flags = 0x2 | 0x1; // alloc, write
-		shdr.addr = 0;
-		shdr.offset = 0;
-		shdr.size = bss_size;
-		shdr.link = 0;
-		shdr.info = 0;
-		shdr.addralign = 1;
-		shdr.entsize = 0;
-		f.write((const char *)&shdr, sizeof(shdr));
-	}
-
-	// shstrtab section
-	shdr.name = 26;
-	shdr.type = 3; // strtab
-	shdr.flags = 0;
-	shdr.addr = 0;
-	shdr.offset = next_offset;
-	shdr.size = 63;
-	shdr.link = 0;
-	shdr.info = 0;
-	shdr.addralign = 1;
-	shdr.entsize = 0;
-	f.write((const char *)&shdr, sizeof(shdr));
-
-	// symbol table
-	shdr.name = 36;
-	shdr.type = 2; // symtab
-	shdr.flags = 0;
-	shdr.addr = 0;
-	shdr.offset = shdr.offset + shdr.size;
-	shdr.size = (labels.size() + extern_labels.size() + 1) * sizeof(elf_symbol);
-	shdr.link = ehdr.shnum - 1 - !!relocations.size(); // strtab
-	shdr.info = shdr.size / sizeof(elf_symbol) - global.size() - extern_labels.size(); // index of last local symbol + 1
-	shdr.addralign = 8;
-	shdr.entsize = sizeof(elf_symbol);
-	f.write((const char *)&shdr, sizeof(shdr));
-
-	// strtab section
-	shdr.name = 44;
-	shdr.type = 3; // strtab
-	shdr.flags = 0;
-	shdr.addr = 0;
-	shdr.offset = shdr.offset + shdr.size;
-	shdr.size = strtab_size;
-	shdr.link = 0;
-	shdr.info = 0;
-	shdr.addralign = 1;
-	shdr.entsize = 0;
-	f.write((const char *)&shdr, sizeof(shdr));
-
-	// relocation table
-	if (relocations.size()) {
-		shdr.name = 52;
-		shdr.type = 4; // rela
-		shdr.flags = 0;
-		shdr.addr = 0;
-		shdr.offset = shdr.offset + shdr.size;
-		shdr.size = relocations.size() * sizeof(elf_relocation);
-		shdr.link = ehdr.shnum - 3; // symtab
-		shdr.info = 1; // text section
-		shdr.addralign = 8;
-		shdr.entsize = sizeof(elf_relocation);
-		f.write((const char *)&shdr, sizeof(shdr));
-	}
-
-	// write text
-	f.write((const char *)text_buffer.data(), text_buffer.size());
-
-	// seek to multiple of 16
-	f.seekp((f.tellp() + (std::streamoff)15) & ~15);
-
-	// write data
-	f.write((const char *)data_buffer.data(), data_size);
-
-	// seek to multiple of 4
-	f.seekp((f.tellp() + (std::streamoff)3) & ~3);
-
-	// write rodata
-	f.write((const char *)rodata_buffer.data(), rodata_size);
-
-	// write shstrtab
-	f.write("\0.text\0.data\0.rodata\0.bss\0.shstrtab\0.symtab\0.strtab\0.rela.text", 63);
-
-	std::vector<std::string> ordered_labels;
-
-	uint64_t i = 1;
-	elf_symbol sym;
-	// null symbol
-	memset(&sym, 0, sizeof(sym));
-	f.write((const char *)&sym, sizeof(sym));
-	sym.info = 0;
-	// write symtab
-	for (const auto &l : labels) {
-		if (global.count(l.first))
+	std::string strtab; // it's more convenient to make it a string even though it's binary
+	strtab.push_back(0); // first character of stringtable is always null
+	std::vector<uint8_t> symtab;
+	int local_sym_count = 0;
+	// Write the symbol table
+	// We have to do this in 2 passes to put local symbols first
+	for (const auto &sym : symbols) {
+		if (sym.global)
 			continue;
-		sym.name = i;
-		i += l.first.size() + 1;
-		sym.other = 0;
-		if (l.second.first == TEXT)
-			sym.shndx = 1; // text
-		else if (l.second.first == DATA)
-			sym.shndx = 2; // data
-		else if (l.second.first == RODATA)
-			sym.shndx = 2 + !!data_size;
-		else
-			sym.shndx = 2 + !!data_size + !!rodata_size; // bss
-		sym.value = l.second.second;
-		sym.size = 0;
-		f.write((const char *)&sym, sizeof(sym));
-		ordered_labels.push_back(l.first);
+		Elf64_Sym esym;
+		esym.st_name = strtab.size(); // name offset in string table
+		strtab += sym.name + '\0'; // add name to string table
+		esym.st_info = ELF64_ST_INFO(sym.global ? STB_GLOBAL : STB_LOCAL, sym.type); // symbol binding and type
+		esym.st_other = 0; // no other
+		esym.st_shndx = 1; // section index
+		esym.st_value = sym.value; // symbol value
+		esym.st_size = 0; // no size
+		symtab.insert(symtab.end(), (uint8_t *)&esym, (uint8_t *)&esym + sizeof(Elf64_Sym));
+		local_sym_count++;
 	}
-	sym.info = 0x10;
-	sym.shndx = 0;
-	for (const auto &s : extern_labels) {
-		sym.name = i;
-		i += s.size() + 1;
-		f.write((const char *)&sym, sizeof(sym));
-		ordered_labels.push_back(s);
-	}
-	for (const auto &l : labels) {
-		if (!global.count(l.first))
+	// Now local symbols
+	for (const auto &sym : symbols) {
+		if (!sym.global)
 			continue;
-		sym.name = i;
-		i += l.first.size() + 1;
-		sym.other = 0;
-		if (l.second.first == TEXT)
-			sym.shndx = 1; // text
-		else if (l.second.first == DATA)
-			sym.shndx = 2; // data
-		else if (l.second.first == RODATA)
-			sym.shndx = 2 + !!data_size;
-		else
-			sym.shndx = 2 + !!data_size + !!rodata_size; // bss
-		sym.value = l.second.second;
-		sym.size = 0;
-		f.write((const char *)&sym, sizeof(sym));
-		ordered_labels.push_back(l.first);
+		Elf64_Sym esym;
+		esym.st_name = strtab.size(); // name offset in string table
+		strtab += sym.name + '\0'; // add name to string table
+		esym.st_info = ELF64_ST_INFO(sym.global ? STB_GLOBAL : STB_LOCAL, sym.type); // symbol binding and type
+		esym.st_other = 0; // no other
+		esym.st_shndx = 1; // section index
+		esym.st_value = sym.value; // symbol value
+		esym.st_size = 0; // no size
+		symtab.insert(symtab.end(), (uint8_t *)&esym, (uint8_t *)&esym + sizeof(Elf64_Sym));
 	}
 
-	// write strtab
-	f.seekp(f.tellp() + (std::streamoff)1);
-	for (auto &l : ordered_labels)
-		if (l.size())
-			f.write(l.c_str(), l.size() + 1);
+	// Offset into file for writing metadata
+	Elf64_Off metaoff = (Elf64_Off)f.tellp() + 3 * sizeof(Elf64_Shdr);
 
-	elf_relocation reloc;
-	// write rela.text
-	for (auto &r : relocations) {
-		reloc.offset = r.offset;
-		uint64_t index = std::find(ordered_labels.begin(), ordered_labels.end(), r.symbol) - ordered_labels.begin();
-		reloc.info = (index + 1) << 32;
-		if (r.type == ABS) {
-			if (r.size == 64)
-				reloc.info |= 1;
-			else if (r.size == 32)
-				reloc.info |= 11;
-		} else if (r.type == REL)
-			reloc.info |= 2;
-		else
-			reloc.info |= 4;
-		reloc.addend = r.addend;
-		f.write((const char *)&reloc, sizeof(reloc));
+	Elf64_Shdr shdr;
+	// Write symtab header
+	shdr.sh_name = shstrtab.size(); // name offset in section name string table
+	shstrtab += ".symtab"; // add section name to section name string table
+	shstrtab.push_back(0);
+	shdr.sh_type = SHT_SYMTAB; // section type
+	shdr.sh_flags = 0; // no flags
+	shdr.sh_addr = 0; // no address
+	shdr.sh_offset = metaoff; // no offset
+	shdr.sh_size = symtab.size(); // section size
+	metaoff += shdr.sh_size;
+	shdr.sh_link = sections.size() + 2; // link to string table
+	shdr.sh_info = local_sym_count; // "one bigger than the index of the last local symbol"
+	shdr.sh_addralign = 8; // alignment
+	shdr.sh_entsize = sizeof(Elf64_Sym); // entry size
+	f.write((char *)&shdr, sizeof(Elf64_Shdr));
+
+	// Write strtab header
+	shdr.sh_name = shstrtab.size(); // name offset in section name string table
+	shstrtab += ".strtab"; // add section name to section name string table
+	shstrtab.push_back(0);
+	shdr.sh_type = SHT_STRTAB; // section type
+	shdr.sh_flags = 0; // no flags
+	shdr.sh_addr = 0; // no address
+	shdr.sh_offset = metaoff; // no offset
+	shdr.sh_size = strtab.size(); // section size
+	metaoff += shdr.sh_size;
+	shdr.sh_link = 0; // no link
+	shdr.sh_info = 0; // no info
+	shdr.sh_addralign = 1; // no alignment
+	shdr.sh_entsize = 0; // no entry size
+	f.write((char *)&shdr, sizeof(Elf64_Shdr));
+
+	// Write shstrtab header
+	shdr.sh_name = shstrtab.size(); // name offset in section name string table
+	shstrtab += ".shstrtab"; // add section name to section name string table
+	shstrtab.push_back(0);
+	shdr.sh_type = SHT_STRTAB; // section type
+	shdr.sh_flags = 0; // no flags
+	shdr.sh_addr = 0; // no address
+	shdr.sh_offset = metaoff; // no offset
+	shdr.sh_size = shstrtab.size(); // section size
+	metaoff += shdr.sh_size;
+	shdr.sh_link = 0; // no link
+	shdr.sh_info = 0; // no info
+	shdr.sh_addralign = 1; // no alignment
+	shdr.sh_entsize = 0; // no entry size
+	f.write((char *)&shdr, sizeof(Elf64_Shdr));
+
+	f.write((const char *)symtab.data(), symtab.size());
+	f.write(strtab.data(), strtab.size());
+	f.write(shstrtab.data(), shstrtab.size());
+
+	// Write the section data
+	for (auto section : sections) {
+		f.seekp((f.tellp() + (std::streampos)0xfff) & ~0xfff, std::ios::beg); // align to page size
+		f.write((char *)section.data.data(), section.data.size());
 	}
-
-	// close file
-	f.close();
+	f.seekp((f.tellp() + (std::streampos)0xfff) & ~0xfff, std::ios::beg);
 }
