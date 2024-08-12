@@ -268,10 +268,10 @@ void parse_labels(const std::vector<Token> &tokens) {
 	std::string curr_sect = "";
 
 	for (int i = 0; i < tokens.size(); i++) {
-		Token curr_token = tokens[i];
+		const Token &curr_token = tokens[i];
 		if (curr_token.type == OTHER) {
 			if (curr_token.text == "section") {
-				curr_sect = std::move(tokens[++i].text);
+				curr_sect = tokens[++i].text;
 				if (!section_map.count(curr_sect)) {
 					section_map[curr_sect] = sections.size();
 					sections.push_back({curr_sect, {}});
@@ -281,7 +281,7 @@ void parse_labels(const std::vector<Token> &tokens) {
 				if (label[0] == '.')
 					fatal(curr_token.linenum, "local label in global directive");
 				if (!symbols.count(label))
-					symbols[std::move(label)] = (Symbol){label, true, SYMTYPE_NONE, 0, -2};
+					symbols[label] = (Symbol){label, true, SYMTYPE_NONE, 0, -2};
 				else
 					symbols[label].global = true;
 			} else if (curr_token.text == "extern") {
@@ -290,7 +290,7 @@ void parse_labels(const std::vector<Token> &tokens) {
 					fatal(curr_token.linenum, "local label in extern directive");
 				if (symbols.count(label) && symbols[label].value != -2)
 					fatal(curr_token.linenum, "duplicate definition of label `" + label + "'");
-				symbols[std::move(label)] = (Symbol){label, false, SYMTYPE_NONE, section_map[curr_sect] + 1, 0};
+				symbols[label] = (Symbol){label, false, SYMTYPE_NONE, section_map[curr_sect] + 1, 0};
 			}
 		} else if (curr_token.type == LABEL) {
 			if (curr_token.text[0] == '.') {
@@ -303,7 +303,7 @@ void parse_labels(const std::vector<Token> &tokens) {
 						fatal(curr_token.linenum, "duplicate definition of label `" + curr_token.text + "'");
 					symbols[curr_token.text].shndx = section_map[curr_sect] + 1;
 				} else {
-					symbols[std::move(curr_token.text)] = (Symbol){curr_token.text, false, SYMTYPE_NONE, section_map[curr_sect] + 1, -1};
+					symbols[curr_token.text] = (Symbol){curr_token.text, false, SYMTYPE_NONE, section_map[curr_sect] + 1, -1};
 				}
 				prev_label = curr_token.text;
 			}
