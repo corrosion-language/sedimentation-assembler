@@ -15,17 +15,51 @@
 #include <vector>
 #include <unordered_set>
 
-enum Section { UNDEF, TEXT, DATA, RODATA, BSS };
-
 enum OperandType { INVALID, REG, MEM, IMM };
-
-// absolute address, rip relative, plt entry
-// R_AMD64_32, R_AMD64_PC32/8, R_AMD64_PLT32
-enum RelocType { NONE, ABS, REL, PLT };
 
 enum OutputFormat { ELF, COFF, MACHO };
 
 enum TokenType { NEWLINE, STRING, MEMORY, LABEL, OTHER };
+
+// Represents the following types: R_AMD64_32, R_AMD64_PC32/8, R_AMD64_PLT32
+// https://docs.oracle.com/cd/E19120-01/open.solaris/819-0690/chapter7-2/index.html
+enum RelocType { NONE, ABS, REL, PLT };
+
+struct RelocEntry {
+	uint64_t offset = 0;
+	int64_t addend = 0;
+	RelocType type = NONE;
+	std::string symbol = nullptr;
+	short size = 0;
+};
+
+struct Section {
+	std::string name;
+	std::vector<uint8_t> data;
+};
+
+struct Symbol {
+	std::string name;
+	uint64_t value;
+	uint8_t type;
+	bool global;
+};
+
+struct MemOperand {
+	std::pair<std::string, RelocType> reloc = {"", NONE};
+	uint8_t prefix = 0;
+	uint8_t rex = 0;
+	uint16_t rm = 0x7fff;
+	uint16_t sib = 0x7fff;
+	uint8_t offsize = 0;
+	int32_t offset;
+};
+
+struct Token {
+	enum TokenType type;
+	std::string text;
+	int linenum;
+};
 
 static const std::unordered_map<std::string, short> _reg_size{
 	{"rax", 64},	{"rbx", 64},	{"rcx", 64},	{"rdx", 64},   {"eax", 32},	   {"ebx", 32},	   {"ecx", 32},	   {"edx", 32},	   {"ax", 16},
@@ -56,30 +90,7 @@ static const std::unordered_map<std::string, short> _reg_num{
 	{"st0", 0},	   {"st1", 1},	  {"st2", 2},	 {"st3", 3},	{"st4", 4},	   {"st5", 5},	  {"st6", 6},	 {"st7", 7},
 };
 
+// [b, w, d, q, x, y, z, t]: [8, 16, 32, 64, 128, 256, 512, 80]
 static const short _sizes[] = {-1, 8, -1, 32, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 64, -1, -1, 80, -1, -1, 16, 128, 256, 512};
-
-struct RelocEntry {
-	uint64_t offset = 0;
-	int64_t addend = 0;
-	RelocType type = NONE;
-	std::string symbol = nullptr;
-	short size = 0;
-};
-
-struct MemOutput {
-	std::pair<std::string, enum RelocType> reloc = {"", NONE};
-	uint8_t prefix = 0;
-	uint8_t rex = 0;
-	uint16_t rm = 0x7fff;
-	uint16_t sib = 0x7fff;
-	uint8_t offsize = 0;
-	int32_t offset;
-};
-
-struct Token {
-	enum TokenType type;
-	std::string text;
-	int linenum;
-};
 
 #endif

@@ -55,9 +55,9 @@ OperandType get_optype(const std::string &s) {
 }
 
 // this function will NOT handle invalid input properly
-MemOutput *parse_mem(std::string in, short &size) {
+MemOperand *parse_mem(std::string in, short &size) {
 	if (reg_size(in) != -1) {
-		MemOutput *out = new MemOutput();
+		MemOperand *out = new MemOperand();
 		short s1 = reg_size(in);
 		short a1 = reg_num(in);
 		if (s1 == 16)
@@ -86,7 +86,7 @@ MemOutput *parse_mem(std::string in, short &size) {
 		in = in.substr(5 + (tmp >= 32));
 	}
 	if (in.starts_with("[rel ")) {
-		MemOutput *out = new MemOutput();
+		MemOperand *out = new MemOperand();
 		out->rm = 0x05;
 		out->offsize = 32;
 		out->reloc.second = REL;
@@ -141,7 +141,7 @@ MemOutput *parse_mem(std::string in, short &size) {
 		ops.erase(ops.begin());
 	}
 
-	MemOutput *out = new MemOutput();
+	MemOperand *out = new MemOperand();
 
 	// resolve labels and combine with imms if possible
 	if (tokens.size() > 1 && (data_labels.count(tokens[tokens.size() - 2]) || bss_labels.count(tokens[tokens.size() - 2]))) {

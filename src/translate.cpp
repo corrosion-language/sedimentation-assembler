@@ -259,7 +259,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 			} else if (p.first[1][0] == 'M') {
 				short s1 = _sizes[p.first[1][1] - 'A'];
 				size_t w = p.first.back()[0] == 'w';
-				MemOutput *data = parse_mem(args[0], s1);
+				MemOperand *data = parse_mem(args[0], s1);
 				if (data == nullptr) {
 					if (error.empty())
 						error = "mode d'adressage invalide";
@@ -403,7 +403,7 @@ void handle(std::string s, std::vector<std::string> args, const size_t linenum, 
 				short rex = 0;
 				short rm = 0x7fff;
 				short sib = 0x7fff;
-				MemOutput *data;
+				MemOperand *data;
 				if (mem.first != -1) {
 					short s1 = mem.second;
 					data = parse_mem(args[mem.first - 1], s1);

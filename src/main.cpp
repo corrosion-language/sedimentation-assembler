@@ -66,33 +66,16 @@ static struct argp argp = {
 	.argp_domain = nullptr,
 };
 
-// input file
 std::ifstream input_file;
-// output file
 std::ofstream output;
-// labels in data section (name, offset)
-std::unordered_map<std::string, uint64_t> data_labels;
-std::unordered_map<std::string, uint64_t> rodata_labels;
-std::unordered_map<std::string, uint64_t> bss_labels;
-std::vector<std::string> text_labels;
-std::vector<std::string> extern_labels;
-std::unordered_map<std::string, size_t> text_labels_map;
-std::unordered_map<std::string, size_t> extern_labels_map;
+// Rough position of the labels in the text section (for optimizing jumps)
 std::vector<size_t> text_labels_instr;
-// symbols (positions)
 std::vector<RelocEntry> relocations;
-std::unordered_map<std::string, std::pair<Section, size_t>> labels;
-// symbol table (name, offset)
-std::unordered_map<std::string, uint64_t> reloc_table;
-// output buffer
-std::string text_buffer;
-std::string data_buffer;
-std::string rodata_buffer;
-uint64_t bss_size = 0;
-// last label that was not a dot
+std::vector<Section> sections;
+std::unordered_map<std::string, size_t> section_map;
+std::unordered_map<std::string, Symbol> symbols;
+// Last label that was not a dot
 std::string prev_label;
-// global symbols
-std::unordered_set<std::string> global;
 
 void fatal(const int linenum, const std::string &msg) {
 	std::cerr << input_name << ":" << linenum << ": error: " << msg << std::endl;
@@ -280,220 +263,121 @@ void pad(int align, std::string &output_buffer) {
 		output_buffer += "\x66\x66\x0f\x1f\x84\x90\x90\x90\x90\x90";
 }
 
-void parse_labels() {
-	sect curr_sect = UNDEF;
-	size_t instr_cnt = 0;
-	for (size_t i = 0; i < lines.size(); i++) {
-		std::string line = lines[i];
-		while (line.size() == 0 && ++i < lines.size())
-			line = lines[i];
-		if (i == lines.size())
-			break;
-		if (line.starts_with("section ")) {
-			if (line == "section .text") {
-				curr_sect = TEXT;
-			} else if (line == "section .data") {
-				curr_sect = DATA;
-			} else if (line == "section .rodata") {
-				curr_sect = RODATA;
-			} else if (line == "section .bss") {
-				curr_sect = BSS;
+void parse_labels(const std::vector<Token> &tokens) {
+	std::string curr_sect = "";
+
+	for (int i = 0; i < tokens.size(); i++) {
+		Token curr_token = tokens[i];
+		if (curr_token.type == OTHER) {
+			if (curr_token.text == ".section") {
+				curr_sect = tokens[++i].text;
+				if (!section_map.contains(curr_sect)) {
+					section_map[curr_sect] = sections.size();
+					sections.push_back({curr_sect, {}});
+				}
+			} else if (curr_token.text == "global") {
+				const std::string &label = tokens[++i].text;
+				if (label.starts_with('.'))
+					fatal(curr_token.linenum, "local label in global directive");
+				if (!symbols.contains(label))
+					symbols[label] = {std::move(label), 0, true};
+				else
+					symbols[label].global = true;
+			} else if (curr_token.text == "extern") {
+				const std::string &label = tokens[++i].text;
+				if (label.starts_with('.'))
+					fatal(curr_token.linenum, "local label in extern directive");
+				if (symbols.contains(label))
+					fatal(curr_token.linenum, "duplicate definition of label '" + label + "`");
+				symbols[label] = {std::move(label), 0, true};
+			}
+		} else if (curr_token.type == LABEL) {
+			if (curr_token.text.starts_with('.')) {
+				if (prev_label.empty())
+					fatal(curr_token.linenum, "local label in global scope");
+				symbols[curr_token.text] = {prev_label + curr_token.text, 0, false};
 			} else {
-				cerr(i + 1, "section inconnue « " + line.substr(8) + " »");
+				prev_label = curr_token.text;
+				symbols[curr_token.text] = {std::move(curr_token.text), 0, false};
 			}
-			prev_label = "";
-		} else if (line.find(':') != std::string::npos && line.find_first_of(" \t\"'") > line.find(':')) {
-			if (line.size() == 1)
-				cerr(i + 1, "étiquette vide");
-			if (curr_sect == TEXT) {
-				std::string label = line.substr(0, line.size() - 1);
-				if (line[0] == '.') {
-					if (prev_label == "")
-						cerr(i + 1, "étiquette sans étiquette parente");
-					label = prev_label + label;
-				} else {
-					prev_label = label;
-				}
-				line = label + ":";
-				text_labels_map[label] = text_labels.size();
-				text_labels.push_back(label);
-				text_labels_instr.push_back(instr_cnt);
-			} else if (curr_sect == UNDEF) {
-				cerr(i + 1, "étiquette hors d'une section");
-			} else if (curr_sect == BSS) {
-				if (line.starts_with("global ")) {
-					std::string label = line.substr(7);
-					if (label[0] == '.')
-						cerr(i + 1, "étiquette locale dans une directive global");
-					global.insert(label);
-					continue;
-				}
-				std::string label = line.substr(0, line.find(':'));
-				std::string instr = line.substr(line.find(':') + 1, line.find(' ') - line.find(':') - 1);
-				size_t size = std::strtoull(line.substr(line.find(' ') + 1).c_str(), nullptr, 10);
-				bss_labels[label] = bss_size;
-				if (instr == "resb") {
-					bss_size += size;
-				} else if (instr == "resw") {
-					bss_size += size * 2;
-				} else if (instr == "resd") {
-					bss_size += size * 4;
-				} else if (instr == "resq") {
-					bss_size += size * 8;
-				} else {
-					cerr(i + 1, "directive inconnue « " + instr + " »");
-				}
-			} else if (curr_sect == DATA || curr_sect == RODATA) {
-				std::string &output_buffer = curr_sect == DATA ? data_buffer : rodata_buffer;
-				if (line.starts_with("global ")) {
-					std::string label = line.substr(7);
-					if (label[0] == '.')
-						cerr(i + 1, "étiquette locale dans une directive global");
-					global.insert(label);
-					continue;
-				}
-				std::string label = line.substr(0, line.find(':'));
-				std::string instr = line.substr(line.find(':') + 1, line.find(' ') - line.find(':') - 1);
-				std::vector<std::string> args;
-				size_t pos = line.find(' ');
-				while (pos != std::string::npos) {
-					size_t next = line.find(',', pos + 1);
-					while (next != std::string::npos) {
-						std::string tmp = line.substr(0, next);
-						if (std::count(tmp.begin(), tmp.end(), '\"') % 2 == 0)
-							break;
-						next = line.find(',', next + 1);
-					}
-					if (next == std::string::npos) {
-						next = line.size();
-						args.push_back(line.substr(pos + 1, next - pos - 1));
-						break;
-					}
-					args.push_back(line.substr(pos + 1, next - pos - 1));
-					pos = next;
-				}
-				size_t tmp = output_buffer.size();
-				parse_d(instr, args, i, output_buffer);
-				(curr_sect == DATA ? data_labels : rodata_labels)[label] = tmp;
-			}
-		} else if (curr_sect == TEXT && !line.starts_with("global ") && !line.starts_with("extern ") && !line.starts_with("align")) {
-			if (line[0] != 'd' || line[2] != ' ') {
-				instr_cnt++;
-				continue;
-			}
-			std::vector<std::string> args;
-			size_t pos = line.find(' ');
-			while (pos != std::string::npos) {
-				size_t next = line.find(',', pos + 1);
-				if (next == std::string::npos) {
-					next = line.size();
-					args.push_back(line.substr(pos + 1, next - pos - 1));
-					break;
-				}
-				args.push_back(line.substr(pos + 1, next - pos - 1));
-				pos = next;
-			}
-			size_t delta = 0;
-			if (line[1] == 'b') {
-				for (const auto &arg : args) {
-					if (arg[0] == '"')
-						delta += arg.size() - 2;
-					else
-						delta++;
-				}
-			} else if (line[1] == 'w') {
-				delta += args.size() * 2;
-			} else if (line[1] == 'd') {
-				delta += args.size() * 4;
-			} else {
-				delta += args.size() * 8;
-			}
-			instr_cnt += delta / 15 + !!(delta % 15);
-		} else if (line.starts_with(".align ")) {
-			int align = std::stoi(line.substr(7));
-			if (curr_sect == TEXT) {
-				instr_cnt += (align + 14) / 15;
-				continue;
-			}
-			pad(align, curr_sect == DATA ? data_buffer : rodata_buffer);
 		}
 	}
 }
 
 void process_instructions() {
-	sect curr_sect = UNDEF;
-	size_t instr_cnt = 0;
-	for (size_t i = 0; i < lines.size(); i++) {
-		std::string line = lines[i];
-		while (line.size() == 0 && ++i < lines.size())
-			line = lines[i];
-		if (i == lines.size())
-			break;
-		if (line.starts_with("section ")) {
-			if (line == "section .text") {
-				curr_sect = TEXT;
-			} else if (line == "section .data") {
-				curr_sect = DATA;
-			} else if (line == "section .bss") {
-				curr_sect = BSS;
-			}
-		} else {
-			if (curr_sect == TEXT) {
-				// parse instruction
-				std::string instr = line.substr(0, line.find(' '));
-				if (instr.ends_with(':')) {
-					instr = instr.substr(0, instr.size() - 1);
-					if (instr[0] != '.') {
-						prev_label = instr.substr(0, instr.find('.'));
-						pad(16, text_buffer);
-					} else {
-						instr = prev_label + instr;
-					}
-					reloc_table[instr] = text_buffer.size();
-					continue;
-				} else {
-					for (size_t i = 0; i < instr.size(); i++)
-						instr[i] = tolower(instr[i]);
-				}
-				if (instr == "global") {
-					std::string label = line.substr(7);
-					if (label[0] == '.') {
-						std::cerr << "avertissement : " << input_name << ':' << i + 1 << ": étiquette locale dans une directive global" << std::endl;
-						label = prev_label + label;
-					}
-					global.insert(label);
-					continue;
-				} else if (instr == "extern") {
-					std::string label = line.substr(7);
-					if (label[0] == '.')
-						cerr(i + 1, "étiquette locale dans une directive extern");
-					extern_labels_map[label] = extern_labels.size();
-					extern_labels.push_back(label);
-					continue;
-				}
-				std::vector<std::string> args;
-				size_t pos = line.find(' ');
-				while (pos != std::string::npos) {
-					size_t next = line.find(',', pos + 1);
-					if (next == std::string::npos) {
-						next = line.size();
-						args.push_back(line.substr(pos + 1, next - pos - 1));
-						break;
-					}
-					args.push_back(line.substr(pos + 1, next - pos - 1));
-					pos = next;
-				}
-				if (instr[0] == 'd' && instr.size() == 2) {
-					parse_d(instr, args, i, text_buffer);
-				} else if (instr == "align") {
-					pad(std::stoi(args[0]), text_buffer);
-				} else {
-					handle(instr, args, i + 1, instr_cnt);
-				}
-				instr_cnt++;
-			}
-		}
-	}
+	// sect curr_sect = UNDEF;
+	// size_t instr_cnt = 0;
+	// for (size_t i = 0; i < lines.size(); i++) {
+	// 	std::string line = lines[i];
+	// 	while (line.size() == 0 && ++i < lines.size())
+	// 		line = lines[i];
+	// 	if (i == lines.size())
+	// 		break;
+	// 	if (line.starts_with("section ")) {
+	// 		if (line == "section .text") {
+	// 			curr_sect = TEXT;
+	// 		} else if (line == "section .data") {
+	// 			curr_sect = DATA;
+	// 		} else if (line == "section .bss") {
+	// 			curr_sect = BSS;
+	// 		}
+	// 	} else {
+	// 		if (curr_sect == TEXT) {
+	// 			// parse instruction
+	// 			std::string instr = line.substr(0, line.find(' '));
+	// 			if (instr.ends_with(':')) {
+	// 				instr = instr.substr(0, instr.size() - 1);
+	// 				if (instr[0] != '.') {
+	// 					prev_label = instr.substr(0, instr.find('.'));
+	// 					pad(16, text_buffer);
+	// 				} else {
+	// 					instr = prev_label + instr;
+	// 				}
+	// 				reloc_table[instr] = text_buffer.size();
+	// 				continue;
+	// 			} else {
+	// 				for (size_t i = 0; i < instr.size(); i++)
+	// 					instr[i] = tolower(instr[i]);
+	// 			}
+	// 			if (instr == "global") {
+	// 				std::string label = line.substr(7);
+	// 				if (label[0] == '.') {
+	// 					std::cerr << "avertissement : " << input_name << ':' << i + 1 << ": étiquette locale dans une directive global" << std::endl;
+	// 					label = prev_label + label;
+	// 				}
+	// 				global.insert(label);
+	// 				continue;
+	// 			} else if (instr == "extern") {
+	// 				std::string label = line.substr(7);
+	// 				if (label[0] == '.')
+	// 					cerr(i + 1, "étiquette locale dans une directive extern");
+	// 				extern_labels_map[label] = extern_labels.size();
+	// 				extern_labels.push_back(label);
+	// 				continue;
+	// 			}
+	// 			std::vector<std::string> args;
+	// 			size_t pos = line.find(' ');
+	// 			while (pos != std::string::npos) {
+	// 				size_t next = line.find(',', pos + 1);
+	// 				if (next == std::string::npos) {
+	// 					next = line.size();
+	// 					args.push_back(line.substr(pos + 1, next - pos - 1));
+	// 					break;
+	// 				}
+	// 				args.push_back(line.substr(pos + 1, next - pos - 1));
+	// 				pos = next;
+	// 			}
+	// 			if (instr[0] == 'd' && instr.size() == 2) {
+	// 				parse_d(instr, args, i, text_buffer);
+	// 			} else if (instr == "align") {
+	// 				pad(std::stoi(args[0]), text_buffer);
+	// 			} else {
+	// 				handle(instr, args, i + 1, instr_cnt);
+	// 			}
+	// 			instr_cnt++;
+	// 		}
+	// 	}
+	// }
 }
 
 int main(int argc, char *argv[]) {
@@ -535,27 +419,10 @@ int main(int argc, char *argv[]) {
 
 	parse_labels();
 
-	// put all labels into a map
-	for (const auto &l : data_labels) {
-		labels[l.first] = {DATA, l.second};
-	}
-	for (const auto &l : rodata_labels) {
-		labels[l.first] = {RODATA, l.second};
-	}
-	for (const auto &l : bss_labels) {
-		labels[l.first] = {BSS, l.second};
-	}
-	for (const auto &l : text_labels) {
-		labels[l] = {TEXT, 0};
-	}
-
 	process_instructions();
 
-	for (const auto &l : reloc_table)
-		labels[l.first] = {TEXT, l.second};
-
 	if (output_format == ELF)
-		generate_elf(output, bss_size);
+		ELF_write(sections, symbols, output_name);
 	else if (output_format == COFF)
 		generate_coff(output, bss_size);
 

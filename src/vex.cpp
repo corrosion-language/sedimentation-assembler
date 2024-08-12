@@ -177,7 +177,7 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 		}
 		if (args.size() == 1) {
 			short s1 = _sizes[p.first[1][1] - 'A'];
-			MemOutput *data = parse_mem(args[0], s1);
+			MemOperand *data = parse_mem(args[0], s1);
 			if (data == nullptr) {
 				if (error.empty())
 					error = "mode d'adressage invalide";
@@ -223,7 +223,7 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 			short mem_i = p.first[1][0] == 'M' ? 1 : 2;
 			short reg_i = mem_i == 1 ? 2 : 1;
 			short s1 = _sizes[p.first[mem_i][1] - 'A'];
-			MemOutput *data = parse_mem(args[mem_i - 1], s1);
+			MemOperand *data = parse_mem(args[mem_i - 1], s1);
 			if (data == nullptr) {
 				if (error.empty())
 					error = "mode d'adressage invalide";
@@ -308,7 +308,7 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 					// reg, rm, imm
 					short reg = reg_num(args[0]);
 					short s1 = _sizes[p.first[2][1] - 'A'];
-					MemOutput *data = parse_mem(args[1], s1);
+					MemOperand *data = parse_mem(args[1], s1);
 					if (data == nullptr) {
 						if (error.empty())
 							error = "mode d'addressage invalide";
@@ -355,7 +355,7 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 					short mem_i = p.first[1][0] == 'M' ? 1 : 3;
 					short reg_i = mem_i == 1 ? 3 : 1;
 					short s1 = _sizes[p.first[mem_i][1] - 'A'];
-					MemOutput *data = parse_mem(args[mem_i - 1], s1);
+					MemOperand *data = parse_mem(args[mem_i - 1], s1);
 					if (data == nullptr) {
 						if (error.empty())
 							error = "mode d'adressage invalide";
