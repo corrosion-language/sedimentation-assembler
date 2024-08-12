@@ -96,6 +96,7 @@ static const std::unordered_map<std::string, short> _reg_num{
 // [b, w, d, q, x, y, z, t]: [8, 16, 32, 64, 128, 256, 512, 80]
 static const short _sizes[] = {-1, 8, -1, 32, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 64, -1, -1, 80, -1, -1, 16, 128, 256, 512};
 
-[[noreturn]] void fatal(const int i, const std::string &s);
+[[noreturn]] void fatal(const int, const std::string &&);
+void warning(const int, const std::string &&);
 
 #endif

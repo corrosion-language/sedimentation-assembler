@@ -77,13 +77,17 @@ std::unordered_map<std::string, Symbol> symbols;
 // Last label that was not a dot
 std::string prev_label;
 
-[[noreturn]] void fatal(const int linenum, const std::string &msg) {
+[[noreturn]] void fatal(const int linenum, const std::string &&msg) {
 	std::cerr << input_name << ":" << linenum << ": error: " << msg << std::endl;
 	if (output_file.is_open()) {
 		output_file.close();
 		remove(output_name);
 	}
 	exit(EXIT_FAILURE);
+}
+
+void warning(const int linenum, const std::string &&msg) {
+	std::cerr << input_name << ":" << linenum << ": warning: " << msg << std::endl;
 }
 
 // https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl01.html
@@ -112,13 +116,15 @@ void lex(std::vector<Token> &tokens) {
 			// String
 			char last = 0;
 			c = input_file.get();
-			while (c != '"' && last != '\\' && c != '\n' && !input_file.eof()) {
+			tokens.back().text += '"';
+			while (!(c == '"' && last != '\\') && c != '\n' && !input_file.eof()) {
 				tokens.back().text += c;
 				last = c;
 				c = input_file.get();
 			}
 			if (c == '\n' || input_file.eof())
 				fatal(linenum, "unterminated string");
+			tokens.back().text += '"';
 			tokens.back().type = STRING;
 			tokens.back().linenum = linenum;
 			tokens.push_back({NEWLINE, "", linenum});
@@ -165,70 +171,178 @@ void lex(std::vector<Token> &tokens) {
 		tokens.pop_back();
 }
 
-void parse_d(std::string &instr, std::vector<std::string> &args, size_t line, std::string &output_buffer) {
-	for (size_t i = 0; i < args.size(); i++) {
+int parse_escape(const std::string &str, int i, std::vector<uint8_t> &output_buffer, const int linenum, bool is_string = true) {
+	ssize_t res = -1;
+	switch (str[i + 1]) {
+	case '\'':
+		output_buffer.push_back('\'');
+		break;
+	case '"':
+		output_buffer.push_back('"');
+		break;
+	case '?':
+		output_buffer.push_back('?');
+		break;
+	case '\\':
+		output_buffer.push_back('\\');
+		break;
+	case 'a':
+		output_buffer.push_back('\a');
+		break;
+	case 'b':
+		output_buffer.push_back('\b');
+		break;
+	case 'f':
+		output_buffer.push_back('\f');
+		break;
+	case 'n':
+		output_buffer.push_back('\n');
+		break;
+	case 'r':
+		output_buffer.push_back('\r');
+		break;
+	case 't':
+		output_buffer.push_back('\t');
+		break;
+	case 'v':
+		output_buffer.push_back('\v');
+		break;
+	case 'x':
+		output_buffer.push_back(std::stoi(str.substr(i + 2, 2), nullptr, 16));
+		i += 2;
+		break;
+	case 'u':
+		res = std::stoul(str.substr(i + 2, 4), nullptr, 16);
+		i -= 4;
+	case 'U':
+		if (!is_string)
+			fatal(linenum, "cannot use Unicode escape sequence in character literal");
+		if (res == -1)
+			res = std::stoul(str.substr(i + 2, 8), nullptr, 16);
+		if (res < 0x80) {
+			output_buffer.push_back(res);
+		} else if (res < 0x800) {
+			output_buffer.push_back(0xc0 | (res >> 6));
+			output_buffer.push_back(0x80 | (res & 0x3f));
+		} else if (res < 0x10000) {
+			output_buffer.push_back(0xe0 | (res >> 12));
+			output_buffer.push_back(0x80 | ((res >> 6) & 0x3f));
+			output_buffer.push_back(0x80 | (res & 0x3f));
+		} else {
+			output_buffer.push_back(0xf0 | (res >> 18));
+			output_buffer.push_back(0x80 | ((res >> 12) & 0x3f));
+			output_buffer.push_back(0x80 | ((res >> 6) & 0x3f));
+			output_buffer.push_back(0x80 | (res & 0x3f));
+		}
+		i += 8;
+		break;
+	default:
+		fatal(linenum, (std::string) "invalid escape sequence `\\" + str[i + 1] + "'");
+	}
+	i++;
+	return i;
+}
+
+void parse_d(const std::string &instr, const std::vector<std::string> &args, const int linenum, std::vector<uint8_t> &output_buffer) {
+	for (int i = 0; i < args.size(); i++) {
 		if (args[i][0] == '"') {
-			for (size_t j = 1; j < args[i].size() - 1; j++) {
+			for (int j = 1; j < args[i].size() - 1; j++) {
 				if (args[i][j] == '\\') {
-					switch (args[i][j + 1]) {
-					case '0':
-						output_buffer += '\0';
-						break;
-					case 'n':
-						output_buffer += '\n';
-						break;
-					case 'r':
-						output_buffer += '\r';
-						break;
-					case 't':
-						output_buffer += '\t';
-						break;
-					case '\\':
-						output_buffer += '\\';
-						break;
-					case '"':
-						output_buffer += '"';
-						break;
-					case '\'':
-						output_buffer += '\'';
-						break;
-					case 'x':
-						output_buffer += std::stoul(args[i].substr(j + 2, 2), nullptr, 16);
-						j += 2;
-						break;
+					try {
+						j = parse_escape(args[i], j, output_buffer, linenum);
+					} catch (std::invalid_argument &e) {
+						fatal(linenum, "invalid numeric escape sequence");
 					}
-					j++;
-				} else
-					output_buffer += args[i][j];
+				} else {
+					output_buffer.push_back(args[i][j]);
+				}
 			}
 			continue;
 		}
-		if (args[i][0] == '\'') {
-			output_buffer.push_back(args[i][1]);
-		} else if (instr == "db") {
-			output_buffer += std::stoul(args[i], nullptr, 0);
-		} else if (instr == "dw") {
-			uint16_t val = std::stoul(args[i], nullptr, 0);
-			output_buffer += val & 0xff;
-			output_buffer += (val >> 8) & 0xff;
-		} else if (instr == "dd") {
-			uint32_t val = std::stoul(args[i], nullptr, 0);
-			output_buffer += val & 0xff;
-			output_buffer += (val >> 8) & 0xff;
-			output_buffer += (val >> 16) & 0xff;
-			output_buffer += (val >> 24) & 0xff;
-		} else if (instr == "dq") {
-			uint64_t val = std::stoull(args[i], nullptr, 0);
-			output_buffer += val & 0xff;
-			output_buffer += (val >> 8) & 0xff;
-			output_buffer += (val >> 16) & 0xff;
-			output_buffer += (val >> 24) & 0xff;
-			output_buffer += (val >> 32) & 0xff;
-			output_buffer += (val >> 40) & 0xff;
-			output_buffer += (val >> 48) & 0xff;
-			output_buffer += (val >> 56) & 0xff;
-		} else {
-			fatal(line + 1, "directive inconnue « " + instr + " »");
+		try {
+			if (args[i][0] == '\'') {
+				if (args[i][1] == '\\') {
+					try {
+						parse_escape(args[i], 0, output_buffer, linenum, false);
+					} catch (std::invalid_argument &e) {
+						fatal(linenum, "invalid numeric escape sequence");
+					}
+				} else {
+					output_buffer.push_back(args[i][1]);
+				}
+			} else if (instr == "db") {
+				if (args[i][0] == '-' || args[i][0] == '+') {
+					int32_t val = std::stoi(args[i], nullptr, 0);
+					if (val < -128)
+						fatal(linenum, "signed integer overflow is undefined");
+					output_buffer.push_back(val);
+				} else {
+					uint32_t val = std::stoul(args[i], nullptr, 0);
+					if (val > 0xff)
+						warning(linenum, "integer is too large and will be truncated");
+					output_buffer.push_back(val & 0xff);
+				}
+			} else if (instr == "dw") {
+				if (args[i][0] == '-' || args[i][0] == '+') {
+					int32_t val = std::stoi(args[i], nullptr, 0);
+					if (val < -32768)
+						fatal(linenum, "signed integer overflow is undefined");
+					output_buffer.push_back(val & 0xff);
+					output_buffer.push_back((val >> 8) & 0xff);
+				} else {
+					uint32_t val = std::stoul(args[i], nullptr, 0);
+					if (val > 0xffff)
+						warning(linenum, "integer is too large and will be truncated");
+					output_buffer.push_back(val & 0xff);
+					output_buffer.push_back((val >> 8) & 0xff);
+				}
+			} else if (instr == "dd") {
+				if (args[i][0] == '-' || args[i][0] == '+') {
+					int64_t val = std::stoll(args[i], nullptr, 0);
+					if (val < -2147483648)
+						fatal(linenum, "signed integer overflow is undefined");
+					output_buffer.push_back(val & 0xff);
+					output_buffer.push_back((val >> 8) & 0xff);
+					output_buffer.push_back((val >> 16) & 0xff);
+					output_buffer.push_back((val >> 24) & 0xff);
+				} else {
+					uint64_t val = std::stoull(args[i], nullptr, 0);
+					if (val > 0xffffffff)
+						warning(linenum, "integer is too large and will be truncated");
+					output_buffer.push_back(val & 0xff);
+					output_buffer.push_back((val >> 8) & 0xff);
+					output_buffer.push_back((val >> 16) & 0xff);
+					output_buffer.push_back((val >> 24) & 0xff);
+				}
+			} else if (instr == "dq") {
+				if (args[i][0] == '-' || args[i][0] == '+') {
+					int64_t val = std::stoll(args[i], nullptr, 0);
+					output_buffer.push_back(val & 0xff);
+					output_buffer.push_back((val >> 8) & 0xff);
+					output_buffer.push_back((val >> 16) & 0xff);
+					output_buffer.push_back((val >> 24) & 0xff);
+					output_buffer.push_back((val >> 32) & 0xff);
+					output_buffer.push_back((val >> 40) & 0xff);
+					output_buffer.push_back((val >> 48) & 0xff);
+					output_buffer.push_back((val >> 56) & 0xff);
+				} else {
+					uint64_t val = std::stoull(args[i], nullptr, 0);
+					output_buffer.push_back(val & 0xff);
+					output_buffer.push_back((val >> 8) & 0xff);
+					output_buffer.push_back((val >> 16) & 0xff);
+					output_buffer.push_back((val >> 24) & 0xff);
+					output_buffer.push_back((val >> 32) & 0xff);
+					output_buffer.push_back((val >> 40) & 0xff);
+					output_buffer.push_back((val >> 48) & 0xff);
+					output_buffer.push_back((val >> 56) & 0xff);
+				}
+			} else {
+				fatal(linenum, "unknown directive" + instr + "'");
+			}
+		} catch (std::invalid_argument &e) {
+			fatal(linenum, "invalid number");
+		} catch (std::out_of_range &e) {
+			fatal(linenum, "number is too large");
 		}
 	}
 }
@@ -322,8 +436,9 @@ void process_instructions(const std::vector<Token> &tokens) {
 			int linenum = curr_token.linenum;
 			if (instr == "section") {
 				curr_sect = tokens[++i].text;
-			} else if (instr == "global" || instr == "extern") {
 				i++;
+			} else if (instr == "global" || instr == "extern") {
+				i += 2;
 			} else if (instr == "align") {
 				try {
 					pad(std::stoi(tokens[++i].text), sections[section_map[curr_sect]].data);
@@ -332,20 +447,22 @@ void process_instructions(const std::vector<Token> &tokens) {
 				}
 			} else if (instr.starts_with("res") && instr.size() == 4) {
 				try {
-					int size = std::stoi(instr.substr(3));
+					int size = std::stoi(tokens[++i].text);
 					if (size < 0)
 						fatal(linenum, "invalid argument to res directive");
 					sections[section_map[curr_sect]].data.resize(sections[section_map[curr_sect]].data.size() + size);
 				} catch (std::invalid_argument &e) {
 					fatal(linenum, "invalid argument to res directive");
 				}
-			} else if (instr[0] == 'd' && instr.size() == 2) {
-				// parse_d(instr, args, linenum, sections[section_map[curr_sect]].data);
+				i++;
 			} else {
 				std::vector<std::string> args;
 				while (tokens[++i].type != NEWLINE)
 					args.push_back(tokens[i].text);
 
+				if (instr[0] == 'd' && instr.size() == 2) {
+					parse_d(instr, args, linenum, sections[section_map[curr_sect]].data);
+				}
 				// handle(curr_token.text, args, linenum, instr_cnt);
 			}
 		} else if (curr_token.type == LABEL) {
@@ -355,7 +472,10 @@ void process_instructions(const std::vector<Token> &tokens) {
 				symbols[curr_token.text].value = sections[section_map[curr_sect]].data.size();
 				prev_label = curr_token.text;
 			}
+			continue;
 		}
+		if (tokens[i].type != NEWLINE)
+			fatal(curr_token.linenum, "syntax error");
 	}
 }
 
