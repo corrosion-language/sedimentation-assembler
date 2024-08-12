@@ -103,7 +103,7 @@ void ELF_write(const std::vector<Section> &sections, const std::vector<Symbol> &
 		symtab.insert(symtab.end(), (uint8_t *)&esym, (uint8_t *)&esym + sizeof(Elf64_Sym));
 		local_sym_count++;
 	}
-	// Now local symbols
+	// Now global symbols
 	for (const auto &sym : symbols) {
 		if (!sym.global)
 			continue;

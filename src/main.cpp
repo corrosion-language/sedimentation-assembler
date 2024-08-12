@@ -233,35 +233,35 @@ void parse_d(std::string &instr, std::vector<std::string> &args, size_t line, st
 	}
 }
 
-void pad(int align, std::string &output_buffer) {
+void pad(int align, std::vector<uint8_t> &output_buffer) {
 	int pad = output_buffer.size() % align;
 	if (!pad)
 		return;
 	pad = align - pad;
 	while (pad >= 11) {
-		output_buffer += "\x66\x66\x66\x0f\x1f\x84\x90\x90\x90\x90\x90";
+		output_buffer.insert(output_buffer.end(), {0x66, 0x66, 0x66, 0x0f, 0x1f, 0x84, 0x90, 0x90, 0x90, 0x90, 0x90});
 		pad -= 11;
 	}
 	if (pad == 1)
-		output_buffer += '\x90';
+		output_buffer.insert(output_buffer.end(), {0x90});
 	else if (pad == 2)
-		output_buffer += "\x66\x90";
+		output_buffer.insert(output_buffer.end(), {0x66, 0x90});
 	else if (pad == 3)
-		output_buffer += "\x0f\x1f\xc0";
+		output_buffer.insert(output_buffer.end(), {0x0f, 0x1f, 0xc0});
 	else if (pad == 4)
-		output_buffer += "\x0f\x1f\x40\x90";
+		output_buffer.insert(output_buffer.end(), {0x0f, 0x1f, 0x40, 0x90});
 	else if (pad == 5)
-		output_buffer += "\x0f\x1f\x44\x90\x90";
+		output_buffer.insert(output_buffer.end(), {0x0f, 0x1f, 0x44, 0x90, 0x90});
 	else if (pad == 6)
-		output_buffer += "\x66\x0f\x1f\x44\x90\x90";
+		output_buffer.insert(output_buffer.end(), {0x66, 0x0f, 0x1f, 0x44, 0x90, 0x90});
 	else if (pad == 7)
-		output_buffer += "\x0f\x1f\x80\x90\x90\x90\x90";
+		output_buffer.insert(output_buffer.end(), {0x0f, 0x1f, 0x80, 0x90, 0x90, 0x90, 0x90});
 	else if (pad == 8)
-		output_buffer += "\x0f\x1f\x84\x90\x90\x90\x90\x90";
+		output_buffer.insert(output_buffer.end(), {0x0f, 0x1f, 0x84, 0x90, 0x90, 0x90, 0x90, 0x90});
 	else if (pad == 9)
-		output_buffer += "\x66\x0f\x1f\x84\x90\x90\x90\x90\x90";
+		output_buffer.insert(output_buffer.end(), {0x66, 0x0f, 0x1f, 0x84, 0x90, 0x90, 0x90, 0x90, 0x90});
 	else if (pad == 10)
-		output_buffer += "\x66\x66\x0f\x1f\x84\x90\x90\x90\x90\x90";
+		output_buffer.insert(output_buffer.end(), {0x66, 0x66, 0x0f, 0x1f, 0x84, 0x90, 0x90, 0x90, 0x90, 0x90});
 }
 
 void parse_labels(const std::vector<Token> &tokens) {
@@ -311,80 +311,52 @@ void parse_labels(const std::vector<Token> &tokens) {
 	}
 }
 
-void process_instructions() {
-	// sect curr_sect = UNDEF;
-	// size_t instr_cnt = 0;
-	// for (size_t i = 0; i < lines.size(); i++) {
-	// 	std::string line = lines[i];
-	// 	while (line.size() == 0 && ++i < lines.size())
-	// 		line = lines[i];
-	// 	if (i == lines.size())
-	// 		break;
-	// 	if (line.starts_with("section ")) {
-	// 		if (line == "section .text") {
-	// 			curr_sect = TEXT;
-	// 		} else if (line == "section .data") {
-	// 			curr_sect = DATA;
-	// 		} else if (line == "section .bss") {
-	// 			curr_sect = BSS;
-	// 		}
-	// 	} else {
-	// 		if (curr_sect == TEXT) {
-	// 			// parse instruction
-	// 			std::string instr = line.substr(0, line.find(' '));
-	// 			if (instr.ends_with(':')) {
-	// 				instr = instr.substr(0, instr.size() - 1);
-	// 				if (instr[0] != '.') {
-	// 					prev_label = instr.substr(0, instr.find('.'));
-	// 					pad(16, text_buffer);
-	// 				} else {
-	// 					instr = prev_label + instr;
-	// 				}
-	// 				reloc_table[instr] = text_buffer.size();
-	// 				continue;
-	// 			} else {
-	// 				for (size_t i = 0; i < instr.size(); i++)
-	// 					instr[i] = tolower(instr[i]);
-	// 			}
-	// 			if (instr == "global") {
-	// 				std::string label = line.substr(7);
-	// 				if (label[0] == '.') {
-	// 					std::cerr << "avertissement : " << input_name << ':' << i + 1 << ": étiquette locale dans une directive global" << std::endl;
-	// 					label = prev_label + label;
-	// 				}
-	// 				global.insert(label);
-	// 				continue;
-	// 			} else if (instr == "extern") {
-	// 				std::string label = line.substr(7);
-	// 				if (label[0] == '.')
-	// 					cerr(i + 1, "étiquette locale dans une directive extern");
-	// 				extern_labels_map[label] = extern_labels.size();
-	// 				extern_labels.push_back(label);
-	// 				continue;
-	// 			}
-	// 			std::vector<std::string> args;
-	// 			size_t pos = line.find(' ');
-	// 			while (pos != std::string::npos) {
-	// 				size_t next = line.find(',', pos + 1);
-	// 				if (next == std::string::npos) {
-	// 					next = line.size();
-	// 					args.push_back(line.substr(pos + 1, next - pos - 1));
-	// 					break;
-	// 				}
-	// 				args.push_back(line.substr(pos + 1, next - pos - 1));
-	// 				pos = next;
-	// 			}
-	// 			if (instr[0] == 'd' && instr.size() == 2) {
-	// 				parse_d(instr, args, i, text_buffer);
-	// 			} else if (instr == "align") {
-	// 				pad(std::stoi(args[0]), text_buffer);
-	// 			} else {
-	// 				handle(instr, args, i + 1, instr_cnt);
-	// 			}
-	// 			instr_cnt++;
-	// 		}
-	// 	}
-	// }
+void process_instructions(const std::vector<Token> &tokens) {
+	std::string curr_sect = "";
+	prev_label = "";
+
+	for (int i = 0; i < tokens.size(); i++) {
+		const Token &curr_token = tokens[i];
+		if (curr_token.type == OTHER) {
+			const std::string &instr = curr_token.text;
+			int linenum = curr_token.linenum;
+			if (instr == "section") {
+				curr_sect = tokens[++i].text;
+			} else if (instr == "global" || instr == "extern") {
+				i++;
+			} else if (instr == "align") {
+				try {
+					pad(std::stoi(tokens[++i].text), sections[section_map[curr_sect]].data);
+				} catch (std::invalid_argument &e) {
+					fatal(linenum, "invalid argument to align directive");
+				}
+			} else if (instr.starts_with("res") && instr.size() == 4) {
+				try {
+					int size = std::stoi(instr.substr(3));
+					if (size < 0)
+						fatal(linenum, "invalid argument to res directive");
+					sections[section_map[curr_sect]].data.resize(sections[section_map[curr_sect]].data.size() + size);
+				} catch (std::invalid_argument &e) {
+					fatal(linenum, "invalid argument to res directive");
+				}
+			} else if (instr[0] == 'd' && instr.size() == 2) {
+				// parse_d(instr, args, linenum, sections[section_map[curr_sect]].data);
+			} else {
+				std::vector<std::string> args;
+				while (tokens[++i].type != NEWLINE)
+					args.push_back(tokens[i].text);
+
+				// handle(curr_token.text, args, linenum, instr_cnt);
+			}
+		} else if (curr_token.type == LABEL) {
+			if (curr_token.text[0] == '.') {
+				symbols[prev_label + curr_token.text].value = sections[section_map[curr_sect]].data.size();
+			} else {
+				symbols[curr_token.text].value = sections[section_map[curr_sect]].data.size();
+				prev_label = curr_token.text;
+			}
+		}
+	}
 }
 
 int main(int argc, char *argv[]) {
@@ -426,7 +398,7 @@ int main(int argc, char *argv[]) {
 
 	parse_labels(tokens);
 
-	process_instructions();
+	process_instructions(tokens);
 
 	std::vector<Symbol> symbols_vec;
 	for (auto &sym : symbols)
