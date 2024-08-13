@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <string>
 #include <unordered_map>
+#include <vector>
 
 enum OperandType { INVALID, REG, MEM, IMM };
 

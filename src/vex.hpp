@@ -3,7 +3,6 @@
 #define VEX_HPP
 
 #include "defines.hpp"
-#include "utility.hpp"
 
 #include <string>
 #include <vector>

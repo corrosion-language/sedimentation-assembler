@@ -1,5 +1,9 @@
 #include "vex.hpp"
+
+#include "utility.hpp"
 #include "vex.dat"
+
+#include <cstring>
 
 void handle_vex(std::string &s, std::vector<std::string> &args, const size_t linenum, const bool prefix) {
 	error = "";

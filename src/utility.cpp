@@ -1,6 +1,9 @@
 #include "utility.hpp"
 
-#include <vector>
+#include <stdexcept>
+
+extern std::unordered_map<std::string, Symbol> symbols;
+extern std::string prev_label; // Last label that was not a dot
 
 short reg_num(const std::string &s) {
 	auto ptr = _reg_num.find(s);
@@ -31,7 +34,7 @@ short mem_size(const std::string &s) {
 		return 80;
 	if (s.starts_with("oword ") || s.starts_with("xmmword "))
 		return 128;
-	if (s.starts_with("yword ") || s.starts_with("ymmword "))
+	if (s.starts_with("ymmword "))
 		return 256;
 	return -1;
 }
