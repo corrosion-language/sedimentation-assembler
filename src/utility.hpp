@@ -4,8 +4,7 @@
 
 #include "defines.hpp"
 
-extern std::string prev_label;
-extern std::unordered_map<std::string, std::pair<Section, size_t>> labels;
+#include <string>
 
 short reg_num(const std::string &);
 short reg_size(const std::string &);

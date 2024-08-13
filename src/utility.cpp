@@ -1,6 +1,6 @@
 #include "utility.hpp"
 
-std::string error;
+#include <vector>
 
 short reg_num(const std::string &s) {
 	auto ptr = _reg_num.find(s);
@@ -29,7 +29,7 @@ short mem_size(const std::string &s) {
 		return 64;
 	if (s.starts_with("tbyte "))
 		return 80;
-	if (s.starts_with("oword ") || s.starts_with("xword ") || s.starts_with("xmmword "))
+	if (s.starts_with("oword ") || s.starts_with("xmmword "))
 		return 128;
 	if (s.starts_with("yword ") || s.starts_with("ymmword "))
 		return 256;
@@ -37,10 +37,10 @@ short mem_size(const std::string &s) {
 }
 
 OperandType get_optype(const std::string &s) {
-	// if in register table return REG
+	// If in register table return REG
 	if (reg_size(s) != -1)
 		return REG;
-	// in format "SIZE [...]" or "[]" return MEM or OFFSET
+	// If in format "SIZE [...]" or "[...]" return MEM or OFFSET
 	auto tmp = s.find(' ');
 	tmp = (tmp != std::string::npos) ? tmp : -1;
 	if (s[tmp + 1] == '[' || s[0] == '[') {
@@ -50,7 +50,7 @@ OperandType get_optype(const std::string &s) {
 			return INVALID;
 		return MEM;
 	}
-	// otherwise return IMM (immediate)
+	// Otherwise return IMM (immediate)
 	return IMM;
 }
 

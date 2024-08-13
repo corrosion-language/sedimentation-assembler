@@ -3,15 +3,8 @@
 #define COFF_HPP
 
 #include "defines.hpp"
-#include "main.hpp"
 
-extern std::vector<std::string> extern_labels;
-extern std::unordered_set<std::string> global;
-extern std::vector<struct RelocEntry> relocations;
-extern std::unordered_map<std::string, std::pair<Section, size_t>> labels;
-extern std::string text_buffer;
-extern std::string data_buffer;
-extern std::string rodata_buffer;
+#include <fstream>
 
 struct coff_header {
 	uint16_t machine = 0x8664; // AMD64

@@ -3,11 +3,10 @@
 #define TRANSLATE_HPP
 
 #include "defines.hpp"
-#include "utility.hpp"
 
-extern std::vector<RelocEntry> relocations;
-extern std::string error;
+#include <string>
+#include <vector>
 
-void handle(std::string, std::vector<std::string>, const size_t, const size_t);
+void handle_instruction(std::string, std::vector<std::string>, const int, std::vector<uint8_t> &);
 
 #endif

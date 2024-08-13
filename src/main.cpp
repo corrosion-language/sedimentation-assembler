@@ -1,4 +1,11 @@
-#include "main.hpp"
+#include "defines.hpp"
+#include "elf.hpp"
+#include "translate.hpp"
+
+#include <argp.h>
+#include <cstring>
+#include <fstream>
+#include <iostream>
 
 // ARGUMENT PARSING
 const char *input_name;
@@ -68,14 +75,12 @@ static struct argp argp = {
 
 std::ifstream input_file;
 std::ofstream output_file;
-// Rough position of the labels in the text section (for optimizing jumps)
-std::vector<size_t> text_labels_instr;
+// Following variables are global and will be used with "extern" in other files
 std::vector<RelocEntry> relocations;
 std::vector<Section> sections;
 std::unordered_map<std::string, uint16_t> section_map;
 std::unordered_map<std::string, Symbol> symbols;
-// Last label that was not a dot
-std::string prev_label;
+std::string prev_label; // Last label that was not a dot
 
 [[noreturn]] void fatal(const int linenum, const std::string &&msg) {
 	std::cerr << input_name << ":" << linenum << ": error: " << msg << std::endl;
@@ -166,11 +171,13 @@ void lex(std::vector<Token> &tokens) {
 			}
 		}
 	}
+	// Removes redundant newline tokens at the end
 	tokens.pop_back();
 	if (tokens.rbegin()[1].type == NEWLINE)
 		tokens.pop_back();
 }
 
+// Returns new index
 int parse_escape(const std::string &str, int i, std::vector<uint8_t> &output_buffer, const int linenum, bool is_string = true) {
 	ssize_t res = -1;
 	switch (str[i + 1]) {
@@ -214,8 +221,9 @@ int parse_escape(const std::string &str, int i, std::vector<uint8_t> &output_buf
 	case 'u':
 		res = std::stoul(str.substr(i + 2, 4), nullptr, 16);
 		i -= 4;
+		[[fallthrough]];
 	case 'U':
-		if (!is_string)
+		if (!is_string && res >= 0x80)
 			fatal(linenum, "cannot use Unicode escape sequence in character literal");
 		if (res == -1)
 			res = std::stoul(str.substr(i + 2, 8), nullptr, 16);
@@ -237,12 +245,13 @@ int parse_escape(const std::string &str, int i, std::vector<uint8_t> &output_buf
 		i += 8;
 		break;
 	default:
-		fatal(linenum, (std::string) "invalid escape sequence `\\" + str[i + 1] + "'");
+		fatal(linenum, "invalid escape sequence `\\" + str[i + 1] + '\'');
 	}
 	i++;
 	return i;
 }
 
+// Parse define directives (db, dw, dd, dq)
 void parse_d(const std::string &instr, const std::vector<std::string> &args, const int linenum, std::vector<uint8_t> &output_buffer) {
 	for (int i = 0; i < args.size(); i++) {
 		if (args[i][0] == '"') {
@@ -347,13 +356,15 @@ void parse_d(const std::string &instr, const std::vector<std::string> &args, con
 	}
 }
 
-void pad(int align, std::vector<uint8_t> &output_buffer) {
+void pad(unsigned int align, std::vector<uint8_t> &output_buffer) {
+	if (align == 0)
+		fatal(0, "alignment must be greater than zero");
 	int pad = output_buffer.size() % align;
-	if (!pad)
+	if (pad == 0)
 		return;
 	pad = align - pad;
 	while (pad >= 11) {
-		output_buffer.insert(output_buffer.end(), {0x66, 0x66, 0x66, 0x0f, 0x1f, 0x84, 0x90, 0x90, 0x90, 0x90, 0x90});
+		output_buffer.insert(output_buffer.end(), {0x66, 0x66, 0x66, 0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00});
 		pad -= 11;
 	}
 	if (pad == 1)
@@ -361,31 +372,34 @@ void pad(int align, std::vector<uint8_t> &output_buffer) {
 	else if (pad == 2)
 		output_buffer.insert(output_buffer.end(), {0x66, 0x90});
 	else if (pad == 3)
-		output_buffer.insert(output_buffer.end(), {0x0f, 0x1f, 0xc0});
+		output_buffer.insert(output_buffer.end(), {0x0f, 0x1f, 0x00});
 	else if (pad == 4)
-		output_buffer.insert(output_buffer.end(), {0x0f, 0x1f, 0x40, 0x90});
+		output_buffer.insert(output_buffer.end(), {0x0f, 0x1f, 0x40, 0x00});
 	else if (pad == 5)
-		output_buffer.insert(output_buffer.end(), {0x0f, 0x1f, 0x44, 0x90, 0x90});
+		output_buffer.insert(output_buffer.end(), {0x0f, 0x1f, 0x44, 0x00, 0x00});
 	else if (pad == 6)
-		output_buffer.insert(output_buffer.end(), {0x66, 0x0f, 0x1f, 0x44, 0x90, 0x90});
+		output_buffer.insert(output_buffer.end(), {0x66, 0x0f, 0x1f, 0x44, 0x00, 0x00});
 	else if (pad == 7)
-		output_buffer.insert(output_buffer.end(), {0x0f, 0x1f, 0x80, 0x90, 0x90, 0x90, 0x90});
+		output_buffer.insert(output_buffer.end(), {0x0f, 0x1f, 0x80, 0x00, 0x00, 0x00, 0x00});
 	else if (pad == 8)
-		output_buffer.insert(output_buffer.end(), {0x0f, 0x1f, 0x84, 0x90, 0x90, 0x90, 0x90, 0x90});
+		output_buffer.insert(output_buffer.end(), {0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00});
 	else if (pad == 9)
-		output_buffer.insert(output_buffer.end(), {0x66, 0x0f, 0x1f, 0x84, 0x90, 0x90, 0x90, 0x90, 0x90});
+		output_buffer.insert(output_buffer.end(), {0x66, 0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00});
 	else if (pad == 10)
-		output_buffer.insert(output_buffer.end(), {0x66, 0x66, 0x0f, 0x1f, 0x84, 0x90, 0x90, 0x90, 0x90, 0x90});
+		output_buffer.insert(output_buffer.end(), {0x66, 0x66, 0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00});
 }
 
 void parse_labels(const std::vector<Token> &tokens) {
-	std::string curr_sect = "";
+	std::string curr_sect = ""; // Current section
 
 	for (int i = 0; i < tokens.size(); i++) {
 		const Token &curr_token = tokens[i];
 		if (curr_token.type == OTHER) {
+			// Some type of directive
 			if (curr_token.text == "section") {
+				// Update current section
 				curr_sect = tokens[++i].text;
+				// Create new section if it doesn't exist
 				if (!section_map.count(curr_sect)) {
 					section_map[curr_sect] = sections.size();
 					sections.push_back({curr_sect, {}});
@@ -394,6 +408,8 @@ void parse_labels(const std::vector<Token> &tokens) {
 				const std::string &label = tokens[++i].text;
 				if (label[0] == '.')
 					fatal(curr_token.linenum, "local label in global directive");
+
+				// Create placeholder symbol if it doesn't exist (value = -2)
 				if (!symbols.count(label))
 					symbols[label] = (Symbol){label, true, SYMTYPE_NONE, 0, -2};
 				else
@@ -407,15 +423,20 @@ void parse_labels(const std::vector<Token> &tokens) {
 				symbols[label] = (Symbol){label, false, SYMTYPE_NONE, section_map[curr_sect] + 1, 0};
 			}
 		} else if (curr_token.type == LABEL) {
+			// Label definition
 			if (curr_token.text[0] == '.') {
 				if (prev_label.empty())
 					fatal(curr_token.linenum, "local label in global scope");
+				if (symbols.count(prev_label + curr_token.text))
+					fatal(curr_token.linenum, "duplicate definition of label `" + prev_label + curr_token.text + "'");
 				symbols[prev_label + curr_token.text] = (Symbol){prev_label + curr_token.text, false, SYMTYPE_NONE, section_map[curr_sect] + 1, -1};
 			} else {
 				if (symbols.count(curr_token.text)) {
 					if (symbols[curr_token.text].value != -2)
 						fatal(curr_token.linenum, "duplicate definition of label `" + curr_token.text + "'");
+					// If symbol is a placeholder, only update section index and value (everything else is already set)
 					symbols[curr_token.text].shndx = section_map[curr_sect] + 1;
+					symbols[curr_token.text].value = -1;
 				} else {
 					symbols[curr_token.text] = (Symbol){curr_token.text, false, SYMTYPE_NONE, section_map[curr_sect] + 1, -1};
 				}
@@ -438,42 +459,55 @@ void process_instructions(const std::vector<Token> &tokens) {
 				curr_sect = tokens[++i].text;
 				i++;
 			} else if (instr == "global" || instr == "extern") {
+				// Skip because already processed in parse_labels
 				i += 2;
 			} else if (instr == "align") {
 				try {
-					pad(std::stoi(tokens[++i].text), sections[section_map[curr_sect]].data);
+					pad(std::stoul(tokens[++i].text), sections[section_map[curr_sect]].data);
 				} catch (std::invalid_argument &e) {
 					fatal(linenum, "invalid argument to align directive");
 				}
-			} else if (instr.starts_with("res") && instr.size() == 4) {
+			} else if (instr.starts_with("res") && instr.size() == 4 && instr.find_first_of("bwdqo") != 3) {
 				try {
-					int size = std::stoi(tokens[++i].text);
-					if (size < 0)
-						fatal(linenum, "invalid argument to res directive");
-					sections[section_map[curr_sect]].data.resize(sections[section_map[curr_sect]].data.size() + size);
+					unsigned int size = std::stoul(tokens[++i].text);
+					if (instr[3] == 'b')
+						sections[section_map[curr_sect]].data.resize(sections[section_map[curr_sect]].data.size() + size);
+					else if (instr[3] == 'w')
+						sections[section_map[curr_sect]].data.resize(sections[section_map[curr_sect]].data.size() + size * 2);
+					else if (instr[3] == 'd')
+						sections[section_map[curr_sect]].data.resize(sections[section_map[curr_sect]].data.size() + size * 4);
+					else if (instr[3] == 'q')
+						sections[section_map[curr_sect]].data.resize(sections[section_map[curr_sect]].data.size() + size * 8);
+					else
+						sections[section_map[curr_sect]].data.resize(sections[section_map[curr_sect]].data.size() + size * 16);
 				} catch (std::invalid_argument &e) {
 					fatal(linenum, "invalid argument to res directive");
 				}
 				i++;
 			} else {
+				// Parse arguments
 				std::vector<std::string> args;
 				while (tokens[++i].type != NEWLINE)
 					args.push_back(tokens[i].text);
 
-				if (instr[0] == 'd' && instr.size() == 2) {
+				// Define directives
+				if (instr[0] == 'd' && instr.size() == 2)
 					parse_d(instr, args, linenum, sections[section_map[curr_sect]].data);
-				}
-				// handle(curr_token.text, args, linenum, instr_cnt);
+				else
+					handle_instruction(curr_token.text, args, linenum, sections[section_map[curr_sect]].data);
 			}
 		} else if (curr_token.type == LABEL) {
+			// Update symbol value
 			if (curr_token.text[0] == '.') {
 				symbols[prev_label + curr_token.text].value = sections[section_map[curr_sect]].data.size();
 			} else {
 				symbols[curr_token.text].value = sections[section_map[curr_sect]].data.size();
 				prev_label = curr_token.text;
 			}
+			// Bypass the newline check because there can be multiple labels or a label and an instruction on the same line
 			continue;
 		}
+		// Make sure there's a newline after each instruction
 		if (tokens[i].type != NEWLINE)
 			fatal(curr_token.linenum, "syntax error");
 	}

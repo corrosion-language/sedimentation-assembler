@@ -1,10 +1,6 @@
 #include "elf.hpp"
 
-#include "elf.hpp"
-
-#include <algorithm>
 #include <elf.h>
-#include <fstream>
 
 void ELF_write(const std::vector<Section> &sections, const std::vector<Symbol> &symbols, std::ofstream &f) {
 	// Open file
@@ -83,8 +79,8 @@ void ELF_write(const std::vector<Section> &sections, const std::vector<Symbol> &
 		f.write((char *)&shdr, sizeof(Elf64_Shdr));
 	}
 
-	std::string strtab; // it's more convenient to make it a string even though it's binary
-	strtab.push_back(0); // first character of stringtable is always null
+	std::string strtab; // It's more convenient to make it a string even though it's binary
+	strtab.push_back(0); // First character of stringtable is always null
 	std::vector<uint8_t> symtab;
 	int local_sym_count = 0;
 	// Write the symbol table

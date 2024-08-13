@@ -1,23 +1,32 @@
 #include "translate.hpp"
+
 #include "instr.dat"
 #include "vex.hpp"
 
-void handle(std::string s, std::vector<std::string> args, const size_t linenum, size_t instr_cnt) {
-	error = "";
+#include <cstring>
+
+extern std::vector<RelocEntry> relocations;
+extern std::vector<Section> sections;
+extern std::unordered_map<std::string, uint16_t> section_map;
+extern std::unordered_map<std::string, Symbol> symbols;
+extern std::string prev_label; // Last label that was not a dot
+
+void handle_instruction(std::string s, std::vector<std::string> args, const int linenum, std::vector<uint8_t> &output_buffer) {
 	bool prefix = false;
-	// handle prefixes (lock, repne, repe)
+	// Handle prefixes (lock, repne, repe)
 	while (true) {
 		if (s == "lock") {
-			text_buffer += '\xf0';
+			output_buffer.push_back('\xf0');
 			prefix = true;
 		} else if (s == "repne" || s == "repnz" || s == "bnd") {
-			text_buffer += '\xf2';
+			output_buffer.push_back('\xf2');
 			prefix = true;
 		} else if (s == "rep" || s == "repe" || s == "repz") {
-			text_buffer += '\xf3';
+			output_buffer.push_back('\xf3');
 			prefix = true;
-		} else
+		} else {
 			break;
+		}
 		size_t i = args.front().find(' ');
 		if (i == std::string::npos) {
 			s = args.front();
