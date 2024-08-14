@@ -1,6 +1,7 @@
 #include "translate.hpp"
 
 #include "instr.dat"
+#include "utility.hpp"
 #include "vex.hpp"
 
 #include <cstring>
@@ -10,6 +11,7 @@ extern std::vector<Section> sections;
 extern std::unordered_map<std::string, uint16_t> section_map;
 extern std::unordered_map<std::string, Symbol> symbols;
 extern std::string prev_label; // Last label that was not a dot
+extern std::string curr_sect;
 
 void handle_instruction(std::string s, std::vector<std::string> args, const int linenum, std::vector<uint8_t> &output_buffer) {
 	bool prefix = false;
@@ -180,7 +182,7 @@ void handle_instruction(std::string s, std::vector<std::string> args, const int 
 				}
 				size += _sizes[token[1] - 'A'];
 			} else {
-				std::cerr << "Erreur : ensemble d'instructions mal configurée" << std::endl;
+				fatal(linenum, "Misconfigured instruction set. Please contact the developer.");
 			}
 		}
 		if (matched) {
@@ -292,7 +294,7 @@ void handle_instruction(std::string s, std::vector<std::string> args, const int 
 				if (data->sib != 0x7fff)
 					tmp += data->sib;
 
-				if (data->reloc.second != NONE) {
+				if (data->reloc.second != RELOC_NONE) {
 					reloc.emplace_back(text_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
 					data->offset = 0;
 				}
@@ -456,7 +458,7 @@ void handle_instruction(std::string s, std::vector<std::string> args, const int 
 				if (sib != 0x7fff)
 					tmp += sib;
 
-				if (data->reloc.second != NONE) {
+				if (data->reloc.second != RELOC_NONE) {
 					reloc.emplace_back(text_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
 					data->offset = 0;
 				}

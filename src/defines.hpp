@@ -7,22 +7,22 @@
 #include <unordered_map>
 #include <vector>
 
-enum OperandType { INVALID, REG, MEM, IMM };
+enum OperandType { INVALID_OPERAND, REG, MEM, IMM };
 
 enum OutputFormat { ELF, COFF, MACHO };
 
-enum TokenType { NEWLINE, STRING, MEMORY, LABEL, OTHER };
+enum TokenType { NEWLINE, LABEL, INSTR, ARG };
 
 // Represents the following types: R_AMD64_32, R_AMD64_PC32/8, R_AMD64_PLT32
 // https://docs.oracle.com/cd/E19120-01/open.solaris/819-0690/chapter7-2/index.html
-enum RelocType { NONE, ABS, REL, PLT };
+enum RelocType { RELOC_NONE, ABS, REL, PLT };
 
-enum SymbolType { SYMTYPE_NONE };
+enum SymbolType { SYMTYPE_NONE, SYMTYPE_EXTERN };
 
 struct RelocEntry {
 	uint64_t offset = 0;
 	int64_t addend = 0;
-	RelocType type = NONE;
+	RelocType type = RELOC_NONE;
 	std::string symbol = nullptr;
 	short size = 0;
 };
@@ -36,12 +36,12 @@ struct Symbol {
 	std::string name;
 	bool global;
 	SymbolType type;
-	uint16_t shndx;
+	std::string section;
 	ssize_t value;
 };
 
 struct MemOperand {
-	std::pair<std::string, RelocType> reloc = {"", NONE};
+	std::pair<std::string, RelocType> reloc = {"", RELOC_NONE};
 	uint8_t prefix = 0;
 	uint8_t rex = 0;
 	uint16_t rm = 0x7fff;

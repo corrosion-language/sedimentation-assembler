@@ -81,6 +81,7 @@ std::vector<Section> sections;
 std::unordered_map<std::string, uint16_t> section_map;
 std::unordered_map<std::string, Symbol> symbols;
 std::string prev_label; // Last label that was not a dot
+std::string curr_sect;
 
 [[noreturn]] void fatal(const int linenum, const std::string &&msg) {
 	std::cerr << input_name << ":" << linenum << ": error: " << msg << std::endl;
@@ -182,7 +183,9 @@ void lex(std::vector<Token> &tokens) {
 }
 
 void parse_labels(const std::vector<Token> &tokens) {
-	std::string curr_sect = ""; // Current section
+	curr_sect = ".text"; // Current section
+	section_map[".text"] = 0;
+	sections.push_back({".text", {}});
 
 	for (int i = 0; i < tokens.size(); i++) {
 		const Token &curr_token = tokens[i];
@@ -221,7 +224,7 @@ void parse_labels(const std::vector<Token> &tokens) {
 					fatal(curr_token.linenum, "local label in extern directive");
 				if (symbols.count(label) && symbols[label].value > -2)
 					fatal(curr_token.linenum, "duplicate definition of label `" + label + "'");
-				symbols[label] = (Symbol){label, false, SYMTYPE_NONE, section_map[curr_sect] + 1, 0};
+				symbols[label] = (Symbol){label, false, SYMTYPE_EXTERN, curr_sect, 0};
 			}
 		} else if (curr_token.type == LABEL) {
 			// Label definition
@@ -230,16 +233,16 @@ void parse_labels(const std::vector<Token> &tokens) {
 					fatal(curr_token.linenum, "local label in global scope");
 				if (symbols.count(prev_label + curr_token.text))
 					fatal(curr_token.linenum, "duplicate definition of label `" + prev_label + curr_token.text + "'");
-				symbols[prev_label + curr_token.text] = (Symbol){prev_label + curr_token.text, false, SYMTYPE_NONE, section_map[curr_sect] + 1, -1};
+				symbols[prev_label + curr_token.text] = (Symbol){prev_label + curr_token.text, false, SYMTYPE_NONE, curr_sect, -1};
 			} else {
 				if (symbols.count(curr_token.text)) {
 					if (symbols[curr_token.text].value > -2)
 						fatal(curr_token.linenum, "duplicate definition of label `" + curr_token.text + "'");
 					// If symbol is a placeholder, only update section index and value (everything else is already set)
-					symbols[curr_token.text].shndx = section_map[curr_sect] + 1;
+					symbols[curr_token.text].section = curr_sect;
 					symbols[curr_token.text].value = -1;
 				} else {
-					symbols[curr_token.text] = (Symbol){curr_token.text, false, SYMTYPE_NONE, section_map[curr_sect] + 1, -1};
+					symbols[curr_token.text] = (Symbol){curr_token.text, false, SYMTYPE_NONE, curr_sect, -1};
 				}
 				prev_label = curr_token.text;
 			}
@@ -466,7 +469,7 @@ void pad(unsigned int align, std::vector<uint8_t> &output_buffer) {
 }
 
 void process_instructions(const std::vector<Token> &tokens) {
-	std::string curr_sect = "";
+	curr_sect = ".text";
 	prev_label = "";
 
 	for (int i = 0; i < tokens.size(); i++) {

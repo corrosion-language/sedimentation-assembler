@@ -50,7 +50,7 @@ OperandType get_optype(const std::string &s) {
 		size_t l = s.find('[');
 		size_t r = s.find(']');
 		if (l == std::string::npos || r == std::string::npos)
-			return INVALID;
+			return INVALID_OPERAND;
 		return MEM;
 	}
 	// Otherwise return IMM (immediate)
@@ -94,10 +94,9 @@ MemOperand *parse_mem(std::string in, short &size) {
 		out->offsize = 32;
 		out->reloc.second = REL;
 		in = in.substr(5, in.size() - 6);
-		if (!labels.count(in)) {
-			error = "symbole « " + in + " » non défini";
-			return nullptr;
-		}
+		if (!symbols.count(in))
+			throw std::runtime_error("undefined symbol `" + in + "'");
+
 		size_t op = in.find('+');
 		if (op != std::string::npos) {
 			out->offset = std::stoi(in.substr(op + 1), 0, 0);
@@ -147,7 +146,7 @@ MemOperand *parse_mem(std::string in, short &size) {
 	MemOperand *out = new MemOperand();
 
 	// resolve labels and combine with imms if possible
-	if (tokens.size() > 1 && (data_labels.count(tokens[tokens.size() - 2]) || bss_labels.count(tokens[tokens.size() - 2]))) {
+	if (tokens.size() > 1 && symbols.count(tokens[tokens.size() - 2])) {
 		out->reloc.first = tokens[tokens.size() - 2];
 		out->reloc.second = ABS;
 		if (ops.back() != '+')
@@ -155,13 +154,13 @@ MemOperand *parse_mem(std::string in, short &size) {
 		tokens.erase(tokens.end() - 2);
 		ops.pop_back();
 	} else {
-		if (data_labels.count(tokens.front()) || bss_labels.count(tokens.front())) {
+		if (symbols.count(tokens.front())) {
 			tokens.push_back(tokens.front());
 			ops.push_back('+');
 			tokens.erase(tokens.begin());
 			ops.erase(ops.begin());
 		}
-		if (data_labels.count(tokens.back()) || bss_labels.count(tokens.back())) {
+		if (symbols.count(tokens.back())) {
 			out->reloc.first = tokens.back();
 			out->reloc.second = ABS;
 			tokens.back() = "0";
@@ -211,7 +210,7 @@ MemOperand *parse_mem(std::string in, short &size) {
 				out->sib = 0b00100101;
 				out->offset = std::stoi(tokens[0], 0, 0);
 				out->offsize = 32;
-				if (out->reloc.second == NONE && (int8_t)out->offset == out->offset) {
+				if (out->reloc.second == RELOC_NONE && (int8_t)out->offset == out->offset) {
 					out->offsize = 8;
 					if (out->rm & 0x80)
 						out->rm ^= 0xc0;
@@ -220,10 +219,9 @@ MemOperand *parse_mem(std::string in, short &size) {
 		} else {
 			// must be reg + offset
 			short a1 = reg_num(tokens[0]);
-			if (a1 == -1) {
-				error = "symbole « " + tokens[0] + " » non défini";
-				return nullptr;
-			}
+			if (a1 == -1)
+				throw std::runtime_error("undefined symbol `" + in + "'");
+
 			// size override
 			if (reg_size(tokens[0]) == 32)
 				out->prefix = 0x67;
@@ -238,7 +236,7 @@ MemOperand *parse_mem(std::string in, short &size) {
 			// offset
 			out->offset = std::stoi(tokens[1], 0, 0);
 			out->offsize = 32;
-			if (out->reloc.second == NONE && (int8_t)out->offset == out->offset) {
+			if (out->reloc.second == RELOC_NONE && (int8_t)out->offset == out->offset) {
 				out->offsize = 8;
 				if (out->rm & 0x80)
 					out->rm ^= 0xc0;
@@ -259,7 +257,7 @@ MemOperand *parse_mem(std::string in, short &size) {
 			base = -1;
 		if (ops.size() && ops.back() != '*' && reg_size(tokens.back()) == -1) {
 			offset = std::stoi(tokens.back(), 0, 0);
-			if (out->reloc.second != NONE)
+			if (out->reloc.second != RELOC_NONE)
 				force = true;
 			tokens.pop_back();
 			ops.pop_back();
@@ -286,10 +284,9 @@ MemOperand *parse_mem(std::string in, short &size) {
 			scale = 3;
 		else
 			return nullptr;
-		if (index == 4) {
-			error = "erreur : impossible d'utiliser sp comme un index";
-			return nullptr;
-		}
+		if (index == 4)
+			throw std::runtime_error("cannot use sp as an index register");
+
 		// size override
 		if (reg_size(tokens[0]) == 32)
 			out->prefix = 0x67;
@@ -316,7 +313,7 @@ MemOperand *parse_mem(std::string in, short &size) {
 		if (offset || force) {
 			out->offset = offset;
 			out->offsize = 32;
-			if (out->reloc.second == NONE && (int8_t)offset == offset) {
+			if (out->reloc.second == RELOC_NONE && (int8_t)offset == offset) {
 				out->offsize = 8;
 				if (out->rm & 0x80)
 					out->rm ^= 0xc0;
@@ -331,10 +328,8 @@ std::pair<unsigned long long, short> parse_imm(std::string s) {
 	if (s[0] == '.')
 		s = prev_label + s;
 	if (s.ends_with(" wrt ..plt")) {
-		if (!extern_labels_map.count(s.substr(0, s.size() - 10))) {
-			error = "symbole « " + s.substr(0, s.size() - 10) + " » non défini";
-			return {0, -1};
-		}
+		if (!symbols.count(s.substr(0, s.size() - 10)))
+			throw std::runtime_error("undefined symbol `" + s.substr(0, s.size() - 10) + "'");
 		return {0, -4};
 	}
 	if (text_labels_map.count(s))
@@ -345,10 +340,8 @@ std::pair<unsigned long long, short> parse_imm(std::string s) {
 		return {0, -2};
 	// if character, return character
 	if (s[0] == '\'') {
-		if (s[2] != '\'') {
-			error = "charactère invalide";
-			return {0, -1};
-		}
+		if (s[2] != '\'')
+			throw std::runtime_error("invalid character");
 		return {(unsigned char)s[1], 8};
 	}
 	// detect base
@@ -386,10 +379,8 @@ std::pair<unsigned long long, short> parse_imm(std::string s) {
 			return {val, size};
 		}
 	} catch (std::invalid_argument const &) {
-		error = "symbole « " + s + " » non défini";
-		return {0, -1};
+		throw std::runtime_error("undefined symbol `" + s + "'");
 	} catch (std::out_of_range const &) {
-		error = "valeur d'immédiate trop grande";
-		return {0, -1};
+		throw std::runtime_error("immediate value too large");
 	}
 }

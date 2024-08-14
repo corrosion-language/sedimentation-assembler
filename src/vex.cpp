@@ -215,7 +215,7 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 			if (data->sib != 0x7fff)
 				tmp += data->sib;
 
-			if (data->reloc.second != NONE) {
+			if (data->reloc.second != RELOC_NONE) {
 				reloc.emplace_back(text_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
 				data->offset = 0;
 			}
@@ -271,7 +271,7 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 			if (data->sib != 0x7fff)
 				tmp += data->sib;
 
-			if (data->reloc.second != NONE) {
+			if (data->reloc.second != RELOC_NONE) {
 				reloc.emplace_back(text_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
 				data->offset = 0;
 			}
@@ -343,7 +343,7 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 					if (data->sib != 0x7fff)
 						tmp += data->sib;
 
-					if (data->reloc.second != NONE) {
+					if (data->reloc.second != RELOC_NONE) {
 						reloc.emplace_back(text_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
 						data->offset = 0;
 					}
@@ -398,7 +398,7 @@ void handle_vex(std::string &s, std::vector<std::string> &args, const size_t lin
 					if (data->sib != 0x7fff)
 						tmp += data->sib;
 
-					if (data->reloc.second != NONE) {
+					if (data->reloc.second != RELOC_NONE) {
 						reloc.emplace_back(text_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
 						data->offset = 0;
 					}
