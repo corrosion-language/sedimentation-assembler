@@ -100,7 +100,7 @@ void lex(std::vector<Token> &tokens) {
 	int linenum = 1;
 	char c = input_file.get();
 	// Uses tokens.back() as a buffer to accumulate characters until a token is complete
-	tokens.push_back({NEWLINE, "", -1});
+	tokens.push_back({NEWLINE, "", 1});
 	while (!input_file.eof()) {
 		while (isspace(c)) {
 			if (c == '\n') {
@@ -112,69 +112,145 @@ void lex(std::vector<Token> &tokens) {
 			}
 			c = input_file.get();
 		}
+		if (input_file.eof())
+			break;
 
+		// Comment
 		if (c == ';') {
-			// Comment
 			while (c != '\n' && !input_file.eof())
 				c = input_file.get();
-		} else if (c == '"') {
-			// String
-			char last = 0;
-			c = input_file.get();
-			tokens.back().text += '"';
-			while (!(c == '"' && last != '\\') && c != '\n' && !input_file.eof()) {
-				tokens.back().text += c;
-				last = c;
-				c = input_file.get();
-			}
-			if (c == '\n' || input_file.eof())
-				fatal(linenum, "unterminated string");
-			tokens.back().text += '"';
-			tokens.back().type = STRING;
-			tokens.back().linenum = linenum;
-			tokens.push_back({NEWLINE, "", linenum});
-			c = input_file.get();
-		} else if (c == '[') {
-			// Memory reference (need this seperately because of the ':')
-			while (c != ']' && c != '\n' && !input_file.eof()) {
-				tokens.back().text += c;
-				c = input_file.get();
-			}
-			if (c == '\n' || input_file.eof())
-				fatal(linenum, "invalid memory reference");
-			tokens.back().text += c;
-			tokens.back().type = MEMORY;
-			tokens.back().linenum = linenum;
-			tokens.push_back({NEWLINE, "", linenum});
-			c = input_file.get();
-		} else {
-			// Label/other
-			while (!isspace(c) && c != ';' && c != ':' && c != ',' && !input_file.eof()) {
-				tokens.back().text += c;
-				c = input_file.get();
-			}
-			if (c == ',' && tokens.back().text.size() == 0) {
-				c = input_file.get();
-				continue;
-			}
-			if (c == ':') {
-				// Label
-				tokens.back().type = LABEL;
-				tokens.back().linenum = linenum;
-				tokens.push_back({NEWLINE, "", linenum});
-				c = input_file.get();
-			} else {
-				// Other
-				tokens.back().type = OTHER;
-				tokens.back().linenum = linenum;
-				tokens.push_back({NEWLINE, "", linenum});
-			}
+			continue;
 		}
+
+		if (tokens.size() == 1 || tokens.rbegin()[1].type == NEWLINE) {
+			// Beginning of line means must be either a label or an instruction/directive
+			while (isalnum(c) || c == '_' || c == '#' || c == '@' || c == '~' || c == '?') {
+				tokens.back().text += c;
+				c = input_file.get();
+			}
+			if (c == ':')
+				tokens.back().type = LABEL;
+			else
+				tokens.back().type = INSTR;
+			if (c == ':')
+				c = input_file.get();
+
+			if (tokens.back().text.empty())
+				fatal(linenum, "syntax error");
+		} else if (tokens.rbegin()[1].type == LABEL || tokens.rbegin()[1].type == INSTR || tokens.rbegin()[1].type == ARG) {
+			// Allows multiple prefixes
+			if (tokens.rbegin()[1].type == INSTR || tokens.rbegin()[1].type == ARG) {
+				Token &prev_token = tokens.rbegin()[1];
+				if (!(prev_token.text == "lock" || prev_token.text == "repne" || prev_token.text == "repnz" || prev_token.text == "rep" ||
+					  prev_token.text == "repe" || prev_token.text == "repz")) {
+					// Must be an argument
+					bool in_string = c == '"';
+					while (!(c == ',' && !in_string) && c != '\n' && !input_file.eof()) {
+						tokens.back().text += c;
+						c = input_file.get();
+						if (tokens.back().text.back() != '\\' && c == '"')
+							in_string = !in_string;
+					}
+					if (in_string)
+						fatal(linenum, "unterminated string");
+					tokens.back().type = ARG;
+					if (c == ',')
+						c = input_file.get();
+
+					if (tokens.back().text.empty())
+						fatal(linenum, "syntax error");
+					tokens.push_back({NEWLINE, "", linenum});
+					continue;
+				}
+			}
+			// Must be an instruction/directive
+			while (isalnum(c)) {
+				tokens.back().text += c;
+				c = input_file.get();
+			}
+			tokens.back().type = INSTR;
+
+			if (tokens.back().text.empty())
+				fatal(linenum, "syntax error");
+		}
+		tokens.push_back({NEWLINE, "", linenum});
 	}
 	// Removes redundant newline tokens at the end
 	tokens.pop_back();
 	if (tokens.rbegin()[1].type == NEWLINE)
 		tokens.pop_back();
+}
+
+void parse_labels(const std::vector<Token> &tokens) {
+	std::string curr_sect = ""; // Current section
+
+	for (int i = 0; i < tokens.size(); i++) {
+		const Token &curr_token = tokens[i];
+		if (curr_token.type == INSTR) {
+			// Some type of directive
+			if (curr_token.text == "section") {
+				// Update current section
+				curr_sect = tokens[++i].text;
+				if (tokens[i].type != ARG)
+					fatal(curr_token.linenum, "missing argument to section directive");
+
+				// Create new section if it doesn't exist
+				if (!section_map.count(curr_sect)) {
+					section_map[curr_sect] = sections.size();
+					sections.push_back({curr_sect, {}});
+				}
+			} else if (curr_token.text == "global") {
+				const std::string &label = tokens[++i].text;
+				if (tokens[i].type != ARG)
+					fatal(curr_token.linenum, "missing argument to global directive");
+
+				if (label[0] == '.')
+					fatal(curr_token.linenum, "local label in global directive");
+
+				// Create placeholder symbol if it doesn't exist (value = -1 - linenum)
+				if (!symbols.count(label))
+					symbols[label] = (Symbol){label, true, SYMTYPE_NONE, 0, -1 - curr_token.linenum};
+				else
+					symbols[label].global = true;
+			} else if (curr_token.text == "extern") {
+				const std::string &label = tokens[++i].text;
+				if (tokens[i].type != ARG)
+					fatal(curr_token.linenum, "missing argument to extern directive");
+
+				if (label[0] == '.')
+					fatal(curr_token.linenum, "local label in extern directive");
+				if (symbols.count(label) && symbols[label].value > -2)
+					fatal(curr_token.linenum, "duplicate definition of label `" + label + "'");
+				symbols[label] = (Symbol){label, false, SYMTYPE_NONE, section_map[curr_sect] + 1, 0};
+			}
+		} else if (curr_token.type == LABEL) {
+			// Label definition
+			if (curr_token.text[0] == '.') {
+				if (prev_label.empty())
+					fatal(curr_token.linenum, "local label in global scope");
+				if (symbols.count(prev_label + curr_token.text))
+					fatal(curr_token.linenum, "duplicate definition of label `" + prev_label + curr_token.text + "'");
+				symbols[prev_label + curr_token.text] = (Symbol){prev_label + curr_token.text, false, SYMTYPE_NONE, section_map[curr_sect] + 1, -1};
+			} else {
+				if (symbols.count(curr_token.text)) {
+					if (symbols[curr_token.text].value > -2)
+						fatal(curr_token.linenum, "duplicate definition of label `" + curr_token.text + "'");
+					// If symbol is a placeholder, only update section index and value (everything else is already set)
+					symbols[curr_token.text].shndx = section_map[curr_sect] + 1;
+					symbols[curr_token.text].value = -1;
+				} else {
+					symbols[curr_token.text] = (Symbol){curr_token.text, false, SYMTYPE_NONE, section_map[curr_sect] + 1, -1};
+				}
+				prev_label = curr_token.text;
+			}
+		}
+	}
+
+	// Verify that all symbols are defined
+	for (auto &sym : symbols) {
+		if (sym.second.value <= -2)
+			fatal(-1 - sym.second.value, "undefined reference to label `" + sym.first + "'");
+	}
 }
 
 // Returns new index
@@ -389,70 +465,13 @@ void pad(unsigned int align, std::vector<uint8_t> &output_buffer) {
 		output_buffer.insert(output_buffer.end(), {0x66, 0x66, 0x0f, 0x1f, 0x84, 0x00, 0x00, 0x00, 0x00, 0x00});
 }
 
-void parse_labels(const std::vector<Token> &tokens) {
-	std::string curr_sect = ""; // Current section
-
-	for (int i = 0; i < tokens.size(); i++) {
-		const Token &curr_token = tokens[i];
-		if (curr_token.type == OTHER) {
-			// Some type of directive
-			if (curr_token.text == "section") {
-				// Update current section
-				curr_sect = tokens[++i].text;
-				// Create new section if it doesn't exist
-				if (!section_map.count(curr_sect)) {
-					section_map[curr_sect] = sections.size();
-					sections.push_back({curr_sect, {}});
-				}
-			} else if (curr_token.text == "global") {
-				const std::string &label = tokens[++i].text;
-				if (label[0] == '.')
-					fatal(curr_token.linenum, "local label in global directive");
-
-				// Create placeholder symbol if it doesn't exist (value = -2)
-				if (!symbols.count(label))
-					symbols[label] = (Symbol){label, true, SYMTYPE_NONE, 0, -2};
-				else
-					symbols[label].global = true;
-			} else if (curr_token.text == "extern") {
-				const std::string &label = tokens[++i].text;
-				if (label[0] == '.')
-					fatal(curr_token.linenum, "local label in extern directive");
-				if (symbols.count(label) && symbols[label].value != -2)
-					fatal(curr_token.linenum, "duplicate definition of label `" + label + "'");
-				symbols[label] = (Symbol){label, false, SYMTYPE_NONE, section_map[curr_sect] + 1, 0};
-			}
-		} else if (curr_token.type == LABEL) {
-			// Label definition
-			if (curr_token.text[0] == '.') {
-				if (prev_label.empty())
-					fatal(curr_token.linenum, "local label in global scope");
-				if (symbols.count(prev_label + curr_token.text))
-					fatal(curr_token.linenum, "duplicate definition of label `" + prev_label + curr_token.text + "'");
-				symbols[prev_label + curr_token.text] = (Symbol){prev_label + curr_token.text, false, SYMTYPE_NONE, section_map[curr_sect] + 1, -1};
-			} else {
-				if (symbols.count(curr_token.text)) {
-					if (symbols[curr_token.text].value != -2)
-						fatal(curr_token.linenum, "duplicate definition of label `" + curr_token.text + "'");
-					// If symbol is a placeholder, only update section index and value (everything else is already set)
-					symbols[curr_token.text].shndx = section_map[curr_sect] + 1;
-					symbols[curr_token.text].value = -1;
-				} else {
-					symbols[curr_token.text] = (Symbol){curr_token.text, false, SYMTYPE_NONE, section_map[curr_sect] + 1, -1};
-				}
-				prev_label = curr_token.text;
-			}
-		}
-	}
-}
-
 void process_instructions(const std::vector<Token> &tokens) {
 	std::string curr_sect = "";
 	prev_label = "";
 
 	for (int i = 0; i < tokens.size(); i++) {
 		const Token &curr_token = tokens[i];
-		if (curr_token.type == OTHER) {
+		if (curr_token.type == INSTR) {
 			const std::string &instr = curr_token.text;
 			int linenum = curr_token.linenum;
 			if (instr == "section") {
@@ -462,14 +481,19 @@ void process_instructions(const std::vector<Token> &tokens) {
 				// Skip because already processed in parse_labels
 				i += 2;
 			} else if (instr == "align") {
+				if (tokens[++i].type != ARG)
+					fatal(linenum, "missing argument to align directive");
+
 				try {
-					pad(std::stoul(tokens[++i].text), sections[section_map[curr_sect]].data);
+					pad(std::stoul(tokens[i].text), sections[section_map[curr_sect]].data);
 				} catch (std::invalid_argument &e) {
 					fatal(linenum, "invalid argument to align directive");
 				}
 			} else if (instr.starts_with("res") && instr.size() == 4 && instr.find_first_of("bwdqo") != 3) {
 				try {
-					unsigned int size = std::stoul(tokens[++i].text);
+					if (tokens[++i].type != ARG)
+						fatal(linenum, "missing argument to " + instr + " directive");
+					unsigned int size = std::stoul(tokens[i].text);
 					if (instr[3] == 'b')
 						sections[section_map[curr_sect]].data.resize(sections[section_map[curr_sect]].data.size() + size);
 					else if (instr[3] == 'w')
@@ -481,7 +505,7 @@ void process_instructions(const std::vector<Token> &tokens) {
 					else
 						sections[section_map[curr_sect]].data.resize(sections[section_map[curr_sect]].data.size() + size * 16);
 				} catch (std::invalid_argument &e) {
-					fatal(linenum, "invalid argument to res directive");
+					fatal(linenum, "invalid argument to " + instr + " directive");
 				}
 				i++;
 			} else {
@@ -493,8 +517,8 @@ void process_instructions(const std::vector<Token> &tokens) {
 				// Define directives
 				if (instr[0] == 'd' && instr.size() == 2)
 					parse_d(instr, args, linenum, sections[section_map[curr_sect]].data);
-				else
-					handle_instruction(curr_token.text, args, linenum, sections[section_map[curr_sect]].data);
+				// else
+				// 	handle_instruction(curr_token.text, args, linenum, sections[section_map[curr_sect]].data);
 			}
 		} else if (curr_token.type == LABEL) {
 			// Update symbol value
