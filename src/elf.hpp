@@ -7,6 +7,6 @@
 #include <fstream>
 #include <vector>
 
-void ELF_write(const std::vector<Section> &, const std::vector<Symbol> &, std::ofstream &);
+void ELF_write(const std::vector<Section> &, const std::vector<Symbol> &, const std::vector<RelocEntry>, std::ofstream &);
 
 #endif

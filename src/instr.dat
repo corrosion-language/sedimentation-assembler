@@ -147,7 +147,7 @@ bts MQ RQ w0fab
 bts MW IB 0fba/5
 bts MW RW 0fab
 
-call ID e8
+call CD e8
 call MQ ff/2
 
 cbw 98
@@ -749,103 +749,103 @@ iretd cf
 
 iretq wcf
 
-ja IB 77
-ja ID 0f87
+ja CB 77
+ja CD 0f87
 
-jae IB 73
-jae ID 0f83
+jae CB 73
+jae CD 0f83
 
-jb IB 72
-jb ID 0f82
+jb CB 72
+jb CD 0f82
 
-jbe IB 76
-jbe ID 0f86
+jbe CB 76
+jbe CD 0f86
 
-jc IB 72
-jc ID 0f82
+jc CB 72
+jc CD 0f82
 
-je IB 74
-je ID 0f84
+je CB 74
+je CD 0f84
 
-jecxz IB e3
+jecxz CB e3
 
-jg IB 7f
-jg ID 0f8f
+jg CB 7f
+jg CD 0f8f
 
-jge IB 7d
-jge ID 0f8d
+jge CB 7d
+jge CD 0f8d
 
-jl IB 7c
-jl ID 0f8c
+jl CB 7c
+jl CD 0f8c
 
-jle IB 7e
-jle ID 0f8e
+jle CB 7e
+jle CD 0f8e
 
-jmp IB eb
-jmp ID e9
+jmp CB eb
+jmp CD e9
 jmp MQ ff/4
 
-jna IB 76
-jna ID 0f86
+jna CB 76
+jna CD 0f86
 
-jnae IB 72
-jnae ID 0f82
+jnae CB 72
+jnae CD 0f82
 
-jnb IB 73
-jnb ID 0f83
+jnb CB 73
+jnb CD 0f83
 
-jnbe IB 77
-jnbe ID 0f87
+jnbe CB 77
+jnbe CD 0f87
 
-jnc IB 73
-jnc ID 0f83
+jnc CB 73
+jnc CD 0f83
 
-jne IB 75
-jne ID 0f85
+jne CB 75
+jne CD 0f85
 
-jng IB 7e
-jng ID 0f8e
+jng CB 7e
+jng CD 0f8e
 
-jnge IB 7c
-jnge ID 0f8c
+jnge CB 7c
+jnge CD 0f8c
 
-jnl IB 7d
-jnl ID 0f8d
+jnl CB 7d
+jnl CD 0f8d
 
-jnle IB 7f
-jnle ID 0f8f
+jnle CB 7f
+jnle CD 0f8f
 
-jno IB 71
-jno ID 0f81
+jno CB 71
+jno CD 0f81
 
-jnp IB 7b
-jnp ID 0f8b
+jnp CB 7b
+jnp CD 0f8b
 
-jns IB 79
-jns ID 0f89
+jns CB 79
+jns CD 0f89
 
-jnz IB 75
-jnz ID 0f85
+jnz CB 75
+jnz CD 0f85
 
-jo IB 70
-jo ID 0f80
+jo CB 70
+jo CD 0f80
 
-jp IB 7a
-jp ID 0f8a
+jp CB 7a
+jp CD 0f8a
 
-jpe IB 7a
-jpe ID 0f8a
+jpe CB 7a
+jpe CD 0f8a
 
-jpo IB 7b
-jpo ID 0f8b
+jpo CB 7b
+jpo CD 0f8b
 
-jrcxz IB e3
+jrcxz CB e3
 
-js IB 78
-js ID 0f88
+js CB 78
+js CD 0f88
 
-jz IB 74
-jz ID 0f84
+jz CB 74
+jz CD 0f84
 
 lddqu RX MX pf20ff0
 
@@ -875,11 +875,11 @@ lodsq wad
 
 lodsw ad
 
-loop RB e2cb
+loop CB e2cb
 
-loope RB e1cb
+loope CB e1cb
 
-loopne RB e0cb
+loopne CB e0cb
 
 lsl RD MW 0f03
 lsl RQ MW w0f03

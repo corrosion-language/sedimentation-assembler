@@ -64,7 +64,7 @@ void handle_instruction(std::string s, std::vector<std::string> args, const int 
 	while ((strncmp(l, s.c_str(), s.size()) != 0 || l[s.size()] != ' ') && l < map + map_size)
 		l++;
 	if (l >= map + map_size - 1 || *(l - 1) != '\n') {
-		handle_vex(s, args, linenum, prefix);
+		// handle_vex(s, args, linenum, prefix);
 		return;
 	}
 	r = std::find(l + 1, map + map_size, '\n');
@@ -82,30 +82,17 @@ void handle_instruction(std::string s, std::vector<std::string> args, const int 
 		} else if (type == MEM) {
 			types.emplace_back(MEM, mem_size(arg));
 		} else if (type == IMM) {
-			auto tmp = parse_imm(arg);
-			if (tmp.second == -1) {
-				fatal(linenum, error);
-			} else if (tmp.second == -3) {
-				if (reloc_table.count(text_labels[tmp.first])) {
-					int32_t off = reloc_table.at(text_labels.at(tmp.first)) - text_buffer.size() - 5;
-					if ((int8_t)off == off) {
-						types.emplace_back(IMM, 8);
-					} else {
-						types.emplace_back(IMM, 32);
-						tmp.first = 0;
-					}
+			try {
+				auto tmp = parse_imm(arg);
+				if (tmp.second == -3) {
+					types.emplace_back(IMM, 32);
+				} else if (tmp.second == -2 || tmp.second == -4) {
+					types.emplace_back(IMM, 32);
 				} else {
-					if (text_labels_instr[tmp.first] - instr_cnt <= 9) {
-						types.emplace_back(IMM, 8);
-					} else {
-						types.emplace_back(IMM, 32);
-						tmp.first = 0;
-					}
+					types.emplace_back(IMM, tmp.second);
 				}
-			} else if (tmp.second == -2 || tmp.second == -4) {
-				types.emplace_back(IMM, 32);
-			} else {
-				types.emplace_back(IMM, tmp.second);
+			} catch (std::exception &e) {
+				fatal(linenum, e.what());
 			}
 		} else {
 			fatal(linenum, "opérande invalide « " + arg + " »");
@@ -157,7 +144,7 @@ void handle_instruction(std::string s, std::vector<std::string> args, const int 
 					break;
 				}
 				size += _sizes[token[1] - 'A'];
-			} else if (token[0] == 'I') {
+			} else if (token[0] == 'I' || token[0] == 'C') {
 				if (types[j].first != IMM) {
 					matched = false;
 					break;
@@ -270,12 +257,15 @@ void handle_instruction(std::string s, std::vector<std::string> args, const int 
 			} else if (p.first[1][0] == 'M') {
 				short s1 = _sizes[p.first[1][1] - 'A'];
 				size_t w = p.first.back()[0] == 'w';
-				MemOperand *data = parse_mem(args[0], s1);
-				if (data == nullptr) {
-					if (error.empty())
-						error = "mode d'adressage invalide";
-					fatal(linenum, error);
+				MemOperand *data;
+				try {
+					data = parse_mem(args[0], s1);
+				} catch (std::exception &e) {
+					fatal(linenum, e.what());
 				}
+				if (data == nullptr)
+					fatal(linenum, "invalid addressing mode");
+
 				if (data->prefix)
 					tmp += data->prefix;
 				if (data->rex)
@@ -295,7 +285,7 @@ void handle_instruction(std::string s, std::vector<std::string> args, const int 
 					tmp += data->sib;
 
 				if (data->reloc.second != RELOC_NONE) {
-					reloc.emplace_back(text_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
+					reloc.emplace_back(output_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, curr_sect, 32);
 					data->offset = 0;
 				}
 
@@ -303,8 +293,7 @@ void handle_instruction(std::string s, std::vector<std::string> args, const int 
 					tmp += (data->offset >> i) & 0xff;
 
 				delete data;
-			} else if (p.first[1][0] == 'I') {
-				auto a1 = parse_imm(args[0]);
+			} else if (p.first[1][0] == 'I' || p.first[1][0] == 'C') {
 				size_t i = p.first.back()[0] == 'w';
 				if (i)
 					tmp += 0x48;
@@ -315,36 +304,24 @@ void handle_instruction(std::string s, std::vector<std::string> args, const int 
 					}
 					tmp += std::stoi(p.first.back().substr(i, 2), nullptr, 16);
 				}
-				if (a1.second == -1) {
-					fatal(linenum, error);
-				} else if (a1.second == -2) {
-					reloc.emplace_back(text_buffer.size() + tmp.size(), 0, ABS, args[0], 32);
-				} else if (a1.second == -3) {
-					if (reloc_table.count(text_labels[a1.first])) {
-						int32_t off = reloc_table.at(text_labels.at(a1.first)) - text_buffer.size() - 1 - _sizes[p.first[1][1] - 'A'] / 8;
-						if ((int8_t)off == off) {
-							a1.first = off;
-						} else {
-							reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32);
-							a1.first = 0;
-						}
-					} else {
-						if (text_labels_instr[a1.first] - instr_cnt <= 9) {
-							reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 8);
-							a1.first = 0;
-						} else {
-							reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32);
-							a1.first = 0;
-						}
+				try {
+					auto a1 = parse_imm(args[0]);
+					if (a1.second == -2) {
+						if (p.first[1][0] == 'C')
+							a1.first -= output_buffer.size() + tmp.size() + 4;
+					} else if (a1.second == -3) {
+						if (p.first[1][0] == 'C')
+							reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, args[0], curr_sect, 32);
+						else
+							reloc.emplace_back(output_buffer.size() + tmp.size(), 0, ABS, args[0], curr_sect, 64);
+					} else if (a1.second == -4) {
+						reloc.emplace_back(output_buffer.size() + tmp.size(), 0, PLT, args[0].substr(0, args[0].size() - 10), curr_sect, 32);
 					}
-				} else if (a1.second == -4) {
-					reloc.emplace_back(text_buffer.size() + tmp.size(), 0, PLT, args[0].substr(0, args[0].size() - 10), 32);
-				} else if (a1.second == -5) {
-					reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, extern_labels[a1.first], 32);
-					a1.first = 0;
+					for (int i = 0; i < _sizes[p.first[1][1] - 'A']; i += 8)
+						tmp += (a1.first >> i) & 0xff;
+				} catch (std::exception &e) {
+					fatal(linenum, e.what());
 				}
-				for (int i = 0; i < _sizes[p.first[1][1] - 'A']; i += 8)
-					tmp += (a1.first >> i) & 0xff;
 			}
 		} else if (types.size() >= 2) {
 			// index, size
@@ -380,36 +357,23 @@ void handle_instruction(std::string s, std::vector<std::string> args, const int 
 					tmp.back() += a1 & 7;
 				else
 					tmp.back() += 0xc0 | (reg << 3) | (a1 & 7);
-				auto a2 = parse_imm(args[imm.first - 1]);
 				short s2 = _sizes[p.first[imm.first][1] - 'A'];
-				if (a2.second == -1) {
-					fatal(linenum, error);
-				} else if (a2.second == -2) {
-					reloc.emplace_back(text_buffer.size() + tmp.size(), 0, ABS, args[imm.first - 1], std::max(s2, (short)32));
-				} else if (a2.second == -3) {
-					if (reloc_table.count(text_labels[a2.first])) {
-						int32_t off = reloc_table.at(text_labels.at(a2.first)) - text_buffer.size() - 1 - _sizes[p.first[1][1] - 'A'] / 8;
-						if ((int8_t)off == off) {
-							a2.first = off;
-						} else {
-							reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 32);
-							a2.first = 0;
-						}
-					} else {
-						if (text_labels_instr[a2.first] - instr_cnt <= 9) {
-							reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 8);
-							a2.first = 0;
-						} else {
-							reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, text_labels[a2.first], 32);
-							a2.first = 0;
-						}
+				try {
+					auto a2 = parse_imm(args[imm.first - 1]);
+					if (a2.second == -2) {
+						if (p.first[1][1] == 'C')
+							a2.first -= output_buffer.size() + tmp.size() + 4;
+					} else if (a2.second == -3) {
+						if (p.first[1][0] == 'C')
+							reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, args[0], curr_sect, 32);
+						else
+							reloc.emplace_back(output_buffer.size() + tmp.size(), 0, ABS, args[0], curr_sect, 64);
 					}
-				} else if (a2.second == -5) {
-					reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, extern_labels[a2.first], 32);
-					a2.first = 0;
+					for (int i = 0; i < s2; i += 8)
+						tmp += (a2.first >> i) & 0xff;
+				} catch (std::exception &e) {
+					fatal(linenum, e.what());
 				}
-				for (int i = 0; i < s2; i += 8)
-					tmp += (a2.first >> i) & 0xff;
 			} else {
 				short rex = 0;
 				short rm = 0x7fff;
@@ -417,11 +381,13 @@ void handle_instruction(std::string s, std::vector<std::string> args, const int 
 				MemOperand *data;
 				if (mem.first != -1) {
 					short s1 = mem.second;
-					data = parse_mem(args[mem.first - 1], s1);
+					try {
+						data = parse_mem(args[mem.first - 1], s1);
+					} catch (std::exception &e) {
+						fatal(linenum, e.what());
+					}
 					if (data == nullptr) {
-						if (error.empty())
-							error = "mode d'adressage invalide";
-						fatal(linenum, error);
+						fatal(linenum, "invalid addressing mode");
 					}
 					if (data->prefix)
 						tmp += data->prefix;
@@ -459,7 +425,7 @@ void handle_instruction(std::string s, std::vector<std::string> args, const int 
 					tmp += sib;
 
 				if (data->reloc.second != RELOC_NONE) {
-					reloc.emplace_back(text_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, 32);
+					reloc.emplace_back(output_buffer.size() + tmp.size(), data->offset, data->reloc.second, data->reloc.first, curr_sect, 32);
 					data->offset = 0;
 				}
 
@@ -469,36 +435,23 @@ void handle_instruction(std::string s, std::vector<std::string> args, const int 
 				delete data;
 
 				if (imm.first != -1) {
-					auto a1 = parse_imm(args[imm.first - 1]);
 					short s1 = _sizes[p.first[imm.first][1] - 'A'];
-					if (a1.second == -1) {
-						fatal(linenum, error);
-					} else if (a1.second == -2) {
-						reloc.emplace_back(text_buffer.size() + tmp.size(), 0, ABS, args[imm.first - 1], std::max(s1, (short)32));
-					} else if (a1.second == -3) {
-						if (reloc_table.count(text_labels[a1.first])) {
-							int32_t off = reloc_table.at(text_labels.at(a1.first)) - text_buffer.size() - 1 - _sizes[p.first[1][1] - 'A'] / 8;
-							if ((int8_t)off == off) {
-								a1.first = off;
-							} else {
-								reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32);
-								a1.first = 0;
-							}
-						} else {
-							if (text_labels_instr[a1.first] - instr_cnt <= 9) {
-								reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 8);
-								a1.first = 0;
-							} else {
-								reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, text_labels[a1.first], 32);
-								a1.first = 0;
-							}
+					try {
+						auto a1 = parse_imm(args[imm.first - 1]);
+						if (a1.second == -2) {
+							if (p.first[1][0] == 'C')
+								a1.first -= output_buffer.size() + tmp.size() + 4;
+						} else if (a1.second == -3) {
+							if (p.first[1][0] == 'C')
+								reloc.emplace_back(output_buffer.size() + tmp.size(), 0, REL, args[0], curr_sect, 32);
+							else
+								reloc.emplace_back(output_buffer.size() + tmp.size(), 0, ABS, args[0], curr_sect, 64);
 						}
-					} else if (a1.second == -5) {
-						reloc.emplace_back(text_buffer.size() + tmp.size(), 0, REL, extern_labels[a1.first], 32);
-						a1.first = 0;
+						for (int i = 0; i < s1; i += 8)
+							tmp += (a1.first >> i) & 0xff;
+					} catch (std::exception &e) {
+						fatal(linenum, e.what());
 					}
-					for (int i = 0; i < s1; i += 8)
-						tmp += (a1.first >> i) & 0xff;
 				}
 			}
 		}
@@ -512,9 +465,9 @@ void handle_instruction(std::string s, std::vector<std::string> args, const int 
 	}
 	for (auto reloc : bestreloc) {
 		if (reloc.type != ABS)
-			reloc.addend -= best.size() - (reloc.offset - text_buffer.size());
+			reloc.addend -= best.size() - (reloc.offset - output_buffer.size());
 		relocations.push_back(reloc);
 	}
 	for (size_t i = 0; i < best.size(); i++)
-		text_buffer.push_back(best[i]);
+		output_buffer.push_back(best[i]);
 }

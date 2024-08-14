@@ -22,19 +22,19 @@ short reg_size(const std::string &s) {
 }
 
 short mem_size(const std::string &s) {
-	if (s.starts_with("byte "))
+	if (s.starts_with("byte"))
 		return 8;
-	if (s.starts_with("word "))
+	if (s.starts_with("word"))
 		return 16;
-	if (s.starts_with("dword "))
+	if (s.starts_with("dword"))
 		return 32;
-	if (s.starts_with("qword "))
+	if (s.starts_with("qword"))
 		return 64;
-	if (s.starts_with("tbyte "))
+	if (s.starts_with("tbyte"))
 		return 80;
-	if (s.starts_with("oword ") || s.starts_with("xmmword "))
+	if (s.starts_with("oword") || s.starts_with("xword") || s.starts_with("xmmword"))
 		return 128;
-	if (s.starts_with("ymmword "))
+	if (s.starts_with("ymmword"))
 		return 256;
 	return -1;
 }
@@ -43,16 +43,9 @@ OperandType get_optype(const std::string &s) {
 	// If in register table return REG
 	if (reg_size(s) != -1)
 		return REG;
-	// If in format "SIZE [...]" or "[...]" return MEM or OFFSET
-	auto tmp = s.find(' ');
-	tmp = (tmp != std::string::npos) ? tmp : -1;
-	if (s[tmp + 1] == '[' || s[0] == '[') {
-		size_t l = s.find('[');
-		size_t r = s.find(']');
-		if (l == std::string::npos || r == std::string::npos)
-			return INVALID_OPERAND;
+	// If in format "SIZE[...]" or "[...]" return MEM or OFFSET
+	if (s.back() == ']')
 		return MEM;
-	}
 	// Otherwise return IMM (immediate)
 	return IMM;
 }
@@ -86,7 +79,7 @@ MemOperand *parse_mem(std::string in, short &size) {
 		if (tmp == -1)
 			return nullptr;
 		size = tmp;
-		in = in.substr(5 + (tmp >= 32));
+		in = in.substr(in.find('['));
 	}
 	if (in.starts_with("[rel ")) {
 		MemOperand *out = new MemOperand();
@@ -332,12 +325,12 @@ std::pair<unsigned long long, short> parse_imm(std::string s) {
 			throw std::runtime_error("undefined symbol `" + s.substr(0, s.size() - 10) + "'");
 		return {0, -4};
 	}
-	if (text_labels_map.count(s))
-		return {text_labels_map.at(s), -3};
-	if (extern_labels_map.count(s))
-		return {extern_labels_map.at(s), -5};
-	if (labels.count(s))
-		return {0, -2};
+	if (symbols.count(s)) {
+		if (symbols[s].section == ".text" && symbols[s].value >= 0)
+			return {symbols[s].value, -2};
+		return {0, -3};
+	}
+
 	// if character, return character
 	if (s[0] == '\'') {
 		if (s[2] != '\'')

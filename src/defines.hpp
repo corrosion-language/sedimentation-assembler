@@ -24,6 +24,7 @@ struct RelocEntry {
 	int64_t addend = 0;
 	RelocType type = RELOC_NONE;
 	std::string symbol = nullptr;
+	std::string section = nullptr;
 	short size = 0;
 };
 

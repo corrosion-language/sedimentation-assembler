@@ -125,7 +125,7 @@ void lex(std::vector<Token> &tokens) {
 
 		if (tokens.size() == 1 || tokens.rbegin()[1].type == NEWLINE) {
 			// Beginning of line means must be either a label or an instruction/directive
-			while (isalnum(c) || c == '_' || c == '#' || c == '@' || c == '~' || c == '?') {
+			while (isalnum(c) || c == '_' || c == '#' || c == '@' || c == '~' || c == '?' || c == '.') {
 				tokens.back().text += c;
 				c = input_file.get();
 			}
@@ -160,6 +160,7 @@ void lex(std::vector<Token> &tokens) {
 
 					if (tokens.back().text.empty())
 						fatal(linenum, "syntax error");
+
 					tokens.push_back({NEWLINE, "", linenum});
 					continue;
 				}
@@ -212,7 +213,7 @@ void parse_labels(const std::vector<Token> &tokens) {
 
 				// Create placeholder symbol if it doesn't exist (value = -1 - linenum)
 				if (!symbols.count(label))
-					symbols[label] = (Symbol){label, true, SYMTYPE_NONE, 0, -1 - curr_token.linenum};
+					symbols[label] = (Symbol){label, true, SYMTYPE_NONE, curr_sect, -1 - curr_token.linenum};
 				else
 					symbols[label].global = true;
 			} else if (curr_token.text == "extern") {
@@ -492,7 +493,7 @@ void process_instructions(const std::vector<Token> &tokens) {
 				} catch (std::invalid_argument &e) {
 					fatal(linenum, "invalid argument to align directive");
 				}
-			} else if (instr.starts_with("res") && instr.size() == 4 && instr.find_first_of("bwdqo") != 3) {
+			} else if (instr.starts_with("res") && instr.size() == 4 && instr.find_first_of("bwdqo") == 3) {
 				try {
 					if (tokens[++i].type != ARG)
 						fatal(linenum, "missing argument to " + instr + " directive");
@@ -520,8 +521,8 @@ void process_instructions(const std::vector<Token> &tokens) {
 				// Define directives
 				if (instr[0] == 'd' && instr.size() == 2)
 					parse_d(instr, args, linenum, sections[section_map[curr_sect]].data);
-				// else
-				// 	handle_instruction(curr_token.text, args, linenum, sections[section_map[curr_sect]].data);
+				else
+					handle_instruction(curr_token.text, args, linenum, sections[section_map[curr_sect]].data);
 			}
 		} else if (curr_token.type == LABEL) {
 			// Update symbol value
@@ -577,6 +578,28 @@ int main(int argc, char *argv[]) {
 	std::vector<Token> tokens;
 	lex(tokens);
 
+	// Clean up tokens
+	for (int i = 0; i < tokens.size(); i++) {
+		// Trim whitespace
+		tokens[i].text.erase(tokens[i].text.find_last_not_of(" \t\n\r\f\v") + 1);
+		tokens[i].text.erase(0, tokens[i].text.find_first_not_of(" \t\n\r\f\v"));
+
+		if (tokens[i].type == INSTR) {
+			// Convert instructions to lowercase
+			for (int j = 0; j < tokens[i].text.size(); j++)
+				tokens[i].text[j] = tolower(tokens[i].text[j]);
+		} else if (tokens[i].type == ARG) {
+			if (tokens[i].text.back() == ']') {
+				// Remove redundant spaces in memory operands
+				for (int j = 1; j < tokens[i].text.size() - 1; j++) {
+					if (tokens[i].text[j] == ' ' && !(isalnum(tokens[i].text[j - 1]) && isalnum(tokens[i].text[j + 1]))) {
+						tokens[i].text.erase(j--, 1);
+					}
+				}
+			}
+		}
+	}
+
 	parse_labels(tokens);
 
 	process_instructions(tokens);
@@ -586,7 +609,7 @@ int main(int argc, char *argv[]) {
 		symbols_vec.emplace_back(sym.second);
 
 	if (output_format == ELF)
-		ELF_write(sections, symbols_vec, output_file);
+		ELF_write(sections, symbols_vec, relocations, output_file);
 	// else if (output_format == COFF)
 	// 	generate_coff(output_file, bss_size);
 

@@ -1,10 +1,20 @@
 #include "elf.hpp"
 
 #include <elf.h>
+#include <unordered_set>
 
-void ELF_write(const std::vector<Section> &sections, const std::vector<Symbol> &symbols, std::ofstream &f) {
+void ELF_write(const std::vector<Section> &sections, const std::vector<Symbol> &symbols, const std::vector<RelocEntry> relocations, std::ofstream &f) {
 	// Open file
 	uint8_t zero[64] = {0};
+
+	// Get all the relocation sections
+	std::unordered_map<std::string, int> reloc_sections;
+	for (const auto &reloc : relocations) {
+		if (reloc_sections.count(reloc.section) == 0)
+			reloc_sections[reloc.section] = 1;
+		else
+			reloc_sections[reloc.section]++;
+	}
 
 	// Write the ELF header
 	Elf64_Ehdr ehdr;
@@ -20,6 +30,7 @@ void ELF_write(const std::vector<Section> &sections, const std::vector<Symbol> &
 	ehdr.e_type = ET_REL; // relocatable
 	ehdr.e_machine = EM_X86_64; // x86-64
 	ehdr.e_version = EV_CURRENT; // current version
+	ehdr.e_entry = 0; // no entry point
 	ehdr.e_phoff = 0; // no program header table
 	ehdr.e_shoff = sizeof(Elf64_Ehdr); // section header table offset
 	ehdr.e_flags = 0; // no flags
@@ -27,8 +38,8 @@ void ELF_write(const std::vector<Section> &sections, const std::vector<Symbol> &
 	ehdr.e_phentsize = 0; // no program header table
 	ehdr.e_phnum = 0; // no program header table
 	ehdr.e_shentsize = sizeof(Elf64_Shdr); // section header size
-	ehdr.e_shnum = sections.size() + 4; // null + number of sections + symtab + strtab + shstrtab
-	ehdr.e_shstrndx = sections.size() + 3; // index of section name string table (last section)
+	ehdr.e_shnum = sections.size() + 4 + reloc_sections.size(); // null + number of sections + symtab + strtab + shstrtab + relocs
+	ehdr.e_shstrndx = sections.size() + reloc_sections.size() + 3; // index of section name string table (last section)
 	f.write((char *)&ehdr, sizeof(Elf64_Ehdr));
 
 	// Write the null section header
@@ -79,6 +90,11 @@ void ELF_write(const std::vector<Section> &sections, const std::vector<Symbol> &
 		f.write((char *)&shdr, sizeof(Elf64_Shdr));
 	}
 
+	// Make a section map for shndx
+	std::unordered_map<std::string, int> shndx;
+	for (int i = 0; i < sections.size(); i++)
+		shndx[sections[i].name] = i + 1;
+
 	std::string strtab; // It's more convenient to make it a string even though it's binary
 	strtab.push_back(0); // First character of stringtable is always null
 	std::vector<uint8_t> symtab;
@@ -93,7 +109,7 @@ void ELF_write(const std::vector<Section> &sections, const std::vector<Symbol> &
 		strtab += sym.name + '\0'; // add name to string table
 		esym.st_info = ELF64_ST_INFO(sym.global ? STB_GLOBAL : STB_LOCAL, sym.type); // symbol binding and type
 		esym.st_other = 0; // no other
-		esym.st_shndx = sym.shndx; // section index
+		esym.st_shndx = shndx[sym.section]; // section index
 		esym.st_value = sym.value; // symbol value
 		esym.st_size = 0; // no size
 		symtab.insert(symtab.end(), (uint8_t *)&esym, (uint8_t *)&esym + sizeof(Elf64_Sym));
@@ -108,14 +124,14 @@ void ELF_write(const std::vector<Section> &sections, const std::vector<Symbol> &
 		strtab += sym.name + '\0'; // add name to string table
 		esym.st_info = ELF64_ST_INFO(sym.global ? STB_GLOBAL : STB_LOCAL, sym.type); // symbol binding and type
 		esym.st_other = 0; // no other
-		esym.st_shndx = sym.shndx; // section index
+		esym.st_shndx = shndx[sym.section]; // section index
 		esym.st_value = sym.value; // symbol value
 		esym.st_size = 0; // no size
 		symtab.insert(symtab.end(), (uint8_t *)&esym, (uint8_t *)&esym + sizeof(Elf64_Sym));
 	}
 
 	// Offset into file for writing metadata
-	Elf64_Off metaoff = (Elf64_Off)f.tellp() + 3 * sizeof(Elf64_Shdr);
+	Elf64_Off metaoff = (Elf64_Off)f.tellp() + 4 * sizeof(Elf64_Shdr);
 
 	Elf64_Shdr shdr;
 	// Write symtab header
@@ -150,6 +166,24 @@ void ELF_write(const std::vector<Section> &sections, const std::vector<Symbol> &
 	shdr.sh_entsize = 0; // no entry size
 	f.write((char *)&shdr, sizeof(Elf64_Shdr));
 
+	// Write the relocation sections
+	for (const auto &section : reloc_sections) {
+		shdr.sh_name = shstrtab.size(); // name offset in section name string table
+		shstrtab += ".rela" + section.first; // add section name to section name string table
+		shstrtab.push_back(0);
+		shdr.sh_type = SHT_RELA; // section type
+		shdr.sh_flags = SHF_INFO_LINK; // sh_info is valid
+		shdr.sh_addr = 0; // no address
+		shdr.sh_offset = metaoff; // no offset
+		shdr.sh_size = section.second * sizeof(Elf64_Rela); // section size
+		metaoff += shdr.sh_size;
+		shdr.sh_link = sections.size() + 1; // link to symbol table
+		shdr.sh_info = shndx[section.first]; // link to section
+		shdr.sh_addralign = 8; // alignment
+		shdr.sh_entsize = sizeof(Elf64_Rela); // entry size
+		f.write((char *)&shdr, sizeof(Elf64_Shdr));
+	}
+
 	// Write shstrtab header
 	shdr.sh_name = shstrtab.size(); // name offset in section name string table
 	shstrtab += ".shstrtab"; // add section name to section name string table
@@ -168,6 +202,37 @@ void ELF_write(const std::vector<Section> &sections, const std::vector<Symbol> &
 
 	f.write((const char *)symtab.data(), symtab.size());
 	f.write(strtab.data(), strtab.size());
+
+	// Write the relocation entries
+	for (const auto &section : reloc_sections) {
+		for (const auto &reloc : relocations) {
+			if (reloc.section != section.first)
+				continue;
+			Elf64_Rela erela;
+			erela.r_offset = reloc.offset; // offset in section
+			int type;
+			if (reloc.type == ABS) {
+				type = R_X86_64_32;
+			} else if (reloc.type == REL) {
+				if (reloc.size == 8)
+					type = R_X86_64_PC8;
+				else
+					type = R_X86_64_PC32;
+			} else if (reloc.type == PLT) {
+				type = R_X86_64_PLT32;
+			}
+			int cnt = 0;
+			int i = strtab.find(reloc.symbol);
+			while (i > 0) {
+				if (strtab[i--] == '\0')
+					cnt++;
+			}
+			erela.r_info = ELF64_R_INFO(cnt, type); // symbol and type
+			erela.r_addend = reloc.addend; // addend
+			f.write((char *)&erela, sizeof(Elf64_Rela));
+		}
+	}
+
 	f.write(shstrtab.data(), shstrtab.size());
 
 	// Write the section data
