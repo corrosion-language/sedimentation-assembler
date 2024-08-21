@@ -133,12 +133,21 @@ mem_output *parse_mem(std::string in, short &size) {
 		}
 	}
 
-	// move stuff from front to back if not register
-	while (tokens.size() > 1 && reg_size(tokens.front()) == -1) {
-		tokens.push_back(tokens.front());
-		ops.push_back('+');
-		tokens.erase(tokens.begin());
-		ops.erase(ops.begin());
+	bool has_reg = false;
+	for (size_t i = 0; i < tokens.size(); i++) {
+		if (reg_size(tokens[i]) != -1) {
+			has_reg = true;
+			break;
+		}
+	}
+	if (has_reg) {
+		// move stuff from front to back if not register
+		while (tokens.size() > 1 && reg_size(tokens.front()) == -1) {
+			tokens.push_back(tokens.front());
+			ops.push_back('+');
+			tokens.erase(tokens.begin());
+			ops.erase(ops.begin());
+		}
 	}
 
 	mem_output *out = new mem_output();
