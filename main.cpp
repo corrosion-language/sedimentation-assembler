@@ -92,7 +92,7 @@ int parse_args(int argc, char *argv[]) {
 				}
 			} else if (strcmp(argv[i], "-f") == 0 || strcmp(argv[i], "--format") == 0) {
 				if (i + 1 < argc) {
-					if (strcmp(argv[i + 1], "elf") == 0) {
+					if (strcmp(argv[i + 1], "elf") == 0 || strcmp(argv[i + 1], "elf64") == 0) {
 						output_format = ELF;
 					} else if (strcmp(argv[i + 1], "coff") == 0) {
 						output_format = COFF;
